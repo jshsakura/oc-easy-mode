@@ -1,0 +1,296 @@
+// The shell around the views: sidebar, player bar, and the slot YouTube's own
+// player is placed into.
+//
+// The slot is one element that is never re-rendered, only re-classed. That is
+// deliberate: the player is positioned over it by the page-level stylesheet,
+// and a slot that came and went would make the video jump every time a list
+// redrew.
+
+import { thumbnail } from '../parse.ts'
+import type { Engine } from '../engine.ts'
+import type { Shell } from '../shell.ts'
+import type { VideoLayout } from '../store.ts'
+import { LAYOUT_FOR } from '../store.ts'
+import { h, icon, replace } from './dom.ts'
+import { STYLES } from './styles.ts'
+import { clock, type Ctx, type View } from './ctx.ts'
+import { showMenu, toast } from './overlay.ts'
+import { render } from './views.ts'
+
+export interface AppOptions {
+  shell: Shell
+  engine: Engine
+  /** Leaves the mode: the one thing this UI promises always works. */
+  exit(): void
+  /** Everything a view needs that the app does not own. */
+  ctx: Omit<Ctx, 'view' | 'go' | 'reload' | 'say' | 'overlay'>
+}
+
+export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
+  const { shell, engine } = opts
+
+  const main = h('div', { class: 'main' })
+  const slot = h('div', { class: 'slot' })
+  const side = h('div', { class: 'side' })
+  const bar = h('div', { class: 'bar' })
+  const app = h('div', { class: 'app' }, side, main, slot, bar)
+
+  const style = document.createElement('style')
+  style.textContent = STYLES
+  shell.root.append(style, app)
+
+  const overlayStyle = document.createElement('style')
+  overlayStyle.textContent = STYLES
+  shell.overlay.append(overlayStyle)
+
+  // ── Context ──────────────────────────────────────────────────────────────
+
+  // Delegating rather than spreading, because `playlists` is filled in after
+  // mount: a spread would freeze today's empty array into the sidebar forever.
+  const ctx: Ctx = {
+    engine: opts.ctx.engine,
+    cfg: opts.ctx.cfg,
+    get playlists() {
+      return opts.ctx.playlists
+    },
+    refreshPlaylists: () => opts.ctx.refreshPlaylists(),
+    addToPlaylist: (tracks) => opts.ctx.addToPlaylist(tracks),
+    overlay: shell.overlay,
+    view: viewFromName(engine.state.view),
+    go(view) {
+      ctx.view = view
+      engine.setView(nameOf(view))
+      drawSide()
+      void render(ctx, main)
+      main.scrollTop = 0
+    },
+    reload() {
+      void render(ctx, main)
+    },
+    say(message, bad) {
+      toast(shell.overlay, message, bad)
+    },
+  }
+
+  // ── Sidebar ──────────────────────────────────────────────────────────────
+
+  const NAV: Array<{ view: View; label: string; icon: Parameters<typeof icon>[0] }> = [
+    { view: { kind: 'search', query: '' }, label: '검색', icon: 'search' },
+    { view: { kind: 'home' }, label: '홈', icon: 'home' },
+    { view: { kind: 'subs' }, label: '구독', icon: 'subs' },
+    { view: { kind: 'history' }, label: '시청 기록', icon: 'history' },
+    { view: { kind: 'playlists' }, label: '내 재생목록', icon: 'library' },
+    { view: { kind: 'queue' }, label: '대기열', icon: 'queue' },
+  ]
+
+  function drawSide(): void {
+    const mode = engine.state.mode
+    replace(
+      side,
+      h('div', { class: 'brand' }, icon('note', 20), h('span', null, '튜브 모드')),
+      h(
+        'div',
+        { class: 'modes' },
+        (['music', 'video'] as const).map((m) =>
+          h(
+            'button',
+            {
+              class: mode === m ? 'mode on' : 'mode',
+              onclick: () => {
+                engine.setMode(m)
+                setLayout(LAYOUT_FOR[m])
+                drawSide()
+                drawBar()
+              },
+            },
+            m === 'music' ? '음악' : '영상',
+          ),
+        ),
+      ),
+      NAV.map((item) =>
+        h(
+          'button',
+          {
+            class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
+            onclick: () => ctx.go(item.view),
+          },
+          icon(item.icon, 18),
+          h('span', null, item.label),
+        ),
+      ),
+      ctx.playlists.length > 0 && h('h4', null, '재생목록'),
+      ctx.playlists.slice(0, 30).map((p) =>
+        h(
+          'button',
+          { class: 'nav pl', title: p.title, onclick: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }) },
+          p.title,
+        ),
+      ),
+      h('div', { class: 'spacer' }),
+      h(
+        'button',
+        { class: 'exit', title: '원래 유튜브 화면으로 (Esc 두 번)', onclick: opts.exit },
+        icon('back', 18),
+        h('span', null, '유튜브로 돌아가기'),
+      ),
+    )
+  }
+
+  // ── The player slot ──────────────────────────────────────────────────────
+
+  function setLayout(layout: VideoLayout): void {
+    engine.setVideo(layout)
+    slot.className = `slot ${layout}`
+    app.classList.toggle('has-stage', layout === 'stage')
+    app.classList.toggle('has-corner', layout === 'corner')
+    shell.place(layout === 'hidden' ? null : slot)
+    drawBar()
+  }
+
+  // ── Player bar ───────────────────────────────────────────────────────────
+
+  const seek = h('input', { type: 'range', min: '0', max: '1000', value: '0' })
+  const elapsed = h('span', null, '0:00')
+  const total = h('span', null, '0:00')
+  let scrubbing = false
+  seek.addEventListener('pointerdown', () => (scrubbing = true))
+  const commit = () => {
+    const d = engine.position.duration
+    if (d > 0) engine.seek((Number(seek.value) / 1000) * d)
+    scrubbing = false
+  }
+  seek.addEventListener('pointerup', commit)
+  seek.addEventListener('change', commit)
+  seek.addEventListener('input', () => {
+    const d = engine.position.duration
+    if (d > 0) elapsed.textContent = clock((Number(seek.value) / 1000) * d)
+  })
+
+  const nowThumb = h('div', { class: 'thumb' })
+  const nowTitle = h('div', { class: 't' }, '재생 중인 항목 없음')
+  const nowBy = h('div', { class: 'b' })
+  const playButton = h('button', { class: 'big', title: '재생 / 일시정지' }, icon('play', 20))
+  playButton.addEventListener('click', () => engine.toggle())
+
+  const prevButton = h('button', { title: '이전' }, icon('prev', 20))
+  prevButton.addEventListener('click', () => engine.prev())
+  const nextButton = h('button', { title: '다음' }, icon('next', 20))
+  nextButton.addEventListener('click', () => engine.next())
+  const shuffleButton = h('button', { title: '셔플' }, icon('shuffle', 18))
+  shuffleButton.addEventListener('click', () => {
+    engine.setShuffle(!engine.state.shuffle)
+    drawBar()
+  })
+  const repeatButton = h('button', { title: '반복' }, icon('repeat', 18))
+  repeatButton.addEventListener('click', () => {
+    engine.cycleRepeat()
+    drawBar()
+  })
+
+  const volume = h('input', { type: 'range', class: 'vol', min: '0', max: '100', value: String(engine.state.volume) })
+  volume.addEventListener('input', () => engine.setVolume(Number(volume.value)))
+  const muteButton = h('button', { title: '음소거' }, icon('volume', 18))
+  muteButton.addEventListener('click', () => {
+    const on = engine.state.volume === 0
+    engine.setVolume(on ? 70 : 0)
+    volume.value = String(engine.state.volume)
+    drawBar()
+  })
+
+  const videoButton = h('button', { title: '화면 위치' }, icon('video', 18))
+  videoButton.addEventListener('click', () =>
+    showMenu(shell.overlay, videoButton, [
+      { label: '크게 보기', icon: 'expand', onSelect: () => setLayout('stage') },
+      { label: '구석에 두기', icon: 'video', onSelect: () => setLayout('corner') },
+      { label: '소리만 듣기', icon: 'videoOff', onSelect: () => setLayout('hidden') },
+    ]),
+  )
+
+  const queueButton = h('button', { title: '대기열' }, icon('queue', 18))
+  queueButton.addEventListener('click', () => ctx.go({ kind: 'queue' }))
+
+  bar.append(
+    h('div', { class: 'now' }, nowThumb, h('div', { style: 'min-width:0' }, nowTitle, nowBy)),
+    h(
+      'div',
+      { class: 'center' },
+      h('div', { class: 'ctl' }, shuffleButton, prevButton, playButton, nextButton, repeatButton),
+      h('div', { class: 'seek' }, elapsed, seek, total),
+    ),
+    h('div', { class: 'right' }, videoButton, queueButton, muteButton, volume),
+  )
+
+  function drawBar(): void {
+    const t = engine.current
+    nowTitle.textContent = t ? t.title : '재생 중인 항목 없음'
+    nowBy.textContent = t ? t.byline : ''
+    nowThumb.style.backgroundImage = t ? `url(${thumbnail(t.videoId)})` : ''
+    shuffleButton.classList.toggle('on', engine.state.shuffle)
+    repeatButton.classList.toggle('on', engine.state.repeat !== 'off')
+    replace(repeatButton, icon(engine.state.repeat === 'one' ? 'repeatOne' : 'repeat', 18))
+    repeatButton.title = { off: '반복 안 함', all: '전체 반복', one: '한 곡 반복' }[engine.state.repeat]
+    replace(muteButton, icon(engine.state.volume === 0 ? 'mute' : 'volume', 18))
+    replace(videoButton, icon(engine.state.video === 'hidden' ? 'videoOff' : 'video', 18))
+    videoButton.classList.toggle('on', engine.state.video === 'stage')
+    prevButton.disabled = engine.state.queue.length === 0
+    nextButton.disabled = engine.state.queue.length === 0
+  }
+
+  function drawTick(): void {
+    const p = engine.position
+    replace(playButton, icon(p.playing ? 'pause' : 'play', 20))
+    total.textContent = clock(p.duration)
+    if (!scrubbing) {
+      elapsed.textContent = clock(p.current)
+      seek.value = String(p.duration > 0 ? Math.round((p.current / p.duration) * 1000) : 0)
+    }
+  }
+
+  // ── Wiring ───────────────────────────────────────────────────────────────
+
+  const offChange = engine.subscribe(() => {
+    drawBar()
+    if (ctx.view.kind === 'queue') ctx.reload()
+  })
+  const offTick = engine.onTick(drawTick)
+
+  drawSide()
+  drawBar()
+  drawTick()
+  setLayout(engine.state.video)
+  void render(ctx, main)
+
+  // The sidebar's playlist list arrives late and is not worth blocking on.
+  void ctx.refreshPlaylists().then(drawSide).catch(() => {})
+
+  return {
+    ctx,
+    destroy() {
+      offChange()
+      offTick()
+    },
+  }
+}
+
+/** The view name that survives a reload, and its way back. */
+function nameOf(view: View): string {
+  return view.kind === 'playlist' ? `playlist:${view.id}:${view.title}` : view.kind
+}
+
+function viewFromName(name: string): View {
+  if (name.startsWith('playlist:')) {
+    const rest = name.slice('playlist:'.length)
+    const cut = rest.indexOf(':')
+    if (cut > 0) return { kind: 'playlist', id: rest.slice(0, cut), title: rest.slice(cut + 1) }
+  }
+  switch (name) {
+    case 'home':
+    case 'subs':
+    case 'history':
+    case 'playlists':
+    case 'queue':
+      return { kind: name }
+    default:
+      return { kind: 'search', query: '' }
+  }
+}

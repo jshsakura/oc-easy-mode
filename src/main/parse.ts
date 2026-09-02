@@ -1,0 +1,251 @@
+// Reading InnerTube responses.
+//
+// **Searched, not addressed.** The path to a row differs between search, a
+// playlist, a mix and the library, and changes without notice. A recursive
+// search for the renderer by name survives all of that, because the renderer
+// names are the part YouTube keeps stable: they are what its own client
+// dispatches on. Every collector is narrow about what it accepts in return.
+
+export type Json = Record<string, unknown>
+
+export function isObject(v: unknown): v is Json {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/** Every value stored under `key`, anywhere in the tree, in document order. */
+export function collect(root: unknown, key: string): unknown[] {
+  const out: unknown[] = []
+  const stack: unknown[] = [root]
+  while (stack.length > 0) {
+    const node = stack.pop()
+    if (Array.isArray(node)) {
+      for (let i = node.length - 1; i >= 0; i--) stack.push(node[i])
+    } else if (isObject(node)) {
+      const entries = Object.entries(node)
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const entry = entries[i]!
+        if (entry[0] === key) out.push(entry[1])
+        else stack.push(entry[1])
+      }
+      const hit = node[key]
+      if (hit !== undefined) stack.push(hit)
+    }
+  }
+  return out
+}
+
+export function findFirst(root: unknown, key: string): unknown {
+  return collect(root, key)[0]
+}
+
+/** Flattens one of YouTube's text objects: `{runs}`, `{simpleText}` or `{content}`. */
+export function text(node: unknown): string {
+  if (typeof node === 'string') return node
+  if (!isObject(node)) return ''
+  if (typeof node.simpleText === 'string') return node.simpleText
+  if (typeof node.content === 'string') return node.content
+  const runs = node.runs
+  if (Array.isArray(runs)) {
+    return runs.map((r) => (isObject(r) && typeof r.text === 'string' ? r.text : '')).join('')
+  }
+  return ''
+}
+
+/** One track, as far as a player cares about it. */
+export interface Track {
+  videoId: string
+  title: string
+  /** Channel or artist, as the row itself renders it. */
+  byline: string
+  /** `m:ss` as rendered, or empty when the row did not say. */
+  duration: string
+  /** Identifies this track's slot in a playlist; needed to remove it. */
+  setVideoId?: string
+  /** Greyed out: taken down, private or region-locked. Skipped on play. */
+  unavailable: boolean
+}
+
+export interface Playlist {
+  id: string
+  title: string
+  /** Free text under the title, usually the count. */
+  subtitle: string
+  /** A video id to build a cover from, when the row offered one. */
+  coverVideoId?: string
+}
+
+/** The medium thumbnail for any video, without asking the API for it. */
+export function thumbnail(videoId: string): string {
+  return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+}
+
+function watchVideoId(node: unknown): string | undefined {
+  for (const endpoint of collect(node, 'watchEndpoint')) {
+    if (isObject(endpoint) && typeof endpoint.videoId === 'string') return endpoint.videoId
+  }
+  return undefined
+}
+
+/** `setVideoId` from the row's own remove-from-playlist action, if it has one. */
+function setVideoIdOf(node: unknown): string | undefined {
+  for (const endpoint of collect(node, 'playlistEditEndpoint')) {
+    if (!isObject(endpoint) || !Array.isArray(endpoint.actions)) continue
+    for (const action of endpoint.actions) {
+      if (isObject(action) && action.action === 'ACTION_REMOVE_VIDEO' && typeof action.setVideoId === 'string') {
+        return action.setVideoId
+      }
+    }
+  }
+  return undefined
+}
+
+/** Search results and the classic list rows: `videoRenderer`, `playlistVideoRenderer`. */
+function tracksFromVideoRenderers(root: unknown, key: string): Track[] {
+  const out: Track[] = []
+  for (const item of collect(root, key)) {
+    if (!isObject(item) || typeof item.videoId !== 'string') continue
+    out.push({
+      videoId: item.videoId,
+      title: text(item.title),
+      byline: text(item.ownerText) || text(item.shortBylineText) || text(item.longBylineText),
+      duration: text(item.lengthText),
+      setVideoId: typeof item.setVideoId === 'string' ? item.setVideoId : setVideoIdOf(item),
+      unavailable: item.isPlayable === false,
+    })
+  }
+  return out
+}
+
+/** The queue panel of a `next` response, which is what a mix is. */
+function tracksFromQueue(root: unknown): Track[] {
+  const out: Track[] = []
+  for (const item of collect(root, 'playlistPanelVideoRenderer')) {
+    if (!isObject(item)) continue
+    const videoId = typeof item.videoId === 'string' ? item.videoId : watchVideoId(item)
+    if (!videoId) continue
+    out.push({
+      videoId,
+      title: text(item.title),
+      byline: text(item.shortBylineText) || text(item.longBylineText),
+      duration: text(item.lengthText),
+      setVideoId: typeof item.playlistSetVideoId === 'string' ? item.playlistSetVideoId : undefined,
+      unavailable: item.unplayableText !== undefined,
+    })
+  }
+  return out
+}
+
+/**
+ * The 2025 row: `lockupViewModel`. One component for videos and playlists,
+ * told apart by `contentType`. Title and byline live under `metadata`, the
+ * duration is the badge on the thumbnail.
+ */
+function lockups(root: unknown, contentType: string): Json[] {
+  const out: Json[] = []
+  for (const item of collect(root, 'lockupViewModel')) {
+    if (isObject(item) && item.contentType === contentType) out.push(item)
+  }
+  return out
+}
+
+function lockupTitle(item: Json): string {
+  return text(findFirst(item.metadata, 'title'))
+}
+
+function lockupRows(item: Json): string[] {
+  const rows: string[] = []
+  const meta = findFirst(item.metadata, 'contentMetadataViewModel')
+  if (!isObject(meta) || !Array.isArray(meta.metadataRows)) return rows
+  for (const row of meta.metadataRows) {
+    if (!isObject(row) || !Array.isArray(row.metadataParts)) continue
+    const parts = row.metadataParts
+      .map((p) => (isObject(p) ? text(p.text) : ''))
+      .filter(Boolean)
+    if (parts.length) rows.push(parts.join(' · '))
+  }
+  return rows
+}
+
+function lockupBadge(item: Json): string {
+  const badge = findFirst(item.contentImage, 'thumbnailBadgeViewModel')
+  return isObject(badge) ? text(badge.text) : ''
+}
+
+function tracksFromLockups(root: unknown): Track[] {
+  const out: Track[] = []
+  for (const item of lockups(root, 'LOCKUP_CONTENT_TYPE_VIDEO')) {
+    const videoId = (typeof item.contentId === 'string' && item.contentId) || watchVideoId(item)
+    if (!videoId) continue
+    out.push({
+      videoId,
+      title: lockupTitle(item),
+      byline: lockupRows(item)[0] ?? '',
+      duration: lockupBadge(item),
+      setVideoId: setVideoIdOf(item),
+      unavailable: false,
+    })
+  }
+  return out
+}
+
+/** Tracks from any response shape this player reads, in document order. */
+export function tracks(root: unknown): Track[] {
+  return dedupe([
+    ...tracksFromVideoRenderers(root, 'videoRenderer'),
+    ...tracksFromVideoRenderers(root, 'playlistVideoRenderer'),
+    ...tracksFromQueue(root),
+    ...tracksFromLockups(root),
+  ])
+}
+
+/** Playlists from a library or search response. */
+export function playlists(root: unknown): Playlist[] {
+  const out: Playlist[] = []
+  for (const item of lockups(root, 'LOCKUP_CONTENT_TYPE_PLAYLIST')) {
+    const id = typeof item.contentId === 'string' ? item.contentId : undefined
+    if (!id) continue
+    const cover = findFirst(item.contentImage, 'url')
+    const m = typeof cover === 'string' ? /\/vi\/([\w-]{11})\//.exec(cover) : null
+    out.push({
+      id,
+      title: lockupTitle(item),
+      subtitle: [lockupBadge(item), ...lockupRows(item)].filter(Boolean).join(' · '),
+      coverVideoId: m?.[1],
+    })
+  }
+  for (const key of ['gridPlaylistRenderer', 'playlistRenderer', 'compactPlaylistRenderer']) {
+    for (const item of collect(root, key)) {
+      if (!isObject(item) || typeof item.playlistId !== 'string') continue
+      out.push({
+        id: item.playlistId,
+        title: text(item.title),
+        subtitle: text(item.videoCountText) || text(item.videoCountShortText),
+        coverVideoId: watchVideoId(item),
+      })
+    }
+  }
+  const seen = new Set<string>()
+  return out.filter((p) => !seen.has(p.id) && seen.add(p.id))
+}
+
+/** The token that asks for the next page, in either of the forms YouTube emits. */
+export function continuationToken(root: unknown): string | undefined {
+  for (const item of collect(root, 'continuationItemRenderer')) {
+    const token = findFirst(item, 'token')
+    if (typeof token === 'string' && token) return token
+  }
+  for (const key of ['nextContinuationData', 'nextRadioContinuationData']) {
+    for (const data of collect(root, key)) {
+      if (isObject(data) && typeof data.continuation === 'string' && data.continuation) {
+        return data.continuation
+      }
+    }
+  }
+  return undefined
+}
+
+/** Drops repeats while keeping the first occurrence, which is list order. */
+export function dedupe(list: readonly Track[]): Track[] {
+  const seen = new Set<string>()
+  return list.filter((t) => !seen.has(t.videoId) && seen.add(t.videoId))
+}
