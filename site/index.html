@@ -360,10 +360,14 @@ svg {
   text-align: center;
 }
 
+/* A grid item's automatic minimum size is its content, so a long word or a
+   wide child pushes the track wider than the container and the last column
+   runs off the edge. Every grid child here is allowed to be narrower. */
+.feature-grid > *, .install-grid > *, .notice-grid > *, .showcase-grid > * { min-width: 0; }
+
 /* 본문 구역 공통 */
 section {
   padding: var(--band) 0;
-  border-top: 1px solid var(--border);
 }
 
 .section-label {
@@ -393,7 +397,7 @@ section {
 /* 기능 6가지 격자 */
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -421,7 +425,7 @@ section {
 /* 설치 방법 */
 .install-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -495,7 +499,7 @@ code {
 /* 유의 사항 4가지 */
 .notice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -532,7 +536,6 @@ kbd {
 
 /* 바닥글 */
 .footer {
-  border-top: 1px solid var(--border);
   padding: 44px 0;
   font-size: 14px;
   color: var(--text-muted);
