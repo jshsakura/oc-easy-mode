@@ -94,14 +94,28 @@ export const STYLES = `
   --bar: 84px;
   --side: 244px;
   --gap: 8px;
+  /* The stage is as tall as a 16:9 video in the width it has, and no taller.
+     A fraction of the screen height was the wrong measure: it took the room a
+     video needed plus whatever was left over, and the list got half a screen
+     the moment anyone pressed 영상. Capped, because on a wide window 16:9 of
+     the full width is most of the viewport. */
+  --stage-h: min(calc((100vw - var(--side) - var(--gap) * 3) * 0.5625), 42vh);
 
   /* Two panels floating on a darker ground, with the player bar across the
      bottom. This is what separates an application from a web page: the chrome
      is a frame the content sits inside, not a strip of the document. */
-  /* Height is set from the visual viewport in app.ts; see the note there.
-     bottom is deliberately not set, so nothing fights that measurement.
+  /* dvh, not vh and not a number measured in script.
+     vh is the *largest* viewport — it ignores a browser's retractable toolbars,
+     so the bottom of the app hides behind them. Measuring visualViewport in
+     script has the opposite failure: it reports the visible area in CSS pixels,
+     which on a zoomed-out page is far smaller than the screen, and the app ends
+     up covering the top half with the hidden page showing black underneath.
+     dvh is the dynamic viewport — exactly the visible area, in the page's own
+     units — and it is the unit this problem was invented for.
      No backticks anywhere in this file: it is one template literal. */
   position: fixed; top: 0; left: 0; right: 0; z-index: 2147482000;
+  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
   gap: var(--gap); padding: var(--gap);
@@ -322,25 +336,11 @@ input { font: inherit; color: inherit; }
    sliver. A player that shows one and a half rows is not showing a list. */
 .slot.stage {
   left: calc(var(--side) + var(--gap) * 2); top: var(--gap);
-  right: var(--gap); width: auto; height: min(34vh, 340px);
+  right: var(--gap); width: auto; height: var(--stage-h);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
-.app.has-stage .main { padding-top: calc(min(34vh, 340px) + 20px); }
+.app.has-stage .main { padding-top: calc(var(--stage-h) + 20px); }
 .app.has-corner .main { padding-bottom: 220px; }
-
-/* ── The utility cluster, top right over the content ─────────────────────── */
-.utils {
-  position: absolute; z-index: 6;
-  top: calc(var(--gap) + 18px); right: calc(var(--gap) + 20px);
-  display: flex; gap: 2px;
-}
-.utils button {
-  width: 34px; height: 34px; border-radius: var(--radius-md);
-  display: inline-flex; align-items: center; justify-content: center;
-  color: var(--muted-foreground);
-  transition: background var(--ease), color var(--ease);
-}
-.utils button:hover { background: var(--hover); color: var(--foreground); }
 
 /* ── Player bar ──────────────────────────────────────────────────────────── */
 .bar {
@@ -473,92 +473,80 @@ input[type=range]::-webkit-slider-thumb {
 
 /* Below this the sidebar cannot be a column at all, and becomes a drawer. */
 @media (max-width: 860px) {
-  /* ── The phone is not a narrow desktop ──────────────────────────────────
-     A drawer is a desktop idea. A phone music app puts its destinations on a
-     bottom tab bar under the thumb, gives the list the whole width, and keeps
-     the playing track directly above the tabs. That is the shape here. */
+  /* ── Narrow ─────────────────────────────────────────────────────────────
+     The sidebar slides in from the left rather than lying along the bottom.
+     Eight destinations across a phone is a row of stamps: too small to read
+     and too small to hit. As a drawer each one is a full-width line. */
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto auto;
+    grid-template-rows: 1fr auto;
     gap: 0; padding: 0;
     --bar: auto;
+    --stage-h: calc(100vw * 0.5625);
   }
 
+  /* A header strip of its own above the content: the drawer button on the
+     left, the mode switch on the right, and the title beneath them with the
+     whole width. Squeezing the title in beside the switch put every screen
+     name onto two lines. */
   .main {
-    grid-column: 1; grid-row: 1;
-    border: 0; border-radius: 0; background: var(--panel);
-    padding: calc(16px + env(safe-area-inset-top)) 16px 20px;
+    grid-column: 1; grid-row: 1; position: relative;
+    border: 0; border-radius: 0;
+    padding: calc(60px + env(safe-area-inset-top)) 16px 20px;
   }
-  .main h2 { font-size: 22px; margin-bottom: 16px; }
+  .main h2 { font-size: 22px; margin-bottom: 16px; padding-right: 0; }
 
-  /* Row two: the playing track, full width, right above the tabs. */
+  .drawerToggle {
+    display: inline-flex; position: fixed; z-index: 6;
+    top: calc(10px + env(safe-area-inset-top)); left: 10px;
+    width: 40px; height: 40px;
+  }
+
+  /* Slid with left, not transform.
+     A transformed element becomes the containing block for any fixed-position
+     descendant, and the mode switch lives inside this one — so with a
+     transform it went off-canvas with the drawer instead of staying on screen.
+     Animating left costs a little smoothness and avoids the whole class of
+     problem. (No backticks in this file: it is one template literal.) */
+  .side {
+    position: fixed; left: -282px; top: 0; bottom: 0; width: 282px; z-index: 20;
+    border: 0; border-right: 1px solid var(--border); border-radius: 0;
+    transition: left .22s ease;
+    padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom));
+  }
+  .drawer-open .side { left: 0; }
+  .drawerScrim {
+    display: block; position: fixed; inset: 0; z-index: 15;
+    background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
+    transition: opacity .22s ease;
+  }
+  .drawer-open .drawerScrim { opacity: 1; pointer-events: auto; }
+  /* The track and its buttons on one line, the progress under them. */
   .bar {
     grid-column: 1; grid-row: 2;
     grid-template-columns: 1fr auto; grid-template-rows: auto auto;
     background: var(--side-panel); border-top: 1px solid var(--border);
-    padding: 8px 14px 10px; gap: 6px 12px; align-items: center;
+    padding: 10px 12px calc(8px + env(safe-area-inset-bottom));
+    gap: 6px 10px; align-items: center;
   }
-  .seek { grid-row: 1; grid-column: 1 / -1; max-width: none; }
-  .now { grid-row: 2; grid-column: 1; gap: 12px; }
+  .now { grid-row: 1; grid-column: 1; gap: 10px; }
   .now .thumb { width: 46px; height: 46px; }
   .now .t { font-size: 15px; }
-  .center { grid-row: 2; grid-column: 2; gap: 0; }
+  .center { grid-row: 1; grid-column: 2; gap: 0; }
+  .seek { grid-row: 2; grid-column: 1 / -1; max-width: none; font-size: 11px; }
   .ctl { gap: 2px; }
   .ctl button { width: 40px; height: 40px; }
-  .ctl .big { width: 44px; height: 44px; }
+  .ctl .big { width: 46px; height: 46px; }
   .ctl > button:first-child, .ctl > button:last-child { display: none; }
   .right { display: none; }
 
-  /* Row three: the tab bar. The sidebar becomes it — same buttons, laid on
-     their side, labels under the icons. */
-  .side {
-    grid-column: 1; grid-row: 3;
-    flex-direction: row; align-items: stretch;
-    background: var(--side-panel); border: 0; border-top: 1px solid var(--border);
-    border-radius: 0; overflow: visible;
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    gap: 0;
-  }
-  /* Seven things fit across a phone; ten do not. The destinations and the way
-     out stay; theme and language are desktop conveniences and follow YouTube
-     on their own here. */
-  .side .brand, .side h4, .side .pl, .side .spacer, .side .util { display: none; }
-  /* Eight destinations across a phone leaves no room for eight labels, and a
-     truncated label is worse than none. Icons carry it; the one you are on
-     says its name. */
-  .nav, .exit {
-    flex: 1 1 0; min-width: 0;
-    flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    padding: 7px 2px; border-radius: var(--radius-md);
-    font-size: 10px; font-weight: 500; text-align: center;
-  }
-  .nav svg, .exit svg { width: 22px; height: 22px; }
-  .nav span, .exit span { display: none; }
-  .nav.on span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-  .nav.on { background: transparent; color: var(--primary); }
-  .nav:hover, .exit:hover { background: transparent; }
-
-  /* The two that are not destinations sit apart: the mode switch floats over
-     the top-right of the list, and leaving is the last tab. */
-  /* Not a destination, so it does not belong in the tab bar. It rides at the
-     top of the list instead, where the eye already is. */
-  .utils { top: calc(12px + env(safe-area-inset-top)); right: 12px; }
   .modes {
-    position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 88px;
-    z-index: 5; margin: 0; width: auto; min-width: 124px;
+    position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 12px;
+    z-index: 6; margin: 0; width: auto; min-width: 124px;
     background: var(--side-panel); border-color: var(--border);
   }
   .mode { font-size: 12px; padding: 5px 12px; }
-  .main { position: relative; }
-  .main h2 { padding-right: 224px; }
-  .exit {
-    flex: 1 1 0; min-width: 0;
-    flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    padding: 6px 2px; font-size: 10.5px;
-  }
-  .exit svg { width: 21px; height: 21px; }
 
-  /* Lists lose the columns there is no width for. */
   .row { grid-template-columns: 52px 1fr 32px; gap: 12px; padding: 8px 4px; }
   .row .idx, .row .dur { display: none; }
   .row .thumb { width: 52px; height: 30px; }
@@ -572,15 +560,13 @@ input[type=range]::-webkit-slider-thumb {
   .head .cover { width: 160px; }
   .searchbox { margin-bottom: 16px; }
 
-  /* The picture has nowhere to float on 390 pixels, so in music mode there
-     is none; in video mode it caps the list rather than covering it. */
   .slot.corner { display: none; }
   .app.has-corner .main { padding-bottom: 20px; }
-  .slot.stage { left: 0; right: 0; top: 0; height: min(28vh, 230px); border-radius: 0; }
-  .app.has-stage .main { padding-top: calc(min(28vh, 230px) + 14px); }
+  .slot.stage { left: 0; right: 0; top: 0; height: var(--stage-h); border-radius: 0; }
+  .app.has-stage .main { padding-top: calc(var(--stage-h) + 14px); }
 
   .menu { min-width: 200px; }
   .modal { width: calc(100vw - 28px); }
-  .toasts { bottom: 150px; }
+  .toasts { bottom: 140px; }
 }
 `

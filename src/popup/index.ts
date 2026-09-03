@@ -21,19 +21,19 @@ async function render(): Promise<void> {
   const cfg = await read()
   app.innerHTML = `
     <h1>Easy Mode</h1>
-    <p>유튜브 화면을 음악 플레이어로 바꿉니다. 재생은 그대로 유튜브가 합니다.</p>
+    <p>유튜브 화면을 심플한 플레이어로 바꿉니다. 재생은 그대로 유튜브가 합니다.</p>
     <div class="row">
-      <span>음악 모드 켜기</span>
+      <span>심플 모드 켜기</span>
       <button class="switch" role="switch" aria-checked="${cfg.musicMode}" id="toggle"></button>
     </div>
-    <p class="hint">플레이어 안의 '유튜브로 돌아가기'로도 끌 수 있습니다.</p>
+    <p class="hint">화면 안의 '이지 모드 종료'로도 끌 수 있습니다.</p>
   `
   document.getElementById('toggle')!.addEventListener('click', async () => {
     const next = { ...cfg, musicMode: !cfg.musicMode }
     await chrome.storage.local.set({ config: next })
     if (next.musicMode) {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (!tab?.url?.startsWith('https://www.youtube.com/')) {
+      if (!/^https:\/\/[a-z]+\.youtube\.com\//.test(tab?.url ?? '')) {
         await chrome.tabs.create({ url: 'https://www.youtube.com/' })
       }
     }

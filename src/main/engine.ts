@@ -6,7 +6,7 @@
 
 import { State, disableAutonav, videoIdInUrl, type YtPlayer } from './player.ts'
 import type { Track } from './parse.ts'
-import { load, save, setQuickOn, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
+import { load, save, setQuickOn, type Mode, type Persisted, type Repeat, type VideoLayout } from './store.ts'
 
 export type Listener = () => void
 
@@ -292,11 +292,6 @@ export class Engine {
       const tail = this.state.queue.slice(this.state.index + 1)
       this.state.queue = head.concat(shuffled(tail, -1))
     }
-    this.changed()
-  }
-
-  setTheme(theme: Theme): void {
-    this.state.theme = theme
     this.changed()
   }
 

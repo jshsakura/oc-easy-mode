@@ -6,12 +6,12 @@
 // and a slot that came and went would make the video jump every time a list
 // redrew.
 
-import { getLang, setLang, t, tn, type Lang } from '../../shared/i18n.ts'
+import { t, tn } from '../../shared/i18n.ts'
 import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { layoutFor, youtubeIsDark, type Theme } from '../store.ts'
+import { layoutFor, youtubeIsDark } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
@@ -41,44 +41,21 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // knows — see device.ts.
   const app = h('div', { class: narrowNow() ? 'app narrow' : 'app' }, side, main, slot, bar)
 
-  // Light or dark: what the reader chose, else whatever YouTube is set to.
+  // Light or dark follows YouTube, and nothing else. There is no switch: the
+  // page underneath already has one, and two switches for one question is a
+  // way to end up looking at a light panel over a dark page.
+  //
+  // YouTube says which it is with an attribute on the root element, and can
+  // change it while we are up, so it is watched rather than read once.
   function applyTheme(): void {
-    const dark = engine.state.theme === 'auto' ? youtubeIsDark() : engine.state.theme === 'dark'
-    app.classList.toggle('light', !dark)
+    app.classList.toggle('light', !youtubeIsDark())
   }
-
-  // Theme and language live top right, over the content, where an application
-  // puts the controls that are about the app rather than about what is in it.
-  const themeButton = h('button', { 'data-nav': '', title: t('테마') }, icon('auto', 18))
-  const langButton = h('button', { 'data-nav': '', title: 'ko / en' }, icon('globe', 18))
-  const utils = h('div', { class: 'utils' }, themeButton, langButton)
-
-  themeButton.addEventListener('click', () => {
-    const order: Theme[] = ['auto', 'light', 'dark']
-    engine.setTheme(order[(order.indexOf(engine.state.theme) + 1) % order.length]!)
-    applyTheme()
-    drawUtils()
-  })
-  langButton.addEventListener('click', () => {
-    const next: Lang = getLang() === 'ko' ? 'en' : 'ko'
-    setLang(next)
-    engine.setLang(next)
-    drawSide()
-    drawBar()
-    drawUtils()
-    ctx.reload()
-  })
-
-  function drawUtils(): void {
-    replace(themeButton, icon(engine.state.theme === 'light' ? 'sun' : engine.state.theme === 'dark' ? 'moon' : 'auto', 18))
-    themeButton.title = `${t('테마')} · ${THEME_LABEL[engine.state.theme]}`
-    replace(langButton, icon('globe', 18))
-    langButton.title = getLang() === 'ko' ? '한국어 / English' : 'English / 한국어'
-  }
+  const themeWatch = new MutationObserver(applyTheme)
+  themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['dark'] })
 
   const closeDrawer = () => app.classList.remove('drawer-open')
   const scrim = h('div', { class: 'drawerScrim', onclick: closeDrawer })
-  app.append(scrim, utils)
+  app.appendChild(scrim)
 
   const style = document.createElement('style')
   style.textContent = STYLES
@@ -315,28 +292,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   // ── Wiring ───────────────────────────────────────────────────────────────
 
-  // ── The app is as tall as what is actually on screen ─────────────────────
-  //
-  // `position: fixed; inset: 0` measures against the *layout* viewport, and on
-  // a phone that is not what you can see: a page handed the desktop site gets
-  // a layout viewport taller than the screen, and iOS measures a bottom offset
-  // against it too. The bottom row — the tab bar, the thing a thumb reaches
-  // for — ends up below the fold, present and unreachable. The sibling
-  // extension learned this the hard way with its picture-in-picture button.
-  //
-  // `visualViewport` is the part that is genuinely visible, and it is the only
-  // thing that tracks a collapsing browser toolbar.
-  const fitHeight = () => {
-    const h = window.visualViewport?.height ?? window.innerHeight
-    app.style.height = `${Math.round(h)}px`
-  }
-  fitHeight()
-  window.visualViewport?.addEventListener('resize', fitHeight)
-  window.visualViewport?.addEventListener('scroll', fitHeight)
-
   // Rotating a phone, or dragging a window, changes the answer.
   const onResize = () => {
-    fitHeight()
     const narrow = narrowNow()
     if (narrow === app.classList.contains('narrow')) return
     app.classList.toggle('narrow', narrow)
@@ -357,7 +314,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const offTick = engine.onTick(drawTick)
 
   applyTheme()
-  drawUtils()
   drawSide()
   drawBar()
   drawTick()
@@ -370,8 +326,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   return {
     ctx,
     destroy() {
-      window.visualViewport?.removeEventListener('resize', fitHeight)
-      window.visualViewport?.removeEventListener('scroll', fitHeight)
+      themeWatch.disconnect()
       window.removeEventListener('resize', onResize)
       offRemote()
       offChange()
@@ -379,8 +334,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     },
   }
 }
-
-const THEME_LABEL: Record<Theme, string> = { auto: '자동', light: '밝게', dark: '어둡게' }
 
 /** The view name that survives a reload, and its way back. */
 function nameOf(view: View): string {

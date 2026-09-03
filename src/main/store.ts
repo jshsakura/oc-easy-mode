@@ -8,8 +8,6 @@ import type { Track } from './parse.ts'
 import { narrowNow } from './ui/device.ts'
 
 export type Repeat = 'off' | 'all' | 'one'
-/** `auto` follows YouTube's own light/dark setting. */
-export type Theme = 'auto' | 'light' | 'dark'
 /** Where YouTube's own player sits on screen. */
 export type VideoLayout = 'hidden' | 'corner' | 'stage'
 /**
@@ -22,7 +20,6 @@ export type Mode = 'music' | 'video'
 
 export interface Persisted {
   mode: Mode
-  theme: Theme
   /** null follows YouTube's interface language. */
   lang: 'ko' | 'en' | null
   queue: Track[]
@@ -51,7 +48,6 @@ const KEY_ON = 'oc-easy-mode:on'
 
 export const DEFAULTS: Persisted = {
   mode: 'music',
-  theme: 'auto',
   lang: null,
   queue: [],
   index: -1,
