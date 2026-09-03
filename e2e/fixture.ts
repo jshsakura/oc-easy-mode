@@ -8,7 +8,10 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-const DIST = resolve(import.meta.dirname, '../dist')
+// Normally the local build. `DIST_DIR` points it somewhere else — at a package
+// unzipped from the live page, say, which is the only way to prove that what
+// the download button hands out is what actually installs.
+const DIST = process.env.DIST_DIR ?? resolve(import.meta.dirname, '../dist')
 
 /**
  * A copy of the build with `world: "MAIN"` taken off the main script, which is

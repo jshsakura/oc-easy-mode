@@ -4,6 +4,8 @@
 재생은 유튜브 자신의 플레이어가 그대로 한다. **오리온 브라우저용**이고
 크롬에서도 같은 패키지가 그대로 돈다.
 
+**받는 곳: https://jshsakura.github.io/oc-easy-mode/**
+
 ```
 유튜브가 데이터와 재생을 맡고,  화면은 내가 맡는다
       ↓                              ↓
@@ -164,11 +166,25 @@ npm run build          # → dist/
 npm test               # 실기 Chromium 으로 live 유튜브에 대고 12개
 ```
 
-**오리온** — 설정 → 확장 → **+** → `dist/` 를 zip 으로 묶은 것(`npm run zip`).
-아이폰 오리온도 같은 zip 을 받는다.
+**오리온** — 설정 → 확장 → **+** → [페이지](https://jshsakura.github.io/oc-easy-mode/)에서
+받은 zip. 아이폰 오리온도 같은 파일이다.
 
 **크롬** — `chrome://extensions` → 개발자 모드 → **압축해제된 확장 프로그램을 로드**
 → `dist/`. 툴바 아이콘을 눌러 켠다.
+
+### 페이지
+
+`npm run site` 는 미리보기가 아니라 **설치 시험**이다 — 빌드하고, `dist/` **안에서**
+압축하고(최상위가 `dist` 폴더인 zip 은 manifest 없는 확장으로 읽힌다), Pages 가 하는
+그대로 `_site/` 를 조립해서 띄운다. 로컬과 워크플로가 **같은 `download/index.json`** 을
+쓰므로 버튼의 주소가 로컬에서만 맞고 배포본에서 틀리는 일이 없다.
+
+배포된 페이지에서 받은 파일이 실제로 설치되는지도 확인할 수 있다:
+
+```bash
+unzip -q ~/Downloads/oc-easy-mode-0.1.0.zip -d /tmp/live
+DIST_DIR=/tmp/live npx playwright test e2e/00-safety.spec.ts e2e/04-tv.spec.ts
+```
 
 | 스크립트 | |
 |---|---|
