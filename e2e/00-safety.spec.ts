@@ -26,11 +26,15 @@ test('mounts exactly two nodes and touches nothing else', async () => {
       style: document.querySelectorAll('#oc-easy-mode').length,
       host: document.querySelectorAll('oc-easy-mode').length,
       overlay: document.querySelectorAll('oc-easy-mode-overlay').length,
-      // Nothing of YouTube's carries a mark of ours.
-      marked: document.querySelectorAll('[class*="oc-tube"], [data-oc-tube]').length,
+      // Nothing of YouTube's carries a mark of ours. (This said `oc-tube` for
+      // a while after the rename, which matched nothing and checked nothing.)
+      marked: document.querySelectorAll('[class*="oc-easy"], [data-oc-easy]').length,
+      // Added only on a phone handed the desktop page, which has no viewport
+      // meta of its own. Never here.
+      viewport: document.querySelectorAll('#oc-easy-mode-viewport').length,
       ytdApp: document.querySelectorAll('ytd-app').length,
     }))
-    expect(counts).toEqual({ style: 1, host: 1, overlay: 1, marked: 0, ytdApp: 1 })
+    expect(counts).toEqual({ style: 1, host: 1, overlay: 1, marked: 0, viewport: 0, ytdApp: 1 })
     // The player's position lives in our sheet, not on the page's root element.
     expect(await h.page.evaluate(() => document.documentElement.getAttribute('style') ?? '')).not.toContain('--oc-')
   } finally {

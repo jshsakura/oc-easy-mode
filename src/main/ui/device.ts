@@ -25,13 +25,24 @@ export const PHONE_SHORT_SIDE = 500
 
 export type ScreenKind = 'phone' | 'desktop'
 
-/** For the in-page UI: is there room for a sidebar? */
-export function isNarrow(width: number): boolean {
-  return width < NARROW_MAX
+/**
+ * For the in-page UI: is there room for a sidebar?
+ *
+ * **Both widths, and the smaller one wins.** The viewport alone is not enough:
+ * Orion on iPhone sends a desktop user agent, so YouTube serves the desktop
+ * site, and that page has no mobile viewport meta — the layout viewport becomes
+ * ~980 CSS pixels on a 390-pixel phone. Asked only the viewport, the layout
+ * calls that a desktop and everything is drawn at a quarter scale, which is
+ * exactly what the phone showed. The screen alone is not enough either: a
+ * desktop window dragged narrow has no room for a sidebar however big its
+ * monitor is.
+ */
+export function isNarrow(viewport: number, screenWidth: number): boolean {
+  return Math.min(viewport, screenWidth) < NARROW_MAX
 }
 
 export function narrowNow(): boolean {
-  return isNarrow(window.innerWidth)
+  return isNarrow(window.innerWidth, window.screen.width)
 }
 
 /** For the popup, which has no viewport worth asking. Pure, so tests can name devices. */

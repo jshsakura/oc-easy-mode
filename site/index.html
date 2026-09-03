@@ -4,371 +4,224 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>이지 모드</title>
-<meta name="description" content="유튜브를 음악과 영상 플레이어로 사용하는 확장 프로그램입니다. 화면 구성은 확장이 맡고, 재생은 유튜브가 그대로 합니다.">
+<meta name="description" content="유튜브를 음악 플레이어로. 화면은 이 확장이, 재생은 유튜브가 합니다.">
 <link rel="icon" type="image/png" sizes="128x128" href="icon-128.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="이지 모드">
-<meta property="og:description" content="유튜브를 음악과 영상 플레이어로 사용하는 확장 프로그램입니다.">
+<meta property="og:description" content="유튜브를 음악 플레이어로. 화면은 이 확장이, 재생은 유튜브가 합니다.">
 <meta property="og:url" content="https://jshsakura.github.io/oc-easy-mode/">
 <meta property="og:image" content="https://jshsakura.github.io/oc-easy-mode/og.png">
-<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="이지 모드">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
 
 <style>
-/* shadcn/ui — default theme. Same tokens the extension wears, so the page and
-   the product are recognisably one thing. Flat fills and one-pixel borders do
-   all the work; nothing is blended. */
+/* One surface, one accent, two type sizes that matter. The extension is built
+   the same way; the page should not look like a different product. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --primary-hover: oklch(0.3 0 0);
-  --accent: oklch(0.97 0 0);
-  --border: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --bg: oklch(0.145 0 0);
+  --fg: oklch(0.985 0 0);
+  --dim: oklch(0.708 0 0);
+  --line: oklch(1 0 0 / 10%);
+  --raise: oklch(1 0 0 / 6%);
   --mint: oklch(0.86 0.09 180);
-  --shadow: 0 1px 2px oklch(0 0 0 / 6%);
-  --shadow-lg: 0 24px 48px -12px oklch(0 0 0 / 18%);
-  color-scheme: light dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --primary-hover: oklch(0.86 0 0);
-    --accent: oklch(0.269 0 0);
-    --border: oklch(1 0 0 / 10%);
-    --ring: oklch(0.556 0 0);
-    --shadow: 0 1px 2px oklch(0 0 0 / 40%);
-    --shadow-lg: 0 24px 48px -12px oklch(0 0 0 / 60%);
-  }
+  --ink: oklch(0.145 0 0);
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0; background: var(--background); color: var(--foreground);
+  margin: 0; background: var(--bg); color: var(--fg);
   font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
         'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; }
 svg { display: block; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
 
-/* Layout ------------------------------------------------------------------ */
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
-.prose { max-width: 720px; }
-section { padding: 72px 0; border-top: 1px solid var(--border); }
-section:first-of-type { border-top: 0; }
-
-/* Type -------------------------------------------------------------------- */
-h1 { margin: 0 0 16px; font-size: clamp(40px, 6vw, 60px); line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; }
-h2 { margin: 0 0 10px; font-size: 30px; font-weight: 600; letter-spacing: -0.025em; }
-h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-p { margin: 0 0 16px; }
-.lead { font-size: 19px; line-height: 1.55; color: var(--muted-foreground); margin: 0 0 32px; }
-.sectionLead { color: var(--muted-foreground); margin: 0 0 32px; }
-.muted { color: var(--muted-foreground); }
-.small { font-size: 14px; }
-code, kbd {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em;
-  background: var(--muted); padding: 2px 6px; border-radius: 6px;
-}
-kbd { border: 1px solid var(--border); box-shadow: var(--shadow); }
-
-/* Badge ------------------------------------------------------------------- */
-.badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 30px; padding: 0 12px 0 6px; margin-bottom: 24px;
-  border: 1px solid var(--border); border-radius: 999px;
-  background: var(--card); box-shadow: var(--shadow);
-  font-size: 13px; font-weight: 500; color: var(--muted-foreground);
-}
-.badge .dot {
+/* Hero ------------------------------------------------------------------- */
+header { padding: 96px 0 0; }
+.mark {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 999px;
-  background: var(--mint); color: oklch(0.145 0 0);
+  width: 52px; height: 52px; border-radius: 12px;
+  background: var(--mint); color: var(--ink); margin-bottom: 28px;
 }
-.badge .dot svg { width: 13px; height: 13px; }
-
-/* Hero -------------------------------------------------------------------- */
-.hero { text-align: center; padding: 104px 0 0; }
-.hero .lead { margin-left: auto; margin-right: auto; max-width: 620px; }
-.actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; align-items: center; }
-
-/* Button ------------------------------------------------------------------ */
+.mark svg { width: 28px; height: 28px; }
+h1 {
+  margin: 0 0 20px; font-weight: 700; letter-spacing: -0.04em;
+  font-size: clamp(44px, 8vw, 76px); line-height: 1;
+}
+h1 em { font-style: normal; color: var(--mint); }
+.lead { margin: 0 0 36px; max-width: 30ch; font-size: clamp(18px, 2.4vw, 22px); line-height: 1.5; color: var(--dim); }
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  height: 46px; padding: 0 24px; border: 1px solid transparent; border-radius: 10px;
-  background: var(--primary); color: var(--primary-foreground);
-  font: inherit; font-size: 15px; font-weight: 500; text-decoration: none;
-  cursor: pointer; white-space: nowrap; box-shadow: var(--shadow);
-  transition: background .15s, border-color .15s;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 48px; padding: 0 24px; border: 1px solid transparent; border-radius: 10px;
+  background: var(--mint); color: var(--ink);
+  font: inherit; font-size: 15px; font-weight: 600; text-decoration: none;
+  cursor: pointer; transition: filter .15s, background .15s;
 }
-.btn:hover { background: var(--primary-hover); }
-.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 5px var(--ring); }
-.btn.quiet { background: var(--card); color: var(--foreground); border-color: var(--border); }
-.btn.quiet:hover { background: var(--accent); }
+.btn:hover { filter: brightness(1.08); }
+.btn.quiet { background: transparent; color: var(--fg); border-color: var(--line); font-weight: 500; }
+.btn.quiet:hover { background: var(--raise); filter: none; }
 .btn svg { width: 17px; height: 17px; }
-.hint { margin: 18px 0 0; font-size: 13.5px; color: var(--muted-foreground); }
+.meta { color: var(--dim); font-size: 14px; }
 
-/* Window frame ------------------------------------------------------------ */
-.showcase { padding: 48px 0 0; }
-.frame {
-  margin: 0; border: 1px solid var(--border); border-radius: 16px;
-  background: var(--card); overflow: hidden; box-shadow: var(--shadow-lg);
-}
-.frame .chrome {
-  display: flex; align-items: center; gap: 7px;
-  height: 38px; padding: 0 14px; border-bottom: 1px solid var(--border);
-  background: var(--muted);
-}
-.frame .chrome i { width: 10px; height: 10px; border-radius: 999px; background: var(--border); }
-.frame .chrome span {
-  margin-left: 10px; font-size: 12px; color: var(--muted-foreground);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.frame img { display: block; width: 100%; height: auto; }
-.frame figcaption {
-  padding: 14px 16px; border-top: 1px solid var(--border);
-  color: var(--muted-foreground); font-size: 13.5px;
+/* The product, full bleed ------------------------------------------------- */
+.shot { margin: 64px 0 0; padding: 0 24px; }
+.shot img {
+  display: block; width: 100%; max-width: 1200px; margin: 0 auto; height: auto;
+  border: 1px solid var(--line); border-radius: 14px;
 }
 
-/* Cards ------------------------------------------------------------------- */
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(304px, 1fr)); gap: 16px; }
-.card {
-  border: 1px solid var(--border); border-radius: 14px; background: var(--card);
-  padding: 22px; box-shadow: var(--shadow);
-}
-.card .ico {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; margin-bottom: 14px;
-  border: 1px solid var(--border); border-radius: 10px;
-  background: var(--muted); color: var(--foreground);
-}
-.card .ico svg { width: 18px; height: 18px; }
-.card p { margin: 0; color: var(--muted-foreground); font-size: 14.5px; }
+/* Facts ------------------------------------------------------------------ */
+.facts { margin: 88px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 40px 48px; }
+.facts h2 { margin: 0 0 6px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.facts p { margin: 0; color: var(--dim); font-size: 15px; }
 
-/* Steps ------------------------------------------------------------------- */
-.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-.steps ol { margin: 0; padding: 0; list-style: none; counter-reset: step; }
-.steps li {
-  position: relative; padding: 0 0 0 38px; margin-bottom: 14px;
-  font-size: 14.5px; color: var(--muted-foreground);
+/* Install ---------------------------------------------------------------- */
+.install { margin: 96px 0 0; padding-top: 40px; border-top: 1px solid var(--line); }
+h3 { margin: 0 0 20px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px 48px; }
+.two h4 { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--mint); }
+ol { margin: 0; padding: 0; list-style: none; counter-reset: n; }
+ol li { position: relative; padding-left: 28px; margin-bottom: 10px; color: var(--dim); font-size: 15px; }
+ol li::before {
+  counter-increment: n; content: counter(n) ".";
+  position: absolute; left: 0; color: var(--fg); font-variant-numeric: tabular-nums;
 }
-.steps li:last-child { margin-bottom: 0; }
-.steps li::before {
-  counter-increment: step; content: counter(step);
-  position: absolute; left: 0; top: 1px;
-  display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 999px;
-  border: 1px solid var(--border); background: var(--muted);
-  font-size: 12px; font-weight: 600; color: var(--foreground);
-}
-.steps strong { color: var(--foreground); font-weight: 600; }
+ol strong { color: var(--fg); font-weight: 600; }
+code, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; color: var(--fg); }
+kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
 
-/* Facts list -------------------------------------------------------------- */
-.facts { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-.facts div { background: var(--card); padding: 18px 22px; }
-.facts h3 { margin-bottom: 4px; }
-.facts p { margin: 0; color: var(--muted-foreground); font-size: 14.5px; }
+/* Notes ------------------------------------------------------------------ */
+.notes { margin: 88px 0 0; padding-top: 40px; border-top: 1px solid var(--line); }
+.notes dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px 48px; }
+.notes dt { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.notes dd { margin: 0; color: var(--dim); font-size: 14.5px; }
 
-/* Footer ------------------------------------------------------------------ */
-footer { border-top: 1px solid var(--border); padding: 32px 0 64px; }
-footer p { margin: 0; color: var(--muted-foreground); font-size: 13.5px; }
-footer a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border); }
+footer { margin-top: 96px; padding: 28px 0 72px; border-top: 1px solid var(--line); }
+footer p { margin: 0; color: var(--dim); font-size: 13.5px; }
+footer a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
 footer a:hover { text-decoration-color: currentColor; }
 
 @media (max-width: 640px) {
-  .hero { padding-top: 64px; }
-  section { padding: 52px 0; }
-  h2 { font-size: 25px; }
+  header { padding-top: 56px; }
+  .facts, .install, .notes { margin-top: 64px; }
+  .shot { margin-top: 40px; padding: 0; }
+  .shot img { border-radius: 0; border-left: 0; border-right: 0; }
 }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <header class="hero">
-    <span class="badge">
-      <span class="dot"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3z"/></svg></span>
-      오리온 · 크롬 · 엣지
-    </span>
-    <h1>이지 모드</h1>
-    <p class="lead">유튜브를 음악과 영상 플레이어로 사용하는 확장 프로그램입니다.
-      화면 구성은 이 확장이 맡고, 재생은 유튜브가 그대로 합니다.</p>
-    <div class="actions">
-      <a class="btn" id="download" href="https://github.com/jshsakura/oc-easy-mode/releases">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16 6 10l1.4-1.4L11 12.2V3h2v9.2l3.6-3.6L18 10zM5 20v-2h14v2z"/></svg>
-        내려받기
-      </a>
-      <a class="btn quiet" href="https://github.com/jshsakura/oc-easy-mode">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.4-3.4-1.4-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .3.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg>
-        GitHub
-      </a>
-      <span class="muted small" id="meta"></span>
-    </div>
-    <p class="hint">스토어에는 등록하지 않습니다. 같은 파일을 세 브라우저에서 사용합니다.</p>
-  </header>
+<header class="wrap">
+  <div class="mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3z"/></svg>
+  </div>
+  <h1>유튜브를<br><em>음악 플레이어로</em></h1>
+  <p class="lead">화면은 이 확장이 만들고, 재생은 유튜브가 그대로 합니다.</p>
+  <div class="actions">
+    <a class="btn" id="download" href="https://github.com/jshsakura/oc-easy-mode/releases">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16 6 10l1.4-1.4L11 12.2V3h2v9.2l3.6-3.6L18 10zM5 20v-2h14v2z"/></svg>
+      내려받기
+    </a>
+    <a class="btn quiet" href="https://github.com/jshsakura/oc-easy-mode">GitHub</a>
+    <span class="meta" id="meta"></span>
+  </div>
+</header>
 
-  <div class="showcase">
-    <figure class="frame">
-      <div class="chrome"><i></i><i></i><i></i><span>youtube.com</span></div>
-      <img src="shot-explore.png" width="1440" height="880" alt="선반으로 채워진 둘러보기 화면">
-    </figure>
+<div class="shot">
+  <img src="shot-explore.png" width="1440" height="880" alt="선반으로 채워진 둘러보기 화면">
+</div>
+
+<div class="wrap">
+  <div class="facts">
+    <div>
+      <h2>둘러보기</h2>
+      <p>선반으로 채운 첫 화면입니다. 로그인 없이도 비어 있지 않습니다.</p>
+    </div>
+    <div>
+      <h2>대기열과 재생목록</h2>
+      <p>셔플, 반복, 라디오. 재생목록을 만들고 편집합니다.</p>
+    </div>
+    <div>
+      <h2>쇼츠 없음</h2>
+      <p>세로 영상은 어느 목록에도 넣지 않습니다.</p>
+    </div>
+    <div>
+      <h2>방향키 조작</h2>
+      <p>리모컨처럼 움직입니다. Enter로 엽니다.</p>
+    </div>
+    <div>
+      <h2>음악 모드와 영상 모드</h2>
+      <p>같은 목록이 트랙 줄이 되거나 큰 썸네일 격자가 됩니다.</p>
+    </div>
+    <div>
+      <h2>데스크톱과 모바일</h2>
+      <p>오리온, 크롬, 엣지에서 같은 파일을 씁니다.</p>
+    </div>
   </div>
 
-  <section>
-    <div class="prose">
-      <h2>주요 기능</h2>
-      <p class="sectionLead">유튜브의 화면 대신 이 화면이 뜹니다. 데이터와 재생은 그대로 유튜브의 것입니다.</p>
-    </div>
-    <div class="grid">
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.2 6.2 18.6 1l.7 1.9L8 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8c0-.8.5-1.5 1.2-1.8zM7 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7-6h6v2h-6zm0-4h6v2h-6z"/></svg></span>
-        <h3>둘러보기</h3>
-        <p>선반 형태의 첫 화면입니다. 로그인하지 않아도 항상 채워져 있습니다.</p>
-      </div>
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h13v2H3zm0 4h13v2H3zm0 4h9v2H3zm15-2v6l5-3z"/></svg></span>
-        <h3>대기열과 재생목록</h3>
-        <p>셔플, 반복, 라디오를 지원합니다. 재생목록을 만들고 편집합니다.</p>
-      </div>
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h7v6H4zm9 0h7v6h-7zM4 13h7v6H4zm9 0h7v6h-7z"/></svg></span>
-        <h3>음악 모드와 영상 모드</h3>
-        <p>같은 목록을 트랙 목록 또는 큰 썸네일 격자로 표시합니다.</p>
-      </div>
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6z"/></svg></span>
-        <h3>쇼츠 제외</h3>
-        <p>세로 영상은 어느 목록에도 표시하지 않습니다.</p>
-      </div>
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 8 6h3v5H6V8l-4 4 4 4v-3h5v5H8l4 4 4-4h-3v-5h5v3l4-4-4-4v3h-5V6h3z"/></svg></span>
-        <h3>방향키 조작</h3>
-        <p>리모컨처럼 방향키로 이동하고 Enter로 선택합니다.</p>
-      </div>
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
-        <h3>유튜브 플레이어 재생</h3>
-        <p>유튜브의 플레이어가 그대로 재생합니다. 파일을 내려받지 않습니다.</p>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="prose">
-      <h2>화면</h2>
-      <p class="sectionLead">모드를 바꾸면 같은 목록이 그 자리에서 다시 그려집니다.</p>
-    </div>
-    <figure class="frame">
-      <div class="chrome"><i></i><i></i><i></i><span>youtube.com/results</span></div>
-      <img src="shot-list.png" width="1440" height="880" alt="검색 결과와 트랙 목록" loading="lazy">
-      <figcaption>검색 결과입니다. 영상 모드에서는 같은 목록이 큰 썸네일 격자가 됩니다.</figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <div class="prose">
-      <h2>설치 방법</h2>
-      <p class="sectionLead">스토어를 거치지 않습니다. 받은 파일을 브라우저에 직접 넣어 주세요.</p>
-    </div>
-    <div class="steps grid">
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm0 18H7V5h10z"/></svg></span>
-        <h3>오리온 (맥 · 아이폰 · 아이패드)</h3>
+  <section class="install">
+    <h3>설치 방법</h3>
+    <div class="two">
+      <div>
+        <h4>오리온 — 맥 · 아이폰 · 아이패드</h4>
         <ol>
-          <li>위의 <strong>내려받기</strong> 버튼으로 zip 파일을 받아 주세요.</li>
-          <li>설정 → 확장 → <strong>+</strong> 를 눌러 받은 파일을 선택해 주세요.</li>
+          <li>위의 <strong>내려받기</strong>로 zip 파일을 받아 주세요.</li>
+          <li>설정 → 확장 → <strong>+</strong> 에서 그 파일을 선택해 주세요.</li>
           <li>주소창 옆 아이콘을 눌러 켜 주세요.</li>
         </ol>
       </div>
-      <div class="card">
-        <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 4v10h16V8z"/></svg></span>
-        <h3>크롬 · 엣지</h3>
+      <div>
+        <h4>크롬 · 엣지</h4>
         <ol>
           <li>zip 파일을 받아 압축을 풀어 주세요.</li>
-          <li><code>chrome://extensions</code> 에서 개발자 모드를 켜고
-            <strong>압축해제된 확장 프로그램을 로드</strong>를 선택해 주세요.</li>
-          <li>압축을 푼 폴더를 지정한 뒤 툴바 아이콘을 눌러 주세요.</li>
+          <li><code>chrome://extensions</code> 에서 개발자 모드를 켜 주세요.</li>
+          <li><strong>압축해제된 확장 프로그램을 로드</strong>로 그 폴더를 지정해 주세요.</li>
         </ol>
       </div>
     </div>
   </section>
 
-  <section>
-    <div class="prose">
-      <h2>원본 화면 복귀</h2>
-      <p class="sectionLead">이 확장은 유튜브의 DOM을 변경하지 않습니다. 스타일시트 하나와 자체 화면
-        하나를 덧씌울 뿐이며, 종료는 복원이 아니라 그 둘을 제거하는 과정입니다. 되돌릴 상태가
-        없으므로 복원에 실패하는 경우도 없습니다.</p>
-    </div>
-    <div class="facts">
+  <section class="notes">
+    <h3>알아두실 점</h3>
+    <dl>
       <div>
-        <h3>사이드바의 유튜브로 돌아가기</h3>
-        <p>평소에 사용하는 방법입니다. 툴바 스위치로도 같은 일을 합니다.</p>
+        <dt>언제든 원래 화면으로</dt>
+        <dd>유튜브의 DOM을 건드리지 않습니다. 끄는 것은 복원이 아니라 덧씌운 것을
+          지우는 일입니다. <kbd>Esc</kbd> 를 1초 안에 두 번 누르면 어디서나 빠져나옵니다.</dd>
       </div>
       <div>
-        <h3><kbd>Esc</kbd> <kbd>Esc</kbd></h3>
-        <p>1초 안에 두 번 누르면 어느 화면에서나 즉시 빠져나옵니다.</p>
+        <dt>화면 잠금 재생</dt>
+        <dd>이 확장이 제공하지 않습니다. 오리온이나 파이어폭스의 백그라운드 재생
+          기능을 사용해 주세요.</dd>
       </div>
       <div>
-        <h3>8초 감시</h3>
-        <p>화면이 8초 안에 표시되지 않으면 확장이 스스로 물러납니다.</p>
+        <dt>광고 차단</dt>
+        <dd>포함하지 않습니다. 쓰시던 차단기를 그대로 함께 켜 주세요.</dd>
       </div>
-    </div>
+      <div>
+        <dt>로그인</dt>
+        <dd>구독, 시청 기록, 내 재생목록에만 필요합니다. 검색과 둘러보기는 없이도
+          동작합니다.</dd>
+      </div>
+    </dl>
   </section>
 
-  <section>
-    <div class="prose">
-      <h2>제한 사항</h2>
-      <p class="sectionLead">할 수 없는 것과 하지 않는 것입니다.</p>
-    </div>
-    <div class="facts">
-      <div>
-        <h3>아이폰 화면 잠금 재생</h3>
-        <p>이 확장이 제공하지 않습니다. 구글이 서버에서 차단하고 있어 확장으로는 해결할 수
-          없습니다. <strong>브라우저의 백그라운드 재생 기능을 사용해 주세요.</strong>
-          오리온과 파이어폭스가 그 기능을 제공합니다.</p>
-      </div>
-      <div>
-        <h3>구독 · 시청 기록 · 내 재생목록</h3>
-        <p>유튜브 로그인이 필요합니다. 검색과 둘러보기는 로그인 없이 동작합니다.</p>
-      </div>
-      <div>
-        <h3>광고 차단</h3>
-        <p>포함하지 않습니다. 사용하던 차단기를 그대로 함께 켜 주세요.</p>
-      </div>
-    </div>
-  </section>
+  <footer>
+    <p>GPL-3.0-or-later · <a href="https://github.com/jshsakura/oc-easy-mode">소스</a></p>
+  </footer>
 </div>
 
-<footer>
-  <div class="wrap">
-    <p>개인용으로 제작했으며 스토어에는 등록하지 않습니다.
-      GPL-3.0-or-later · <a href="https://github.com/jshsakura/oc-easy-mode">소스</a></p>
-  </div>
-</footer>
-
 <script>
-  // The button's real address lives in download/index.json, written by both
-  // `npm run site` and the Pages workflow. If it is missing — a first deploy,
-  // or a failed build — the markup's GitHub link is already correct, so the
-  // button is never dead.
+  // The button's address lives in download/index.json, written by `npm run site`
+  // and by the Pages workflow alike. Missing it, the markup's GitHub link is
+  // already correct, so the button is never dead.
   fetch('download/index.json', { cache: 'no-store' })
     .then((r) => (r.ok ? r.json() : null))
     .then((d) => {

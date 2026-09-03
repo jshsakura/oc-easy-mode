@@ -294,12 +294,16 @@ export function playlists(root: unknown): Playlist[] {
   for (const key of ['gridPlaylistRenderer', 'playlistRenderer', 'compactPlaylistRenderer']) {
     for (const item of collect(root, key)) {
       if (!isObject(item) || typeof item.playlistId !== 'string') continue
+      // The row's own artwork first. `compactPlaylistRenderer` — which is what
+      // one shelf of the mobile music channel is made of — carries a real
+      // thumbnail and no watch endpoint, so deriving the cover from a video id
+      // left that shelf grey while every other shelf had covers.
       const seed = watchVideoId(item)
       out.push({
         id: item.playlistId,
         title: text(item.title),
         subtitle: text(item.videoCountText) || text(item.videoCountShortText),
-        cover: seed ? thumbnail(seed) : undefined,
+        cover: pickThumb(item) ?? (seed ? thumbnail(seed) : undefined),
       })
     }
   }

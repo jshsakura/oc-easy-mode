@@ -6,6 +6,8 @@
 //   <style id="oc-easy-mode">   one stylesheet, hiding YouTube's own chrome
 //   <oc-easy-mode>              one shadow host, holding all of our UI
 //                               (plus its twin for menus, above the video)
+//   <meta name="viewport">      only on a phone served the desktop page, which
+//                               has none — see the note further down
 //
 // Nothing of YouTube's is moved, removed, reparented or rewritten — not one
 // attribute, not one class, not one inline style. Where the player goes is a
@@ -31,6 +33,7 @@
 // simply not running is indistinguishable from plain YouTube.
 
 const STYLE_ID = 'oc-easy-mode'
+const VIEWPORT_ID = 'oc-easy-mode-viewport'
 const HOST_TAG = 'oc-easy-mode'
 const OVERLAY_TAG = 'oc-easy-mode-overlay'
 
@@ -108,11 +111,34 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   const overlayHost = document.createElement(OVERLAY_TAG)
   const overlay = overlayHost.attachShadow({ mode: 'open' })
 
+  // ── One more node, and only on a phone that was served the desktop site ──
+  //
+  // Orion on iPhone reports a desktop user agent, so YouTube hands it the
+  // desktop page — which carries no viewport meta, because a desktop page has
+  // no need of one. The phone then falls back to a ~980px layout viewport and
+  // renders the whole thing at about a quarter scale. Our UI is laid out in
+  // that fictional 980, so it comes out shrunken however carefully it is
+  // styled.
+  //
+  // The only cure is to give the document the viewport it is missing. It is
+  // ours, it is tagged, and it goes out with everything else on exit — at
+  // which point YouTube reflows back to what it had. A page that already
+  // declares one is left alone; that page knows its own mind.
+  const viewport =
+    window.screen.width <= 500 && !document.querySelector('meta[name="viewport"]')
+      ? Object.assign(document.createElement('meta'), {
+          id: VIEWPORT_ID,
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+        })
+      : null
+
   const attach = () => {
     // `document_start` can beat `<body>` into existence by a frame or two.
     if (!document.body) return requestAnimationFrame(attach)
     document.body.appendChild(host)
     document.body.appendChild(overlayHost)
+    if (viewport) (document.head ?? document.documentElement).appendChild(viewport)
   }
   attach()
 
@@ -221,6 +247,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     style.remove()
     host.remove()
     overlayHost.remove()
+    viewport?.remove()
   }
 
   return { root, overlay, place, teardown }
