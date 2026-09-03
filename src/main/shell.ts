@@ -195,7 +195,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     .splash.gone { opacity: 0; pointer-events: none; }
     .splash .ring { width: 28px; height: 28px; border-radius: 999px;
       border: 2px solid ${dark ? '#1e1e28' : '#e6e6ec'};
-      border-top-color: ${dark ? '#9d6ee0' : '#7e4dc5'};
+      border-top-color: ${dark ? '#8578a6' : '#776aa6'};
       animation: splash-spin .8s linear infinite; }
     @keyframes splash-spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .splash .ring { animation-duration: 2.4s; } }

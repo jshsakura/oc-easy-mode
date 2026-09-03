@@ -134,8 +134,25 @@ export class Engine {
    * The element cannot be wrong about this, so it is the answer, and the
    * player's own state is only the fallback for when there is no element yet.
    */
+  private videoEl(): HTMLVideoElement | null {
+    return document.querySelector('video')
+  }
+
+  /**
+   * Whether YouTube is playing an advert in front of the track.
+   *
+   * It matters twice, and both times because an advert shares the one video
+   * element with the track it interrupts — same element, source swapped, so
+   * from the outside an advert simply looks like the wrong video playing.
+   */
+  private adShowing(): boolean {
+    const p = this.player
+    if (!p) return false
+    return p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting')
+  }
+
   private sounding(): boolean {
-    const el = document.querySelector('video')
+    const el = this.videoEl()
     if (el) return !el.paused && !el.ended
     const s = this.player?.getPlayerState()
     return s === State.Playing || s === State.Buffering
@@ -150,10 +167,16 @@ export class Engine {
     // has not landed yet" and never "some load once happened". Until then the
     // state reads Unstarted or Cued and the transport would flash a play glyph
     // into the gap between pressing next and the video existing.
+    //
+    // An advert counts as landed. It asks for the track's id and gets the
+    // advert's, so the load stayed "pending" for the whole advert: the
+    // transport sat spinning, pause did nothing but queue an intention, and
+    // there was no way to stop what was audibly playing. Whatever is coming
+    // out of the speakers, the load we asked for has happened.
+    const ad = this.adShowing()
     if (
       this.loading !== undefined &&
-      (s === State.Playing || s === State.Buffering) &&
-      p.getVideoData()?.video_id === this.loading
+      (ad || ((s === State.Playing || s === State.Buffering) && p.getVideoData()?.video_id === this.loading))
     ) {
       this.loading = undefined
       // Whoever pressed pause while this was loading meant it.
@@ -187,6 +210,23 @@ export class Engine {
     // second, and a sleep timer is not a thing that needs to be punctual to the
     // millisecond.
     if (this.sleep && 'at' in this.sleep && Date.now() >= this.sleep.at) this.fallAsleep()
+
+    // The end of a track, asked of the element.
+    //
+    // The queue used to advance only on the player's own ENDED notification,
+    // and that notification is not dependable — measured: a track seeked to
+    // two seconds from its end never produced one, and the queue sat on the
+    // same song indefinitely. "Automatic advance is slow" was this: not slow,
+    // not happening. The element's `ended` cannot be wrong, and once per track
+    // is enough, which is what endedFor remembers.
+    const el = this.videoEl()
+    const playingId = this.current?.videoId
+    // Not while an advert is playing: the advert ends on this same element, and
+    // taking that for the end of the song would skip the song.
+    if (!ad && el?.ended === true && this.loading === undefined && playingId !== undefined && this.endedFor !== playingId) {
+      this.endedFor = playingId
+      this.ended()
+    }
     // The stall clock: a short wait is a load, and the bar says so with a pause
     // glyph the way YouTube's own does. Past STALL_AFTER_MS of one unbroken
     // wait the story changes — nothing is coming — and the transport switches
@@ -304,6 +344,7 @@ export class Engine {
     if (!track) return
     this.loading = track.videoId
     this.wantPaused = false
+    this.endedFor = undefined
     remember(track)
     if (this.player) {
       this.unlockPlayback()
@@ -341,6 +382,9 @@ export class Engine {
 
   /** Set when someone pauses a track that has not finished loading. */
   private wantPaused = false
+
+  /** The track we have already acted on the end of, so it only counts once. */
+  private endedFor: string | undefined
 
   seek(seconds: number): void {
     this.player?.seekTo(seconds, true)

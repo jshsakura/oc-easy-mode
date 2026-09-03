@@ -35,10 +35,6 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
   }
 }
 
-function busy(text = t('가져오는 중…')): HTMLElement {
-  return h('div', { class: 'empty' }, h('div', { class: 'spinner' }), h('div', null, text))
-}
-
 /**
  * An empty screen, with a mark above the sentence.
  *
@@ -142,6 +138,59 @@ function relayoutOnModeChange(ctx: Ctx, el: HTMLElement, draw: () => void): void
  * shape of the artwork: a playlist or an album is square, the way every music
  * app draws a cover, and a video keeps the 16:9 of its thumbnail.
  */
+/**
+ * Loading, drawn as the shape of what is coming. A skeleton borrows the real
+ * layout classes and puts grey blocks inside them, so when the data lands the
+ * screen does not change shape — it fills in.
+ */
+function skRow(): HTMLElement {
+  return h(
+    'div',
+    { class: 'row', 'aria-hidden': 'true' },
+    h('div', { class: 'sk', style: 'width: 14px; height: 8px; justify-self: end' }),
+    h('div', { class: 'thumb sk' }),
+    h('div', { class: 'meta' },
+      h('div', { class: 'sk', style: 'height: 10px; width: 62%; margin-bottom: 6px' }),
+      h('div', { class: 'sk', style: 'height: 8px; width: 38%' })),
+    h('div', { class: 'sk', style: 'width: 34px; height: 8px' }),
+  )
+}
+
+function skTile(): HTMLElement {
+  return h(
+    'div',
+    { class: 'tile', style: 'background: none', 'aria-hidden': 'true' },
+    h('div', { class: 'cover sk' }),
+    h('div', { class: 'sk', style: 'height: 10px; width: 80%; margin: 8px 10px 0' }),
+    h('div', { class: 'sk', style: 'height: 8px; width: 55%; margin: 4px 10px 10px' }),
+  )
+}
+
+export function skShelf(): HTMLElement {
+  return h(
+    'section',
+    { class: 'shelf', 'aria-hidden': 'true' },
+    h('div', { class: 'sk', style: 'height: 12px; width: 180px; margin: 0 0 14px' }),
+    h('div', { class: 'shelfRow' }, Array.from({ length: 6 }, () => skTile())),
+  )
+}
+
+export function skHead(): HTMLElement {
+  return h(
+    'div',
+    { class: 'head', 'aria-hidden': 'true' },
+    h('div', { class: 'cover sk' }),
+    h('div', { style: 'min-width: 0' },
+      h('div', { class: 'sk', style: 'height: 8px; width: 60px; margin-bottom: 10px' }),
+      h('div', { class: 'sk', style: 'height: 34px; width: 46%; margin-bottom: 12px' }),
+      h('div', { class: 'sk', style: 'height: 8px; width: 90px' })),
+  )
+}
+
+function skRows(n: number): HTMLElement {
+  return h('div', { class: 'rows' }, Array.from({ length: n }, () => skRow()))
+}
+
 function tile(opts: {
   cover?: string
   title: string
@@ -205,7 +254,7 @@ function shelfRow(ctx: Ctx, shelf: Shelf): HTMLElement {
 // ── Explore ────────────────────────────────────────────────────────────────
 
 async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
-  replace(main, h('h2', null, t('둘러보기')), busy())
+  replace(main, h('h2', null, t('둘러보기')), skShelf(), skShelf())
   try {
     const page = await api.explore(ctx.cfg)
     if (page.shelves.length === 0 && page.tracks.length === 0) {
@@ -238,7 +287,7 @@ async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void>
 
   const run = async (q: string) => {
     if (!q.trim()) return replace(results, nothing(t('무엇을 들을까요?'), 'search'))
-    replace(results, busy())
+    replace(results, skRows(6))
     try {
       const page = await api.search(ctx.cfg, q.trim())
       if (page.tracks.length === 0) return replace(results, nothing(t('결과가 없습니다.'), 'search'))
@@ -270,7 +319,7 @@ async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void>
 // ── Feeds ──────────────────────────────────────────────────────────────────
 
 async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.FeedId): Promise<void> {
-  replace(main, h('h2', null, title), busy())
+  replace(main, h('h2', null, title), skShelf(), skShelf())
   try {
     const page = await api.feed(ctx.cfg, id)
     if (page.tracks.length === 0) {
@@ -311,7 +360,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
 // ── Playlists ──────────────────────────────────────────────────────────────
 
 async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
-  replace(main, h('h2', null, t('내 재생목록')), busy())
+  replace(main, h('h2', null, t('내 재생목록')), skRows(5))
   try {
     await ctx.refreshPlaylists()
     const list = ctx.playlists
@@ -369,7 +418,7 @@ function card(ctx: Ctx, p: Playlist): HTMLElement {
 }
 
 async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string): Promise<void> {
-  replace(main, h('h2', null, title), busy())
+  replace(main, skHead(), skRows(8))
   try {
     const tracks = await api.playlistTracks(ctx.cfg, id)
     const cover = tracks[0]?.videoId

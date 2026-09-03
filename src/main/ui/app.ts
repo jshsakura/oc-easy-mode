@@ -274,7 +274,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         'button',
         { class: 'nav exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
         icon('leave', 18),
-        h('span', null, t('유튜브로 돌아가기')),
+        h('span', null, t('이지 모드 종료')),
       ),
     )
   }
@@ -613,13 +613,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   function drawTick(): void {
     const p = engine.position
-    // Three states, strictly kept apart: pause only while the track really
-    // plays, play only when it is really stopped, and while it is loading —
-    // buffering, or the gap after "next" before the video exists — no glyph
-    // at all, just the turning ring on the button's edge. A pause glyph over
-    // a frozen picture reads as a stuck button, which was the report.
-    playButton.classList.toggle('buffering', p.buffering)
-    replace(playButton, p.buffering ? null : icon(p.playing ? 'pause' : 'play', 20))
+    // YouTube-core: a load is playing-in-waiting and wears the pause glyph,
+    // exactly as YouTube's own bar does — a fetch must never read as stopped.
+    // Only a wait that has outlasted its welcome turns the glyph to stop:
+    // playback is genuinely stuck, and pressing it halts the track (a
+    // buffering player pauses; the next tick shows play again).
+    replace(playButton, icon(p.stalled ? 'stop' : p.playing ? 'pause' : 'play', 20))
+    playButton.title = p.stalled ? t('정지') : t('재생 / 일시정지')
     total.textContent = clock(p.duration)
     if (!scrubbing) {
       elapsed.textContent = clock(p.current)

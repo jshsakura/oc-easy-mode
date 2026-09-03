@@ -36,46 +36,62 @@ export const STYLES = `
   /* Three values far enough apart to be three surfaces. The first attempt put
      #0c0e11, #121419 and #16181c next to each other, which is one colour as
      far as an eye is concerned. */
-  /* **The landing page's palette, value for value** (site/index.html's :root).
-     The user's instruction — "깃헙 페이지처럼 깔끔하게 가자고 디자인 이미 예시가
-     다있구만" — and they are right that the example was already written. The
-     page and the product were two greys apart for no reason anyone could see. */
-  --ground: #0e0e12;
-  --side-panel: #17171e;
-  --panel: #17171e;
-  --background: #17171e;
-  --foreground: #f4f4f7;
-  --muted-foreground: #9c9ca9;
-  --secondary: #1e1e28;
-  --secondary-hover: #262633;
-  --border: #2a2a38;
-  --popover: #17171e;
-  --popover-foreground: #f4f4f7;
-  --primary: #9d6ee0;
-  --primary-hover: #ac82e6;
+  /* **Paper, not pixels.** The palette left the landing page's cool greys for
+     the e-book direction asked for by name: warm ink on warm stock. Night is
+     a reading lamp rather than a screen — near-black with brown in it, text
+     the colour of paper, lines like pencil rules. */
+  --ground: #141210;
+  --side-panel: #1b1815;
+  --panel: #1b1815;
+  --background: #1b1815;
+  --foreground: #ece7df;
+  --muted-foreground: #a39c91;
+  --secondary: #26221d;
+  --secondary-hover: #2f2a24;
+  --border: #322c25;
+  --popover: #1b1815;
+  --popover-foreground: #ece7df;
+  /* The accent is a dusty stamp, not a neon pen — Notion-quiet. It keeps the
+     product's violet hue at a fraction of the saturation, so on paper it
+     reads as ink that happens to be purple. */
+  --primary: #8578a6;
+  --primary-hover: #9286b4;
   --primary-foreground: #ffffff;
   --destructive: #f38ba8;
-  --ring: #9d6ee0;
+  --ring: #8578a6;
 
   /* One surface. The sidebar, the bar and the page are the same colour and are
      told apart by a single hairline, not by three shades of grey. Only things
      that float — a menu, a dialog, the corner window — sit on --popover. */
-  /* The panels are translucent and blurred over a ground that is not flat.
-     Glass over a single colour is just a colour, so the ground carries two
-     soft washes for the panels to have something to be in front of. */
-  --glass: rgba(23, 23, 30, .66);
-  --glass-strong: rgba(23, 23, 30, .80);
-  --glass-line: rgba(255, 255, 255, .09);
-  --blur: saturate(150%) blur(22px);
+  /* Flat, on purpose. The glass era ended where every busy element lived —
+     blurs, washes, saturated panes. Notion-clean means: panels are the panel
+     colour, hairlines do the separating, and colour is spent on one primary
+     button and the focus ring. The tokens keep their names so no rule had to
+     move — only the values went flat. */
+  --glass: #1b1815;
+  --glass-strong: #1b1815;
+  --glass-line: #322c25;
+  --blur: none;
 
-  --hover: rgba(255, 255, 255, .07);
-  --shadow: 0 16px 40px rgba(0, 0, 0, .45);
+  --hover: rgba(236, 231, 223, .06);
+  --shadow: 0 2px 6px rgba(20, 12, 4, .28);
   --ease: .15s ease;
 
+  /* Bookish: the display face for screen titles and the words being sung.
+     Degrades to the UI sans wherever no Korean serif is installed — the
+     measure and leading carry the feel on their own. */
+  --font-book: Georgia, 'Iowan Old Style', 'Times New Roman', 'Noto Serif KR',
+               'Nanum Myeongjo', serif;
+  /* Numbers the way a program sets them: fixed-width figures from the mono
+     rack, for times, counts and durations. */
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
   /* --radius: 0.625rem, in px for the reason at the top of this file */
-  /* Two radii. Controls take the small one, artwork and panels the large. */
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* No radii. 직각 — right angles all the way down, the look of a program
+     rather than a page: boxes meet at corners, and the corners are square.
+     Kept as tokens so a value could come back in one place if ever wanted. */
+  --radius-md: 0px;
+  --radius-lg: 0px;
 }
 * { box-sizing: border-box; }
 
@@ -89,31 +105,31 @@ export const STYLES = `
 .menu.light,
 .modal.light,
 .sheetMenu.light {
-  --ground: #f0f0f4;
-  --side-panel: #f7f7f9;
-  --panel: #ffffff;
-  --background: #ffffff;
-  --foreground: #141418;
-  --muted-foreground: #5e5e6e;
-  --secondary: #f0f0f4;
-  --secondary-hover: #e6e6ec;
-  --border: #e2e2e8;
-  --popover: #ffffff;
-  --popover-foreground: #141418;
-  --primary: #7e4dc5;
-  --primary-hover: #8f61d0;
+  --ground: #f2efe9;
+  --side-panel: #f7f4ee;
+  --panel: #fbfaf6;
+  --background: #fbfaf6;
+  --foreground: #232019;
+  --muted-foreground: #6f6a5f;
+  --secondary: #efece4;
+  --secondary-hover: #e7e3d9;
+  --border: #ddd8cd;
+  --popover: #fbfaf6;
+  --popover-foreground: #232019;
+  --primary: #776aa6;
+  --primary-hover: #8579b2;
   --primary-foreground: #ffffff;
   --destructive: #d63b5e;
-  --ring: #7e4dc5;
-  --glass: rgba(255, 255, 255, .66);
-  --glass-strong: rgba(255, 255, 255, .78);
-  --glass-line: rgba(0, 0, 0, .07);
+  --ring: #776aa6;
+  --glass: #fbfaf6;
+  --glass-strong: #fbfaf6;
+  --glass-line: #ddd8cd;
   --hover: rgba(0, 0, 0, .05);
-  --shadow: 0 16px 40px rgba(0, 0, 0, .16);
+  --shadow: 0 2px 6px rgba(70, 60, 40, .1);
 }
 
 .app {
-  --bar: 84px;
+  --bar: 72px;
   --side: 244px;
   --gap: 8px;
   /* The stage is as tall as a 16:9 video in the width it has, and no taller.
@@ -155,10 +171,7 @@ export const STYLES = `
   display: grid;
   grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
   gap: var(--gap); padding: var(--gap);
-  background:
-    radial-gradient(72% 55% at 12% -8%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 62%),
-    radial-gradient(58% 46% at 96% 106%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 62%),
-    var(--ground);
+  background: var(--ground);
   color: var(--foreground);
   font: 14px/1.4285714 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo',
         'Noto Sans KR', 'Malgun Gothic', sans-serif;
@@ -175,13 +188,15 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 button:disabled { opacity: .5; pointer-events: none; }
 input { font: inherit; color: inherit; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 999px; border: 3px solid var(--background); }
+::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 0; border: 3px solid var(--background); }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 
-/* One hover, everywhere something can be pressed. */
-.nav:hover, .row:hover,
-.menu button:hover, .modal .list button:hover, .ctl button:hover,
-.right button:hover, .row .more:hover, .drawerToggle:hover, .btn.ghost:hover {
+/* Pressed, not passed over: the background appears for the instant of the
+   press alone — a pointer drifting across the screen is not a press, and
+   grey flashing under a moving hand reads as flicker, not feedback. */
+.nav:active, .row:active,
+.menu button:active, .modal .list button:active, .ctl button:active,
+.right button:active, .row .more:active, .drawerToggle:active, .btn.ghost:active {
   background: var(--hover);
 }
 
@@ -196,8 +211,8 @@ input { font: inherit; color: inherit; }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .side {
-  /* Glass, over the ground's wash. Edged with a light hairline rather than a
-     border colour, which is what makes a pane read as glass and not as a box. */
+  /* One flat surface, edged with a hairline — a pane told from a box by the
+     line, not by translucency. */
   background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
@@ -248,23 +263,27 @@ input { font: inherit; color: inherit; }
   width: 34px; height: 34px; border-radius: var(--radius-md);
   color: var(--muted-foreground); transition: background var(--ease), color var(--ease);
 }
-.themeButton:hover { color: var(--foreground); background: var(--hover); }
+.themeButton:hover { color: var(--foreground); }
+.themeButton:active { background: var(--hover); }
 
 .drawerClose {
   display: none; width: 34px; height: 34px; border-radius: var(--radius-md);
   align-items: center; justify-content: center; color: var(--muted-foreground);
   transition: background var(--ease), color var(--ease);
 }
-.drawerClose:hover { color: var(--foreground); background: var(--hover); }
+.drawerClose:hover { color: var(--foreground); }
+.drawerClose:active { background: var(--hover); }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
+/* The page has margins the way a book does — text starts away from the edge,
+   and the edge is where the paper is. */
 .main {
   background: var(--glass-strong); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
-  overflow-y: auto; padding: 28px 28px 48px; min-width: 0;
+  overflow-y: auto; padding: 32px 44px 56px; min-width: 0;
 }
-.main h2 { margin: 0 0 20px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.main h2 { margin: 0 0 20px; font-family: var(--font-book); font-size: 24px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
 .main h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
 .sub { color: var(--muted-foreground); font-size: 14px; }
 .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 10px; }
@@ -279,7 +298,13 @@ input { font: inherit; color: inherit; }
   border-radius: 999px; animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner, .ctl .big.buffering::after { animation-duration: 2.4s; } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+/* Skeletons: the shape of what is coming, in the palette's quiet grey,
+   breathing until it is replaced. A pulse, not a shimmer — nothing travels
+   across the page; a block only dims and returns. */
+.sk { background: var(--secondary); border-radius: var(--radius-md); animation: sk 1.2s ease-in-out infinite; }
+@keyframes sk { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: .6; } }
 .err { color: var(--destructive); font-size: 14px; padding: 16px 0 20px; }
 
 .searchbox {
@@ -288,12 +313,19 @@ input { font: inherit; color: inherit; }
   border: 1px solid var(--border); border-radius: var(--radius-md);
   transition: border-color var(--ease);
 }
-.searchbox:focus-within { border-color: var(--ring); }
+.searchbox:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent); }
+/* The box is the field. The search input is reachable by remote and so carries
+   data-nav, which would otherwise draw the shared focus ring *inside* the box
+   that is already showing focus on its own border — a rectangle within a
+   rectangle, which is what it looked like: two fields where there is one. */
+.searchbox input[data-nav]:focus-visible { box-shadow: none; }
 /* 16px, and not a pixel less.
    WebKit on iPhone zooms the page in when an input smaller than 16px takes
    focus, and it does not zoom back out. Tapping the search box swallowed the
    whole screen. Nothing else in the UI has to be 16px; this does. */
-.searchbox input { flex: 1; height: 100%; background: none; border: 0; outline: 0; font-size: 16px; }
+/* min-width: 0, or the input keeps its intrinsic size and pushes its own right
+   edge past the box it sits in. */
+.searchbox input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: 0; font-size: 16px; }
 .searchbox input::placeholder { color: var(--muted-foreground); }
 .searchbox svg { color: var(--muted-foreground); flex: none; }
 
@@ -305,13 +337,13 @@ input { font: inherit; color: inherit; }
   border: 1px solid var(--border); color: var(--foreground);
   transition: background var(--ease), color var(--ease), border-color var(--ease);
 }
-.btn:hover { background: var(--hover); }
+.btn:active { background: var(--hover); }
 .btn.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
-.btn.primary:hover { background: var(--primary-hover); }
+.btn.primary:active { background: var(--primary-hover); }
 .btn.ghost { border-color: transparent; color: var(--muted-foreground); }
 .btn.ghost:hover { color: var(--foreground); }
 .btn.danger { color: var(--destructive); }
-.btn.danger:hover { background: var(--destructive); color: var(--background); border-color: transparent; }
+.btn.danger:active { background: var(--destructive); color: var(--background); border-color: transparent; }
 
 /* ── Track rows ──────────────────────────────────────────────────────────── */
 .rows { display: flex; flex-direction: column; }
@@ -321,7 +353,7 @@ input { font: inherit; color: inherit; }
 }
 .rows > .queueMark:first-child { margin-top: 4px; }
 .row {
-  display: grid; grid-template-columns: 24px 56px 1fr auto 32px;
+  display: grid; grid-template-columns: 24px 44px 1fr auto 32px;
   align-items: center; gap: 16px; padding: 8px;
   border-radius: var(--radius-md); cursor: pointer;
   transition: background var(--ease);
@@ -331,17 +363,14 @@ input { font: inherit; color: inherit; }
  * A flat tint was easy to miss in a list of forty; this is tinted, edged on
  * the left in the accent, and carries three bars that move. Motion is the
  * thing the eye finds without looking for it. */
-/* Glass, like everything else that stands out here — not a coloured rule down
-   one side. The bars say which row it is; the pane says it is lifted off the
-   list. */
-.row.now {
-  background: var(--glass-strong);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: 0 1px 0 var(--glass-line) inset, 0 8px 20px rgba(0, 0, 0, .18);
-}
+/* A quiet fill, like any list's chosen row. The bars say which row it is;
+   the fill says it is the one you are on. Nothing lifts, nothing glows. */
+.row.now { background: var(--secondary); }
 .row.now .title { font-weight: 600; }
-.eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 13px; }
-.eq i { width: 3px; border-radius: 1px; background: var(--primary); animation: eq .9s ease-in-out infinite; }
+/* The playing mark. Sized to read as motion, not texture — at 3px it vanished
+   into the row and the animation was there but invisible. */
+.eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
+.eq i { width: 4px; border-radius: 0; background: var(--foreground); animation: eq .9s ease-in-out infinite; }
 .eq i:nth-child(1) { height: 40%; animation-delay: -.2s; }
 .eq i:nth-child(2) { height: 100%; animation-delay: -.5s; }
 .eq i:nth-child(3) { height: 65%; }
@@ -355,17 +384,19 @@ input { font: inherit; color: inherit; }
   .eq i { animation: none; }
 }
 .row.dead { opacity: .4; }
-.row .idx { color: var(--muted-foreground); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
-.row .thumb { width: 56px; height: 32px; border-radius: 4px; background: var(--secondary) center/cover; }
+.row .idx { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+/* Square, everywhere a picture appears: the list, the bar, the covers — one
+   shape, like a record sleeve. Video stills crop to it without complaint. */
+.row .thumb { width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--secondary) center/cover; }
 /* Square, because a playlist's picture is a cover. The trailing chevron is the
    one from the sidebar's exit, turned around. */
 .row.plrow { grid-template-columns: 44px 1fr 20px; }
-.row.plrow .thumb { width: 44px; height: 44px; border-radius: 6px; }
+.row.plrow .thumb { width: 44px; height: 44px; border-radius: var(--radius-md); }
 .row.plrow > svg { color: var(--muted-foreground); transform: rotate(180deg); justify-self: end; }
 .row .meta { min-width: 0; }
 .row .title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .by { color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .dur { color: var(--muted-foreground); font-size: 13px; font-variant-numeric: tabular-nums; }
+.row .dur { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
 .row .more {
   width: 32px; height: 32px; border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
@@ -389,9 +420,9 @@ input { font: inherit; color: inherit; }
   text-align: left; border-radius: var(--radius-md); overflow: hidden;
   background: var(--secondary); transition: background var(--ease);
 }
-.card:hover, .tile:hover, .card:focus-visible, .tile:focus-visible { background: var(--secondary-hover); }
+.card:active, .tile:active, .card:focus-visible, .tile:focus-visible { background: var(--secondary-hover); }
 .card .cover, .tile .cover {
-  position: relative; aspect-ratio: 16/9; border-radius: 0;
+  position: relative; aspect-ratio: 1; border-radius: 0;
   background: var(--secondary) center/cover;
   display: flex; align-items: center; justify-content: center; color: var(--muted-foreground);
 }
@@ -399,7 +430,7 @@ input { font: inherit; color: inherit; }
    It is decoration only — the whole card is the button. */
 .cover .play {
   position: absolute; right: 10px; bottom: 10px;
-  width: 40px; height: 40px; border-radius: 999px;
+  width: 40px; height: 40px; border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
   background: oklch(0 0 0 / 74%); color: oklch(0.985 0 0);
   box-shadow: var(--shadow);
@@ -416,11 +447,10 @@ input { font: inherit; color: inherit; }
 /* The running time, where every video player puts it. */
 .cover .badge {
   position: absolute; left: 8px; bottom: 8px;
-  padding: 2px 6px; border-radius: 4px;
+  padding: 2px 6px; border-radius: var(--radius-md);
   background: oklch(0 0 0 / 72%); color: oklch(0.985 0 0);
-  font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums;
 }
-.cards .card .cover, .tile.square .cover { aspect-ratio: 1; }
 .card .t, .tile .t { margin-top: 0; padding: 8px 10px 0; font-size: 14px; font-weight: 500; }
 .card .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Two lines of room whether the title needs them or not. A grid holds titles
@@ -445,7 +475,7 @@ input { font: inherit; color: inherit; }
   border-radius: var(--radius-lg); background: var(--secondary) center/cover;
   box-shadow: var(--shadow);
 }
-.head h2 { font-size: clamp(28px, 4vw, 44px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 10px; }
+.head h2 { font-family: var(--font-book); font-size: clamp(28px, 4vw, 44px); line-height: 1.1; letter-spacing: -0.01em; margin: 0 0 10px; }
 .head .sub { font-size: 14px; }
 
 /* ── The slot YouTube's player is positioned over ────────────────────────── */
@@ -473,63 +503,71 @@ input { font: inherit; color: inherit; }
      track said 390 and the bar took 508, carrying the play and next buttons
      off the right-hand edge. The ellipsis cannot save it: it only applies once
      something has decided the box is narrower than its text. */
-  grid-column: 1 / -1; min-width: 0; background: transparent;
+  /* relative, because the elapsed line runs along the bar's bottom edge —
+     see the seek rule just below the transport. */
+  grid-column: 1 / -1; min-width: 0; background: transparent; position: relative;
   display: grid; grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr) minmax(200px, 1fr);
   align-items: center; padding: 0; gap: 16px;
 }
-.now { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: hidden; }
-.now .nowText { min-width: 0; }
-.now .thumb {
+.bar .now { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: hidden; }
+.bar .now .nowText { min-width: 0; }
+.bar .now .thumb {
   width: 56px; height: 56px; flex: none; border-radius: var(--radius-md);
   background: var(--secondary) center/cover;
 }
-.now .t {
+.bar .now .t {
   font-size: 15px; font-weight: 500; line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.now .b {
+.bar .now .b {
   margin-top: 2px; color: var(--muted-foreground); font-size: 13px; line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .center { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .ctl { display: flex; align-items: center; gap: 4px; }
-/* Round, every one of them: the transport's big button set the shape, and a
-   square hover or a square .on chip beside a circle is two shapes arguing.
-   The chip and hover are backgrounds on the button itself, so one radius
-   settles all three. */
+/* Squared, every one of them — the asked-for 사각사각. Pills and circles are
+   the default shape of generated interfaces; a tight radius is the shape of
+   a tool. The chip and hover are backgrounds on the button itself, so one
+   radius settles all three. Dense on purpose: a toolbar, not a toy. */
 .ctl button, .right button, .drawerToggle {
-  width: 36px; height: 36px; border-radius: 999px;
+  width: 28px; height: 28px; border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--muted-foreground);
   transition: background var(--ease), color var(--ease);
 }
+/* The glyph shrinks with the box, from CSS: the markup asks for 18 and every
+   context that needs another size says so here, once. */
+.ctl button svg, .right button svg, .drawerToggle svg { width: 16px; height: 16px; }
 .ctl button:hover, .right button:hover, .drawerToggle:hover { color: var(--foreground); }
-/* On is a filled chip, not a slightly brighter glyph. Shuffle and repeat were
-   telling the difference with a colour half a step apart from off. */
-.ctl button.on, .right button.on { color: var(--primary); background: color-mix(in srgb, var(--primary) 18%, transparent); }
-.ctl button.on:hover, .right button.on:hover { color: var(--primary); }
+/* On is said by brightness, not by a box and not by the accent: off recedes
+   into grey, on steps forward as paper-white. The strongest contrast the
+   palette has, spent on the smallest change of state. */
+.ctl button.on, .right button.on { color: var(--foreground); }
+.ctl button.on:hover, .right button.on:hover { color: var(--foreground); }
 /* The transport's play button is not the accent. It was the largest purple
    thing on the screen, next to purple sliders and purple badges on every card,
    and a colour used that often stops pointing at anything. It is the highest
    contrast shape instead, which is what a play button wants to be; --primary
    is left to the elapsed line and the one primary button a screen has. */
-.ctl .big { background: var(--foreground); color: var(--background); border-radius: 999px; }
+.ctl .big { width: 30px; height: 30px; background: var(--foreground); color: var(--background); border-radius: var(--radius-md); }
+.ctl .big svg { width: 18px; height: 18px; }
 .ctl .big:hover { background: var(--foreground); color: var(--background); opacity: .88; }
-/* The transport's wait, drawn on the button's edge rather than in it: the
-   glyph is gone because neither play nor pause is true yet, and an accent
-   ring turning says the player is the one working, not the person stuck. */
-.ctl .big.buffering { position: relative; }
-.ctl .big.buffering::after {
-  content: ''; position: absolute; inset: -4px; border-radius: 999px;
-  border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent);
-  border-top-color: var(--primary);
-  animation: spin .8s linear infinite;
-}
 .seek {
   display: flex; align-items: center; gap: 12px; width: 100%; max-width: 620px;
-  font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
 }
 .seek input { flex: 1; }
+/* The elapsed line belongs under the bar, not inside it — a transport footer,
+   which is what every player puts there. The time labels stay at the two
+   ends; the line runs along the bar's bottom edge. It starts clear of the
+   artwork — measured the hard way, a full-width line laid its elapsed label
+   over the playing track's cover — and stops short of the far edge.
+   width: auto for the same reason the narrow rule below needs it: width:
+   100% on an absolutely positioned box wins over the left/right pair. */
+.app:not(.narrow) .bar .seek {
+  position: absolute; left: 96px; right: 16px; bottom: 4px;
+  width: auto; max-width: none;
+}
 .right { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .right .vol { width: 84px; margin-left: 4px; }
 
@@ -544,55 +582,60 @@ input[type=range] {
   height: 16px; margin: 0; background: transparent; outline: 0; cursor: pointer;
 }
 input[type=range]::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 999px;
-  background: linear-gradient(to right, var(--primary) var(--p, 0%), var(--secondary) var(--p, 0%));
+  height: 4px; border-radius: 0;
+  background: linear-gradient(to right, var(--foreground) var(--p, 0%), var(--secondary) var(--p, 0%));
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none; margin-top: -4px;
-  width: 12px; height: 12px; border-radius: 999px; background: var(--foreground);
+  width: 12px; height: 12px; border-radius: 0; background: var(--foreground);
 }
 input[type=range]::-moz-range-track {
-  height: 4px; border-radius: 999px;
-  background: linear-gradient(to right, var(--primary) var(--p, 0%), var(--secondary) var(--p, 0%));
+  height: 4px; border-radius: 0;
+  background: linear-gradient(to right, var(--foreground) var(--p, 0%), var(--secondary) var(--p, 0%));
 }
 input[type=range]::-moz-range-thumb {
-  width: 12px; height: 12px; border: 0; border-radius: 999px; background: var(--foreground);
+  width: 12px; height: 12px; border: 0; border-radius: 0; background: var(--foreground);
 }
 
 /* ── The words ───────────────────────────────────────────────────────────── */
 .lyrics { display: none; }
 .lyricsEmpty { color: var(--muted-foreground); font-size: 14px; text-align: center; padding: 40px 0; }
+/* The words are set like a book's page: the display face, leading wide
+   enough to breathe, centred like a poem rather than fitted like a caption. */
 .lyricLine {
   display: block; width: 100%; text-align: center;
-  padding: 7px 4px; font-size: 16px; line-height: 1.45; font-weight: 500;
+  padding: 8px 4px; font-family: var(--font-book); font-size: 16.5px; line-height: 1.7; font-weight: 500;
   color: var(--muted-foreground); opacity: .55;
   transition: color var(--ease), opacity var(--ease), transform var(--ease);
 }
 /* The line being sung, and only it. Everything else recedes rather than
-   disappearing, so the shape of the song stays visible. */
-.lyricLine.on { color: var(--foreground); opacity: 1; transform: scale(1.04); }
+   disappearing, so the shape of the song stays visible. No scale — calm
+   means the words change, the page does not move. */
+.lyricLine.on { color: var(--foreground); opacity: 1; }
 
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
 /* Glass, like every other thing that floats — a menu over blurred content
    reads as a pane lifted off the page, not as a box drawn on it. */
+/* Compact like the bar beneath it: a menu is a tool palette, dense is right. */
 .menu {
-  position: fixed; z-index: 2147483100; min-width: 208px; padding: 6px;
+  position: fixed; z-index: 2147483100; min-width: 168px; padding: 4px;
   background: var(--glass-strong); color: var(--popover-foreground);
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
   border: 1px solid var(--glass-line); border-radius: var(--radius-md); box-shadow: var(--shadow);
 }
 .menu button {
-  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  padding: 9px 12px; border-radius: 6px; font-size: 14px; font-weight: 500;
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 6px 9px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500;
   color: var(--popover-foreground); transition: background var(--ease), color var(--ease);
 }
 .menu button svg {
-  width: 18px; height: 18px; flex: none; color: var(--muted-foreground);
+  width: 15px; height: 15px; flex: none; color: var(--muted-foreground);
   transition: color var(--ease);
 }
-.menu button:hover { background: var(--hover); color: var(--foreground); }
+.menu button:hover { color: var(--foreground); }
+.menu button:active { background: var(--hover); }
 .menu button:hover svg { color: var(--foreground); }
-.menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px -2px; }
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px -1px; }
 
 /* The narrow form: a sheet at the foot of the screen. Placed here rather than
    in the width query below because this root has no .app to qualify it and the
@@ -602,6 +645,8 @@ input[type=range]::-moz-range-thumb {
   top: auto; min-width: 0; padding: 8px; border-radius: var(--radius-lg);
 }
 .menu.sheetMenu button { padding: 13px 14px; font-size: 15px; }
+/* A thumb aims at the sheet, so the glyph gives it something to aim at. */
+.menu.sheetMenu button svg { width: 18px; height: 18px; }
 
 .scrim {
   position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 2147483090;
@@ -678,7 +723,7 @@ input[type=range]::-moz-range-thumb {
   .tile { width: 158px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 22px 14px; }
   .head .cover { width: 168px; }
-  .row { grid-template-columns: 24px 52px 1fr auto 32px; gap: 12px; }
+  .row { grid-template-columns: 24px 44px 1fr auto 32px; gap: 12px; }
 }
 
 /* ── Narrow ───────────────────────────────────────────────────────────────
@@ -775,14 +820,14 @@ input[type=range]::-moz-range-thumb {
   border-top: 1px solid var(--glass-line);
   padding: 7px 8px calc(16px + env(safe-area-inset-bottom));
 }
-.app.narrow .now { flex: 1; min-width: 0; gap: 10px; cursor: pointer; }
-.app.narrow .now .thumb { width: 38px; height: 38px; }
-.app.narrow .now .t { font-size: 13.5px; }
-.app.narrow .now .b { font-size: 11.5px; margin-top: 1px; }
+.app.narrow .bar .now { flex: 1; min-width: 0; gap: 10px; cursor: pointer; }
+.app.narrow .bar .now .thumb { width: 38px; height: 38px; }
+.app.narrow .bar .now .t { font-size: 13.5px; }
+.app.narrow .bar .now .b { font-size: 11.5px; margin-top: 1px; }
 .app.narrow .center { flex-direction: row; gap: 0; }
 .app.narrow .ctl { gap: 0; }
-.app.narrow .ctl button { width: 38px; height: 38px; }
-.app.narrow .ctl .big { width: 42px; height: 42px; }
+.app.narrow .ctl button { width: 30px; height: 30px; }
+.app.narrow .ctl .big { width: 32px; height: 32px; }
 
 /* Shuffle and repeat put away, which is where they already were. Previous,
    play and next stay exactly where they have always been. */
@@ -843,13 +888,14 @@ input[type=range]::-moz-range-thumb {
   width: 40px; height: 40px; margin-left: -10px;
   border-radius: var(--radius-md); color: var(--muted-foreground);
 }
-.app.narrow.sheet-open .sheetClose:hover { color: var(--foreground); background: var(--hover); }
+.app.narrow.sheet-open .sheetClose:hover { color: var(--foreground); }
+.app.narrow.sheet-open .sheetClose:active { background: var(--hover); }
 
-.app.narrow.sheet-open .now {
+.app.narrow.sheet-open .bar .now {
   flex: 0 1 auto; flex-direction: column; align-items: center; text-align: center;
   gap: 0; padding: 0; margin: 0; cursor: default; min-width: 0;
 }
-.app.narrow.sheet-open .now .thumb {
+.app.narrow.sheet-open .bar .now .thumb {
   width: min(70vw, 300px); height: auto; aspect-ratio: 1;
   border-radius: var(--radius-lg); box-shadow: var(--shadow); margin: 6px 0 26px;
 }
@@ -859,7 +905,7 @@ input[type=range]::-moz-range-thumb {
 
 /* With the words open they are what the pane is for: the artwork steps aside
    and the list takes the room the transport is not using. */
-.app.narrow.sheet-open.lyrics-open .now .thumb { display: none; }
+.app.narrow.sheet-open.lyrics-open .bar .now .thumb { display: none; }
 .app.narrow.sheet-open.lyrics-open .lyrics {
   display: block; flex: 1; min-height: 0; overflow-y: auto;
   overscroll-behavior: contain; padding: 8px 0 4px; margin-top: 10px;
@@ -867,20 +913,20 @@ input[type=range]::-moz-range-thumb {
   mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
 }
 .app.narrow.sheet-open.lyrics-open .center { flex: none; gap: 18px; }
-.app.narrow.sheet-open.lyrics-open .now { flex: none; }
+.app.narrow.sheet-open.lyrics-open .bar .now { flex: none; }
 
 /* iOS will not let script move the volume — it is a hardware control there —
    so the slider is a dead thing on a phone. The mute button still works. */
 .app.narrow .right .vol { display: none; }
-.app.narrow.sheet-open .now .nowText { width: 100%; }
+.app.narrow.sheet-open .bar .now .nowText { width: 100%; }
 /* Two lines of room here too: a one-line title otherwise pulled the artist and
    everything under it up by a line, so the transport moved depending on which
    track was playing. */
-.app.narrow.sheet-open .now .t {
+.app.narrow.sheet-open .bar .now .t {
   font-size: 19px; line-height: 1.3; min-height: calc(19px * 1.3 * 2); white-space: normal;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.app.narrow.sheet-open .now .b { font-size: 14px; margin-top: 6px; }
+.app.narrow.sheet-open .bar .now .b { font-size: 14px; margin-top: 6px; }
 
 /* column-reverse, so the times sit above the transport with the children in
    the order the desktop bar wants them. */
@@ -892,8 +938,10 @@ input[type=range]::-moz-range-thumb {
 }
 .app.narrow.sheet-open .seek { position: static; width: 100%; max-width: none; font-size: 12px; }
 .app.narrow.sheet-open .ctl { gap: 8px; }
-.app.narrow.sheet-open .ctl button { width: 52px; height: 52px; }
-.app.narrow.sheet-open .ctl .big { width: 66px; height: 66px; }
+.app.narrow.sheet-open .ctl button { width: 40px; height: 40px; }
+.app.narrow.sheet-open .ctl .big { width: 48px; height: 48px; }
+.app.narrow.sheet-open .ctl button svg { width: 20px; height: 20px; }
+.app.narrow.sheet-open .ctl .big svg { width: 22px; height: 22px; }
 .app.narrow.sheet-open .right { display: flex; flex: none; justify-content: center; gap: 6px; }
 .app.narrow.sheet-open .right .vol { display: block; width: 116px; margin-left: 8px; }
 
@@ -901,9 +949,9 @@ input[type=range]::-moz-range-thumb {
    Still width queries: these are about how much room a row of cards has, and
    nothing here depends on knowing what kind of screen it is. */
 @media (max-width: 860px) {
-  .row { grid-template-columns: 52px 1fr 32px; gap: 12px; padding: 8px 4px; }
+  .row { grid-template-columns: 44px 1fr 32px; gap: 12px; padding: 8px 4px; }
   .row .idx, .row .dur { display: none; }
-  .row .thumb { width: 52px; height: 30px; }
+  .row .thumb { width: 44px; height: 44px; }
   .shelf { margin-bottom: 26px; }
   .shelf h3 { font-size: 15px; margin-bottom: 10px; }
   .shelfRow { gap: 12px; }
@@ -920,7 +968,7 @@ input[type=range]::-moz-range-thumb {
 
   /* The other shadow root: no .app around these, so they cannot be qualified
      by the narrow class the way everything above is. */
-  .menu { min-width: 200px; }
+  .menu { min-width: 160px; }
   .modal { width: calc(100vw - 28px); }
   .toasts { bottom: 108px; }
 }

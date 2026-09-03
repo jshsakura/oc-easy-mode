@@ -1,5 +1,6 @@
 import { t } from '../../shared/i18n.ts'
 import { youtubeIsDark } from '../store.ts'
+import { narrowNow } from './device.ts'
 import { h, icon, type IconName } from './dom.ts'
 
 export interface MenuItem {
@@ -51,7 +52,7 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
             'button',
             {
               role: 'menuitem',
-              style: it.danger ? 'color: var(--red)' : undefined,
+              style: it.danger ? 'color: var(--destructive)' : undefined,
               onclick: () => {
                 closeMenu()
                 it.onSelect()
@@ -71,7 +72,15 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
   // the play button sat behind the list of choices. Full width at the foot of
   // the screen it covers nothing that matters and every item is a full line
   // for a thumb.
-  const narrow = Math.min(window.innerWidth, window.screen.width) < 900
+  //
+  // **narrowNow(), not a width of our own.** The first version asked
+  // window.screen.width < 900 and every desktop on Windows display scaling
+  // past 200% answered yes — screen.width is CSS pixels, so a 2560 panel at
+  // 300% reports 853 — and every menu on a wide monitor came out a full-width
+  // sheet. The app already has the honest answer: this is the same judgment
+  // that lays out the whole UI as narrow, and the menu can never disagree
+  // with the layout it floats over.
+  const narrow = narrowNow()
   if (narrow) {
     menu.classList.add('sheetMenu')
   } else {
