@@ -129,6 +129,12 @@ export class Engine {
       p.getVideoData()?.video_id === this.loading
     ) {
       this.loading = undefined
+      // The rate is re-applied *here*, where the load has actually landed.
+      // Setting it next to loadVideoById is too early: the player resets its
+      // rate as the new video becomes ready, so the speed chosen a moment
+      // before would be quietly thrown away — both on the next track and on a
+      // rate chosen while the current one was still loading.
+      this.applyRate()
     }
     const pending = this.loading !== undefined && s !== State.Playing && s !== State.Paused
     // Checked here rather than on a timer of its own: this already runs twice a

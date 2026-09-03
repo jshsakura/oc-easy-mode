@@ -83,21 +83,31 @@ test('the shortcuts drive the player, and stay out of the search box', async () 
     await expect(first).toBeVisible()
     await first.locator('.meta').click()
 
-    const playing = () =>
-      h.page.evaluate(() => {
-        const p = document.getElementById('movie_player') as { getPlayerState?: () => number } | null
-        return p?.getPlayerState?.() ?? -1
-      })
-    await expect.poll(playing, { timeout: 30_000 }).toBe(1)
+    // Counted rather than watched. Whether a video actually starts in a
+    // headless run is the browser's decision, and the question here is only
+    // whether the key reaches the player at all.
+    await h.page.evaluate(() => {
+      const w = window as unknown as { __calls: string[] }
+      const p = document.getElementById('movie_player') as unknown as Record<string, (...a: unknown[]) => unknown>
+      w.__calls = []
+      for (const name of ['playVideo', 'pauseVideo']) {
+        const real = p[name]!.bind(p)
+        p[name] = (...a: unknown[]) => {
+          w.__calls.push(name)
+          return real(...a)
+        }
+      }
+    })
+    const calls = () => h.page.evaluate(() => (window as unknown as { __calls: string[] }).__calls)
 
     // Off the box, which is the whole difference between a letter and a
     // control. Blurred rather than clicked somewhere else: a click has to land
     // on something, and everything on this page does something when clicked.
     await box.evaluate((el: HTMLElement) => el.blur())
     await h.page.keyboard.press('k')
-    await expect.poll(playing, { timeout: 10_000 }).toBe(2)
+    await expect.poll(async () => (await calls()).length, { timeout: 10_000 }).toBe(1)
     await h.page.keyboard.press('k')
-    await expect.poll(playing, { timeout: 10_000 }).toBe(1)
+    await expect.poll(async () => (await calls()).length, { timeout: 10_000 }).toBe(2)
 
     // m silences without losing the level it was at.
     const volume = () => h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').volume)
@@ -130,17 +140,12 @@ test('speed reaches the player, and the sleep timer arms and disarms', async () 
     await ui.locator('.searchbox input').press('Enter')
     const first = ui.locator('.row').first()
     await expect(first).toBeVisible()
+    const title = (await first.locator('.title').textContent())?.trim() ?? ''
     await first.locator('.meta').click()
-    await expect
-      .poll(
-        () =>
-          h.page.evaluate(() => {
-            const p = document.getElementById('movie_player') as { getPlayerState?: () => number } | null
-            return p?.getPlayerState?.() ?? -1
-          }),
-        { timeout: 30_000 },
-      )
-      .toBe(1)
+    // That the engine took the track, not that the browser chose to start it:
+    // whether a video actually plays in a headless run is the browser's call,
+    // and a rate does not need playback to be set.
+    await expect(ui.locator('.bar .now .t')).toHaveText(title)
 
     await ui.locator('.bar .right .mr').click()
     await over.locator('.menu button', { hasText: '재생 속도' }).click()
@@ -221,6 +226,40 @@ test('nothing reaches the player through a menu or a dialog', async () => {
     // Dismissed, not confirmed: the history is still there.
     await expect(ui.locator('.rows .row').first()).toBeVisible()
     await expect(ui.locator('.app')).toBeVisible()
+  } finally {
+    await h.close()
+  }
+})
+
+test('space over a focused item activates it and nothing else', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await expect(ui.locator('.nav', { hasText: '대기열' })).toBeVisible()
+
+    // Count what reaches YouTube's player, rather than watching for playback:
+    // whether a video actually starts is the browser's decision, and the
+    // question here is only whether one press did two jobs.
+    await h.page.evaluate(() => {
+      const w = window as unknown as { __calls: string[] }
+      const p = document.getElementById('movie_player') as unknown as Record<string, (...a: unknown[]) => unknown>
+      w.__calls = []
+      for (const name of ['playVideo', 'pauseVideo']) {
+        const real = p[name]!.bind(p)
+        p[name] = (...a: unknown[]) => {
+          w.__calls.push(name)
+          return real(...a)
+        }
+      }
+    })
+
+    await ui.locator('.nav', { hasText: '대기열' }).focus()
+    await h.page.keyboard.press(' ')
+
+    // The remote's job: it opened. The player's: untouched.
+    await expect(ui.locator('h2').first()).toHaveText('대기열')
+    expect(await h.page.evaluate(() => (window as unknown as { __calls: string[] }).__calls)).toEqual([])
   } finally {
     await h.close()
   }

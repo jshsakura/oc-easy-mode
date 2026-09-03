@@ -40,6 +40,10 @@ export function installKeys(engine: Engine, actions: KeyActions): () => void {
   const onKey = (ev: KeyboardEvent): void => {
     // A shortcut is a bare press. Ctrl+R is a reload and Cmd+L is the address
     // bar, and taking either of those would be a theft rather than a feature.
+    // Somebody upstream already claimed this press. The remote control takes
+    // Space to activate whatever is focused, and without this the same press
+    // would open the row *and* pause the music.
+    if (ev.defaultPrevented) return
     if (ev.ctrlKey || ev.metaKey || ev.altKey || typing(ev)) return
     // Nothing reaches the player through a menu or a dialog. Measured: with a
     // row's menu open, s shuffled the queue behind it and r turned repeat on,

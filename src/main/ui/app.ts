@@ -585,6 +585,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     replace(repeatButton, icon(engine.state.repeat === 'one' ? 'repeatOne' : 'repeat', 18))
     repeatButton.title = { off: t('반복 안 함'), all: t('전체 반복'), one: t('한 곡 반복') }[engine.state.repeat]
     replace(muteButton, icon(engine.state.volume === 0 ? 'mute' : 'volume', 18))
+    // The thumb as well as the track. Only the fill was being set, so muting
+    // with the m key left the slider sitting at 100 with the sound off — the
+    // one place a person looks to find out how loud it is.
+    volume.value = String(engine.state.volume)
     fill(volume, engine.state.volume / 100)
     // The glyph is the *next* state, not the current one: a button showing a
     // crossed-out camera while the picture is already off says nothing about
