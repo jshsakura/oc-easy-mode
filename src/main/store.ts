@@ -32,6 +32,8 @@ export interface Persisted {
   repeat: Repeat
   shuffle: boolean
   volume: number
+  /** Playback speed, 1 being ordinary. Kept, because a podcast listener means it. */
+  rate: number
   video: VideoLayout
   /** Where the UI was; restored so a reload lands in the same place. */
   view: string
@@ -82,6 +84,7 @@ export const DEFAULTS: Persisted = {
   repeat: 'off',
   shuffle: false,
   volume: 100,
+  rate: 1,
   video: 'corner',
   // Not 'search', which opens on an empty box, and not 'home', which YouTube
   // leaves empty until it knows you.
@@ -121,6 +124,50 @@ export function save(state: Persisted): void {
   } catch {
     // Quota or private mode: the queue is lost on reload, nothing worse.
   }
+}
+
+// ── Recently played ────────────────────────────────────────────────────────
+//
+// YouTube's own 시청 기록 needs a session, and signed out there is nothing to
+// show — which is the one screen a signed-out listener most wants back. This is
+// the same idea kept here instead: the last fifty things this browser played,
+// in this origin's own storage, never sent anywhere.
+
+const HISTORY_KEY = 'oc-easy-mode:history'
+
+/** Fifty is a few evenings of listening and a few kilobytes of storage. */
+const HISTORY_MAX = 50
+
+export function history(): Track[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY)
+    if (!raw) return []
+    const got = JSON.parse(raw) as unknown
+    return Array.isArray(got) ? (got as Track[]).filter((t) => t && typeof t.videoId === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Puts a track at the front, and only there once.
+ *
+ * A song played twice in an evening should be one row at the top rather than
+ * two rows apart, which is what makes a list like this readable at all.
+ */
+export function remember(track: Track): void {
+  try {
+    const next = [track, ...history().filter((t) => t.videoId !== track.videoId)].slice(0, HISTORY_MAX)
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+  } catch {
+    // See save(). A lost history is not worth a broken player.
+  }
+}
+
+export function forgetHistory(): void {
+  try {
+    localStorage.removeItem(HISTORY_KEY)
+  } catch {}
 }
 
 export function quickOn(): boolean {

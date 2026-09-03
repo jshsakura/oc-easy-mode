@@ -191,7 +191,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     { view: { kind: 'search', query: '' }, label: t('검색'), icon: 'search' },
     { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
     { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
-    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history', section: t('내 라이브러리') },
+    { view: { kind: 'recent' }, label: t('최근 감상'), icon: 'history', section: t('내 라이브러리') },
+    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history' },
     { view: { kind: 'playlists' }, label: t('내 재생목록'), icon: 'library' },
     { view: { kind: 'queue' }, label: t('대기열'), icon: 'queue' },
   ]
@@ -754,6 +755,8 @@ function titleOf(view: View): string {
       return t('구독')
     case 'history':
       return t('시청 기록')
+    case 'recent':
+      return t('최근 감상')
     case 'playlists':
       return t('내 재생목록')
     case 'queue':
@@ -779,6 +782,7 @@ function viewFromName(name: string): View {
     case 'home':
     case 'subs':
     case 'history':
+    case 'recent':
     case 'playlists':
     case 'queue':
       return { kind: name }

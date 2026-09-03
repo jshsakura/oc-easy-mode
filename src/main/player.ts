@@ -32,6 +32,8 @@ export interface YtPlayer extends HTMLElement {
   getVideoData(): VideoData
   getVolume(): number
   setVolume(v: number): void
+  setPlaybackRate(rate: number): void
+  getPlaybackRate(): number
   isMuted(): boolean
   mute(): void
   unMute(): void

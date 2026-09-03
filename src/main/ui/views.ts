@@ -4,6 +4,7 @@
 import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
+import { forgetHistory, history } from '../store.ts'
 import { h, icon, replace } from './dom.ts'
 import { explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
@@ -23,6 +24,8 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
       return listFeed(ctx, main, t('구독'), 'FEsubscriptions')
     case 'history':
       return listFeed(ctx, main, t('시청 기록'), 'FEhistory')
+    case 'recent':
+      return recent(ctx, main)
     case 'playlists':
       return playlists(ctx, main)
     case 'playlist':
@@ -464,6 +467,53 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
   } catch (err) {
     replace(main, h('h2', null, title), h('div', { class: 'err' }, explain(err)))
   }
+}
+
+// ── Recently played ────────────────────────────────────────────────────────
+
+/**
+ * The last fifty things this browser played.
+ *
+ * YouTube's own 시청 기록 needs a session, so signed out that screen is a dead
+ * end — and signed out is exactly when someone has no other way back to the
+ * song they heard yesterday. This is kept here instead, in this origin's own
+ * storage, and never leaves the browser.
+ */
+function recent(ctx: Ctx, main: HTMLElement): void {
+  const list = history()
+  const body = h('div', { class: 'rows' })
+  replace(
+    main,
+    h('h2', null, t('최근 감상')),
+    list.length === 0
+      ? nothing(t('아직 들은 것이 없습니다.'), 'history')
+      : [
+          h(
+            'div',
+            { class: 'toolbar' },
+            h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(list, 0) }, icon('play', 16), t('전체 재생')),
+            h(
+              'button',
+              {
+                class: 'btn ghost',
+                'data-nav': '',
+                onclick: async () => {
+                  if (!(await confirm(ctx.overlay, t('최근 감상 기록을 지울까요?')))) return
+                  forgetHistory()
+                  ctx.reload()
+                },
+              },
+              icon('trash', 16),
+              t('기록 지우기'),
+            ),
+          ),
+          body,
+        ],
+  )
+  if (list.length === 0) return
+  const draw = () => layout(ctx, body, list, () => ({}))
+  draw()
+  relayoutOnModeChange(ctx, body, draw)
 }
 
 // ── Queue ──────────────────────────────────────────────────────────────────

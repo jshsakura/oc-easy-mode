@@ -6,7 +6,7 @@
 
 import { State, disableAutonav, videoIdInUrl, type YtPlayer } from './player.ts'
 import type { Track } from './parse.ts'
-import { load, save, setQuickOn, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
+import { load, remember, save, setQuickOn, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
 
 export type Listener = () => void
 
@@ -59,6 +59,7 @@ export class Engine {
     disableAutonav()
     setTimeout(disableAutonav, 2000)
     this.applyVolume()
+    this.applyRate()
     this.adoptPlaying()
     this.tickTimer = window.setInterval(this.tick, 500)
     this.tick()
@@ -130,6 +131,10 @@ export class Engine {
       this.loading = undefined
     }
     const pending = this.loading !== undefined && s !== State.Playing && s !== State.Paused
+    // Checked here rather than on a timer of its own: this already runs twice a
+    // second, and a sleep timer is not a thing that needs to be punctual to the
+    // millisecond.
+    if (this.sleep && 'at' in this.sleep && Date.now() >= this.sleep.at) this.fallAsleep()
     this.position = {
       current: p.getCurrentTime() || 0,
       duration: p.getDuration() || 0,
@@ -144,6 +149,68 @@ export class Engine {
     if (!p) return
     p.setVolume(this.state.volume)
     if (this.state.volume > 0 && p.isMuted()) p.unMute()
+  }
+
+  // ── Speed ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Applied on every load as well as on the way in.
+   *
+   * The player resets its rate when it is handed a new video, so a speed chosen
+   * once would quietly return to 1 at the end of the first track.
+   */
+  private applyRate(): void {
+    try {
+      this.player?.setPlaybackRate(this.state.rate)
+    } catch {
+      // A player build that does not take the rate keeps the one it has.
+    }
+  }
+
+  setRate(rate: number): void {
+    this.state.rate = rate
+    this.applyRate()
+    this.changed()
+  }
+
+  // ── Sleep ─────────────────────────────────────────────────────────────────
+
+  /**
+   * When to stop by itself: a wall-clock time, the end of this track, or never.
+   *
+   * Deliberately not persisted. A timer is set for tonight, and finding it
+   * still armed tomorrow — or, worse, firing in the middle of the afternoon
+   * because a tab was reopened — is the kind of surprise this feature exists to
+   * avoid.
+   */
+  sleep: { at: number } | { atTrackEnd: true } | undefined
+
+  sleepIn(minutes: number): void {
+    this.sleep = { at: Date.now() + minutes * 60_000 }
+    this.changed()
+  }
+
+  sleepAfterTrack(): void {
+    this.sleep = { atTrackEnd: true }
+    this.changed()
+  }
+
+  cancelSleep(): void {
+    this.sleep = undefined
+    this.changed()
+  }
+
+  /** Minutes left, rounded up, or undefined when nothing is set by the clock. */
+  sleepLeft(): number | undefined {
+    if (!this.sleep || !('at' in this.sleep)) return undefined
+    return Math.max(0, Math.ceil((this.sleep.at - Date.now()) / 60_000))
+  }
+
+  /** Stops where it stands, rather than at the start of the next track. */
+  private fallAsleep(): void {
+    this.sleep = undefined
+    if (this.position.playing) this.player?.pauseVideo()
+    this.changed()
   }
 
   /**
@@ -176,10 +243,12 @@ export class Engine {
     const track = this.current
     if (!track) return
     this.loading = track.videoId
+    remember(track)
     if (this.player) {
       this.unlockPlayback()
       this.player.loadVideoById(track.videoId)
       this.player.playVideo()
+      this.applyRate()
     } else {
       setQuickOn(true)
       save(this.state)
@@ -215,6 +284,11 @@ export class Engine {
   }
 
   private ended(): void {
+    if (this.sleep && 'atTrackEnd' in this.sleep) {
+      this.sleep = undefined
+      this.changed()
+      return
+    }
     if (this.state.repeat === 'one') {
       this.player?.seekTo(0, true)
       this.player?.playVideo()

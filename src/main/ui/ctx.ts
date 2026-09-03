@@ -12,6 +12,7 @@ export type View =
   | { kind: 'search'; query: string }
   | { kind: 'subs' }
   | { kind: 'history' }
+  | { kind: 'recent' }
   | { kind: 'playlists' }
   | { kind: 'playlist'; id: string; title: string }
   | { kind: 'queue' }
