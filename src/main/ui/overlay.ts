@@ -12,6 +12,20 @@ export interface MenuItem {
 let openMenu: HTMLElement | null = null
 /** Takes the open menu's dismissal listeners back off the document. */
 let releaseMenu: (() => void) | null = null
+/** How many dialogs are up. A number rather than a flag because one can open another. */
+let openModals = 0
+
+/**
+ * Whether anything is floating over the app.
+ *
+ * Asked by the keyboard shortcuts and by the panic key, both of which listen on
+ * the document and would otherwise act straight through whatever is on top of
+ * it — s shuffling the queue behind an open menu, Escape counting towards
+ * leaving the mode while a dialog waits for an answer. Measured: it did both.
+ */
+export function overlayIsOpen(): boolean {
+  return openMenu !== null || openModals > 0
+}
 
 export function closeMenu(): void {
   releaseMenu?.()
@@ -127,9 +141,23 @@ export function pick(
   newPlaceholder: string,
 ): Promise<string | { create: string } | null> {
   return new Promise((resolve) => {
+    let closed = false
     const done = (v: string | { create: string } | null) => {
+      if (closed) return
+      closed = true
+      openModals -= 1
+      document.removeEventListener('keydown', onEscape, true)
       scrim.remove()
       resolve(v)
+    }
+    // On the document, not on the field: Escape has to close the dialog from
+    // wherever the focus happens to be, and it must not travel on to the
+    // shell's twice-to-leave.
+    const onEscape = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return
+      ev.stopPropagation()
+      ev.preventDefault()
+      done(null)
     }
     const input = h('input', { placeholder: newPlaceholder, type: 'text' })
     const create = () => {
@@ -138,7 +166,6 @@ export function pick(
     }
     input.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') create()
-      if (ev.key === 'Escape') done(null)
     })
     const scrim = h(
       'div',
@@ -164,6 +191,8 @@ export function pick(
       ),
     )
     root.appendChild(scrim)
+    openModals += 1
+    document.addEventListener('keydown', onEscape, true)
     input.focus()
   })
 }
@@ -171,9 +200,22 @@ export function pick(
 /** Yes/no. Resolves true on confirm. */
 export function confirm(root: ShadowRoot, message: string, yes = t('삭제')): Promise<boolean> {
   return new Promise((resolve) => {
+    let closed = false
     const done = (v: boolean) => {
+      if (closed) return
+      closed = true
+      openModals -= 1
+      document.removeEventListener('keydown', onEscape, true)
       scrim.remove()
       resolve(v)
+    }
+    // It had none at all: the only ways out were the two buttons and the
+    // backdrop, and Escape went past it to the shell's twice-to-leave instead.
+    const onEscape = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return
+      ev.stopPropagation()
+      ev.preventDefault()
+      done(false)
     }
     const scrim = h(
       'div',
@@ -191,6 +233,10 @@ export function confirm(root: ShadowRoot, message: string, yes = t('삭제')): P
       ),
     )
     root.appendChild(scrim)
+    openModals += 1
+    document.addEventListener('keydown', onEscape, true)
+    // The safe answer takes the focus, so Enter cannot delete anything.
+    scrim.querySelector<HTMLElement>('.btn.ghost')?.focus()
   })
 }
 

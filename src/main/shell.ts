@@ -34,6 +34,7 @@
 
 import { youtubeIsDark } from './store.ts'
 import { mark } from './ui/dom.ts'
+import { overlayIsOpen } from './ui/overlay.ts'
 
 const STYLE_ID = 'oc-easy-mode'
 const VIEWPORT_ID = 'oc-easy-mode-viewport'
@@ -258,6 +259,13 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   let lastEscape = 0
   const onKey = (ev: KeyboardEvent) => {
     if (ev.key !== 'Escape') return
+    // An Escape aimed at a menu or a dialog is not one of the two. Without
+    // this, closing a "delete this?" dialog and then pressing Escape again for
+    // any reason took the whole mode down with it.
+    if (overlayIsOpen()) {
+      lastEscape = 0
+      return
+    }
     const now = Date.now()
     if (now - lastEscape < 1000) {
       lastEscape = 0

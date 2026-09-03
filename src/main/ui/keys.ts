@@ -14,6 +14,7 @@
 // otherwise k pauses twice and lands back where it started.
 
 import type { Engine } from '../engine.ts'
+import { overlayIsOpen } from './overlay.ts'
 
 /** What j and l jump, which is what YouTube's own do. */
 const JUMP = 10
@@ -40,6 +41,10 @@ export function installKeys(engine: Engine, actions: KeyActions): () => void {
     // A shortcut is a bare press. Ctrl+R is a reload and Cmd+L is the address
     // bar, and taking either of those would be a theft rather than a feature.
     if (ev.ctrlKey || ev.metaKey || ev.altKey || typing(ev)) return
+    // Nothing reaches the player through a menu or a dialog. Measured: with a
+    // row's menu open, s shuffled the queue behind it and r turned repeat on,
+    // neither of which the person could see happening.
+    if (overlayIsOpen()) return
 
     const act = ((): (() => void) | undefined => {
       switch (ev.key) {

@@ -175,3 +175,53 @@ test('speed reaches the player, and the sleep timer arms and disarms', async () 
     await h.close()
   }
 })
+
+test('nothing reaches the player through a menu or a dialog', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    const over = h.page.locator('oc-easy-mode-overlay')
+    await expect(ui.locator('.app')).toBeVisible()
+
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    await ui.locator('.searchbox input').fill('아이유 밤편지')
+    await ui.locator('.searchbox input').press('Enter')
+    const first = ui.locator('.row').first()
+    await expect(first).toBeVisible()
+    await first.locator('.meta').click()
+
+    const settings = () =>
+      h.page.evaluate(() => {
+        const s = JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}')
+        return { shuffle: s.shuffle, repeat: s.repeat }
+      })
+    const before = await settings()
+
+    // A row's menu open. s and r are shortcuts and must not act behind it.
+    await first.locator('.more').click()
+    await expect(over.locator('.menu')).toBeVisible()
+    await h.page.keyboard.press('s')
+    await h.page.keyboard.press('r')
+    expect(await settings()).toEqual(before)
+
+    // Escape closes the menu and does not count towards leaving the mode.
+    await h.page.keyboard.press('Escape')
+    await expect(over.locator('.menu')).toHaveCount(0)
+    await expect(ui.locator('.app')).toBeVisible()
+
+    // A dialog is the same, and it can be dismissed with Escape at all, which
+    // it could not before.
+    await ui.locator('.nav', { hasText: '최근 감상' }).click()
+    await ui.locator('.toolbar button', { hasText: '기록 지우기' }).click()
+    await expect(over.locator('.modal')).toBeVisible()
+    await h.page.keyboard.press('s')
+    expect(await settings()).toEqual(before)
+    await h.page.keyboard.press('Escape')
+    await expect(over.locator('.modal')).toHaveCount(0)
+    // Dismissed, not confirmed: the history is still there.
+    await expect(ui.locator('.rows .row').first()).toBeVisible()
+    await expect(ui.locator('.app')).toBeVisible()
+  } finally {
+    await h.close()
+  }
+})
