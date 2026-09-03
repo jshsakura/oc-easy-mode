@@ -105,7 +105,20 @@ body > *:not(${HOST_TAG}):not(${OVERLAY_TAG}) { visibility: hidden !important; }
  * screen. --oc-pip is written by place(), which is the one place that knows.
  * The default is grid because that is the display the button sets on itself
  * inline, so putting it back puts back exactly what it had. */
-#oc-abp-pip { display: var(--oc-pip, grid) !important; }
+#oc-abp-pip {
+  display: var(--oc-pip, grid) !important;
+  /* Pinned to the picture's bottom-right corner, because we are the ones who
+     know where the picture is. Left alone it works out its own place from the
+     video's box and lands in the middle of our stage — measured on the phone,
+     switching between 음악 and 영상 parks it somewhere different each time.
+     Its own right/bottom are cleared so these win.
+     The dx/dy are the correction apply() feeds the player; without them this
+     would sit wherever the player would have been rather than where it is. */
+  left: calc(var(--oc-x, 0px) + var(--oc-dx, 0px) + var(--oc-w, 320px) - 46px) !important;
+  top: calc(var(--oc-y, 0px) + var(--oc-dy, 0px) + var(--oc-h, 180px) - 46px) !important;
+  right: auto !important;
+  bottom: auto !important;
+}
 
 /* Our two nodes, ordered against the page rather than against each other. The
  * app sits below the player so the picture is never covered; the overlay sits
@@ -352,8 +365,13 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
       // has to be reachable even if it has not.
       unlift()
       vars.setProperty('--oc-z', '1')
+      // The picture is behind the app now, so its button has nothing to be
+      // the button of — and being drawn above everything, it would be the one
+      // thing of the player still on screen.
+      vars.setProperty('--oc-pip', 'none')
     } else {
       vars.setProperty('--oc-z', PLAYER_Z)
+      vars.setProperty('--oc-pip', 'grid')
       schedule()
     }
   }
