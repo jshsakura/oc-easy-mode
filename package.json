@@ -1,5 +1,5 @@
 {
-  "name": "oc-easy-mode",
+  "name": "이지모드",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,7 +10,7 @@
     "dev": "node scripts/build.mjs --watch",
     "check": "tsc --noEmit",
     "icons": "python3 scripts/make-icons.py",
-    "zip": "npm run build && cd dist && zip -qr ../oc-easy-mode.zip . && cd .. && echo 'oc-easy-mode.zip'",
+    "zip": "npm run build && cd dist && zip -qr ../이지모드.zip . && cd .. && echo '이지모드.zip'",
     "e2e": "npm run build && playwright test",
     "test": "npm run build && playwright test"
   },

@@ -1,0 +1,1443 @@
+{
+ "contents": [
+  {
+   "itemSectionRenderer": {
+    "contents": [
+     {
+      "videoRenderer": {
+       "videoId": "oQA4o6C9M3k",
+       "title": {
+        "runs": [
+         {
+          "text": "아이유, '대군부인' 인연 변우석 챙겼다…'나혼렙' 촬영장에 간식차 지원 [투데이 '픽'/iMBC연예뉴스]"
+         }
+        ]
+       },
+       "longBylineText": {
+        "runs": [
+         {
+          "text": "iMBC연예",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/@imbcenews",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UCynSOK9S5HuUlrbpkiYgm5Q",
+            "canonicalBaseUrl": "/@imbcenews"
+           }
+          }
+         }
+        ]
+       },
+       "publishedTimeText": {
+        "simpleText": "16시간 전"
+       },
+       "lengthText": {
+        "simpleText": "0:58"
+       },
+       "viewCountText": {
+        "simpleText": "조회수 9,292회"
+       },
+       "navigationEndpoint": {
+        "commandMetadata": {
+         "webCommandMetadata": {
+          "url": "/watch?v=oQA4o6C9M3k&pp=ygUJ7JWE7J207Jyg",
+          "webPageType": "WEB_PAGE_TYPE_WATCH",
+          "rootVe": 3832
+         }
+        },
+        "watchEndpoint": {
+         "videoId": "oQA4o6C9M3k"
+        }
+       },
+       "ownerText": {
+        "runs": [
+         {
+          "text": "iMBC연예",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/@imbcenews",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UCynSOK9S5HuUlrbpkiYgm5Q",
+            "canonicalBaseUrl": "/@imbcenews"
+           }
+          }
+         }
+        ]
+       },
+       "shortBylineText": {
+        "runs": [
+         {
+          "text": "iMBC연예",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/@imbcenews",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UCynSOK9S5HuUlrbpkiYgm5Q",
+            "canonicalBaseUrl": "/@imbcenews"
+           }
+          }
+         }
+        ]
+       },
+       "showActionMenu": false,
+       "shortViewCountText": {
+        "simpleText": "조회수 9.2천회"
+       }
+      }
+     },
+     {
+      "videoRenderer": {
+       "videoId": "wDfqXR_5yyQ",
+       "title": {
+        "runs": [
+         {
+          "text": "아이유(IU)의 킬링보이스를 라이브로! - 하루 끝, 너의 의미, 스물셋, 밤편지, 팔레트, 가을 아침, 삐삐, Blueming, 에잇, Coin, 라일락 ㅣ 딩고뮤직"
+         }
+        ]
+       },
+       "longBylineText": {
+        "runs": [
+         {
+          "text": "딩고 뮤직 / dingo music",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/@DingoMusic",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UCtCiO5t2voB14CmZKTkIzPQ",
+            "canonicalBaseUrl": "/@DingoMusic"
+           }
+          }
+         }
+        ]
+       },
+       "publishedTimeText": {
+        "simpleText": "5년 전"
+       },
+       "lengthText": {
+        "simpleText": "18:24"
+       },
+       "viewCountText": {
+        "simpleText": "조회수 72,649,121회"
+       },
+       "navigationEndpoint": {
+        "commandMetadata": {
+         "webCommandMetadata": {
+          "url": "/watch?v=wDfqXR_5yyQ&list=RDwDfqXR_5yyQ&start_radio=1&pp=ygUJ7JWE7J207JygoAcB",
+          "webPageType": "WEB_PAGE_TYPE_WATCH",
+          "rootVe": 3832
+         }
+        },
+        "watchEndpoint": {
+         "videoId": "wDfqXR_5yyQ",
+         "playlistId": "RDwDfqXR_5yyQ"
+        }
+       },
+       "ownerText": {
+        "runs": [
+         {
+          "text": "딩고 뮤직 / dingo music",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/@DingoMusic",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UCtCiO5t2voB14CmZKTkIzPQ",
+            "canonicalBaseUrl": "/@DingoMusic"
+           }
+          }
+         }
+        ]
+       },
+       "shortBylineText": {
+        "runs": [
+         {
+          "text": "딩고 뮤직 / dingo music",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/@DingoMusic",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UCtCiO5t2voB14CmZKTkIzPQ",
+            "canonicalBaseUrl": "/@DingoMusic"
+           }
+          }
+         }
+        ]
+       },
+       "showActionMenu": false,
+       "shortViewCountText": {
+        "simpleText": "조회수 7264만회"
+       },
+       "expandableMetadata": {
+        "expandableMetadataRenderer": {
+         "header": {
+          "collapsedTitle": {
+           "runs": [
+            {
+             "text": "하루 끝 | 금요일에 만나요 | 너의 의미 | 스물셋 | 밤편지 | 팔레트 | 가을 아침 | 삐삐 | Blueming | 에잇 | Coin | 라일락 | 내 손을 잡아 (앵콜)"
+            }
+           ]
+          },
+          "collapsedThumbnail": {
+           "thumbnails": [
+            {
+             "url": "https://i.ytimg.com/vi/wDfqXR_5yyQ/hqdefault_7933.jpg?sqp=-oaymwEjCNACELwBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAmr5CwYQVXYLzzMF_CtkAf_S5A6A",
+             "width": 336,
+             "height": 188
+            }
+           ]
+          },
+          "collapsedLabel": {
+           "runs": [
+            {
+             "text": "챕터 "
+            },
+            {
+             "text": "13"
+            }
+           ]
+          },
+          "expandedTitle": {
+           "runs": [
+            {
+             "text": "이 동영상의 챕터 "
+            },
+            {
+             "text": "13"
+            }
+           ]
+          },
+          "showLeadingCollapsedLabel": true
+         },
+         "expandedContent": {
+          "horizontalCardListRenderer": {
+           "cards": [
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "하루 끝"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "0:00"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ"
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "금요일에 만나요"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "2:05"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=125s&pp=0gcJCfoAdtSAhXgk",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 125
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "너의 의미"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "3:09"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=189s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 189
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "스물셋"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "4:55"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=295s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 295
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "밤편지"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "6:18"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=378s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 378
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "팔레트"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "7:57"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=477s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 477
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "가을 아침"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "9:10"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=550s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 550
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "삐삐"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "10:46"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=646s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 646
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Blueming"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "11:47"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=707s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 707
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "에잇"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "13:14"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=794s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 794
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Coin"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "14:15"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=855s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 855
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "라일락"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "15:32"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=932s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 932
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            },
+            {
+             "macroMarkersListItemRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "내 손을 잡아 (앵콜)"
+                }
+               ]
+              },
+              "timeDescription": {
+               "runs": [
+                {
+                 "text": "17:07"
+                }
+               ]
+              },
+              "onTap": {
+               "commandMetadata": {
+                "webCommandMetadata": {
+                 "url": "/watch?v=wDfqXR_5yyQ&t=1027s",
+                 "webPageType": "WEB_PAGE_TYPE_WATCH",
+                 "rootVe": 3832
+                }
+               },
+               "watchEndpoint": {
+                "videoId": "wDfqXR_5yyQ",
+                "startTimeSeconds": 1027
+               }
+              },
+              "layout": "MACRO_MARKERS_LIST_ITEM_RENDERER_LAYOUT_VERTICAL",
+              "isHighlighted": false
+             }
+            }
+           ],
+           "style": {
+            "type": "HORIZONTAL_CARD_LIST_STYLE_TYPE_ENGAGEMENT_PANEL_SECTION"
+           },
+           "previousButton": {
+            "buttonRenderer": {
+             "style": "STYLE_DEFAULT",
+             "size": "SIZE_DEFAULT",
+             "isDisabled": false,
+             "icon": {
+              "iconType": "CHEVRON_LEFT"
+             }
+            }
+           },
+           "nextButton": {
+            "buttonRenderer": {
+             "style": "STYLE_DEFAULT",
+             "size": "SIZE_DEFAULT",
+             "isDisabled": false,
+             "icon": {
+              "iconType": "CHEVRON_RIGHT"
+             }
+            }
+           }
+          }
+         },
+         "expandButton": {
+          "buttonRenderer": {
+           "style": "STYLE_DEFAULT",
+           "size": "SIZE_DEFAULT",
+           "isDisabled": false,
+           "icon": {
+            "iconType": "EXPAND_MORE"
+           }
+          }
+         },
+         "collapseButton": {
+          "buttonRenderer": {
+           "style": "STYLE_DEFAULT",
+           "size": "SIZE_DEFAULT",
+           "isDisabled": false,
+           "icon": {
+            "iconType": "EXPAND_LESS"
+           }
+          }
+         },
+         "colorData": {
+          "lightColorPalette": {
+           "section1Color": 4294835199,
+           "section2Color": 4294308344,
+           "section3Color": 4293781490,
+           "primaryTitleColor": 4279570457,
+           "secondaryTitleColor": 4285552260,
+           "iconActivatedColor": 4281995609,
+           "iconInactiveColor": 4286739086,
+           "section4Color": 4293254635,
+           "iconDisabledColor": 4071794618
+          },
+          "darkColorPalette": {
+           "section1Color": 4280813887,
+           "section2Color": 4280289075,
+           "section3Color": 4279764262,
+           "primaryTitleColor": 4294239743,
+           "secondaryTitleColor": 4290421708,
+           "iconActivatedColor": 4294239743,
+           "iconInactiveColor": 4287067795,
+           "section4Color": 4279239449,
+           "iconDisabledColor": 4065741152
+          },
+          "vibrantColorPalette": {
+           "section1Color": 4283437951,
+           "section2Color": 4282913138,
+           "section3Color": 4282388326,
+           "primaryTitleColor": 4294239743,
+           "secondaryTitleColor": 4291934181,
+           "iconActivatedColor": 4294239743,
+           "iconInactiveColor": 4286933913,
+           "section4Color": 4281863513,
+           "iconDisabledColor": 4064425292
+          },
+          "saturatedColorPalettes": {
+           "lightThemePalette": {
+            "baseBackground": 4294504703,
+            "raisedBackground": 4294504703,
+            "additiveBackground": 563293665,
+            "textPrimary": 4280550205,
+            "textSecondary": 4284289686,
+            "outline": 859178842,
+            "keyLight": 4291532020,
+            "collectionStack": 4289683691,
+            "invertedBackground": 4284289686,
+            "textPrimaryInverse": 4294504703,
+            "textDisabled": 2134247258,
+            "dropShadow": 429075937,
+            "cardOutline": 177417697,
+            "overlayBackground": 3424912189,
+            "overlayTextPrimary": 4294504703,
+            "solidWash": 4284289686,
+            "solidRim": 870498811,
+            "tonalWash": 871952639,
+            "tonalRim": 868979956,
+            "outlineRim": 1291383039,
+            "solidWashInverse": 4293050875,
+            "solidRimInverse": 2146426365,
+            "tonalWashInverse": 653848831,
+            "tonalRimInverse": 653254141,
+            "outlineRimInverse": 653848831,
+            "solidBackground": 4281730906,
+            "solidBackgroundInverse": 4289683691,
+            "tonalBackground": 867131627,
+            "tonalBackgroundInverse": 434291195,
+            "outlineInverse": 871357949,
+            "directionalLightStopPrimary": 4293910013,
+            "directionalLightStopSecondary": 4294504703
+           },
+           "darkThemePalette": {
+            "baseBackground": 4279304478,
+            "raisedBackground": 4280550205,
+            "additiveBackground": 731065825,
+            "textPrimary": 4293910013,
+            "textSecondary": 4291532020,
+            "outline": 1071825403,
+            "keyLight": 4283042936,
+            "collectionStack": 4284289686,
+            "invertedBackground": 4290278125,
+            "textPrimaryInverse": 4279304478,
+            "textDisabled": 2145567227,
+            "dropShadow": 429075937,
+            "cardOutline": 177417697,
+            "overlayBackground": 3424912189,
+            "overlayTextPrimary": 4294504703,
+            "solidWash": 4293050875,
+            "solidRim": 2146426365,
+            "tonalWash": 653848831,
+            "tonalRim": 653254141,
+            "outlineRim": 653848831,
+            "solidWashInverse": 4284289686,
+            "solidRimInverse": 870498811,
+            "tonalWashInverse": 871952639,
+            "tonalRimInverse": 868979956,
+            "outlineRimInverse": 1291383039,
+            "solidBackground": 4289683691,
+            "solidBackgroundInverse": 4281730906,
+            "tonalBackground": 434291195,
+            "tonalBackgroundInverse": 867131627,
+            "outlineInverse": 859178842,
+            "directionalLightStopPrimary": 4280550205,
+            "directionalLightStopSecondary": 4278779919
+           }
+          }
+         },
+         "useCustomColors": true
+        }
+       }
+      }
+     },
+     {
+      "reelShelfRenderer": {
+       "items": [
+        {
+         "shortsLockupViewModel": {
+          "entityId": "shorts-shelf-item-zm6V2uZb2PQ",
+          "accessibilityText": "달의연인 회식자리에서 긴장한 아이유 모먼트, 조회수 28만회 - Shorts 동영상 재생",
+          "onTap": {
+           "innertubeCommand": {
+            "commandMetadata": {
+             "webCommandMetadata": {
+              "url": "/shorts/zm6V2uZb2PQ",
+              "webPageType": "WEB_PAGE_TYPE_SHORTS",
+              "rootVe": 37414
+             }
+            },
+            "reelWatchEndpoint": {
+             "videoId": "zm6V2uZb2PQ",
+             "overlay": {
+              "reelPlayerOverlayRenderer": {
+               "style": "REEL_PLAYER_OVERLAY_STYLE_SHORTS",
+               "reelPlayerNavigationModel": "REEL_PLAYER_NAVIGATION_MODEL_UNSPECIFIED"
+              }
+             },
+             "sequenceProvider": "REEL_WATCH_SEQUENCE_PROVIDER_RPC",
+             "sequenceParams": "Cgt6bTZWMnVaYjJQUSr4BAoNCgtwR0daVUVWaGtEQQoNCgtOend6VjdnQnpaQQoNCgs3alBSUGZkQ1lJYwoNCgsxMFQ0SE9IblpZawoNCgtyWHF5ODQ5eFJXcwoNCgs5Qk4wMVBOWDVTQQoNCgtGZ0h3cFhrUUt4cwoNCgtQemRXeW5hRVhzSQoNCgtFOS1fLUczQWlTcwoNCgsyeGNzTG5FOHNWdwoNCgtrczhOOGlHRjJHRQoNCgtyUHdROTh0aGNwWQoNCgswVTRTeWNFR2h0MAoNCgtKUGtObUFQZzVfbwoNCgttRDNJSGVUc1BKTQoNCgs0MjBkbTVsSDVEWQoNCgt2MDgwTDljc3pUWQoNCgtzOFlHQ1ktTnFVOAoNCgtGeE5GVjR6YmRSRQoNCgtOMmZLejZkUUlUQQoNCgt0dm5WTFpXd3E2UQoNCgtMWUxqbFVuQ0J0QQoNCgtZQk9VeVl1MTBCWQoNCgtxVjZzLTFWZjI2YwoNCgtZUE1FRXE4NXU2UQoNCgtoSG9mVVpYREVOawoNCgtzckRjeDhoUGZYMAoNCgttX0NJeWl6VEd3awoNCgtzbXVPMk1xaE5HTQoNCgtIdGNMcnlVZllXcwoNCgtVNm1kdVF6NnJlYwoNCgtOVkp5ZnJKbVlIdwoNCgthbDJwMVo1ZHhSVQoNCgtHQTFxeGpkUXNOawoNCgtzYTl2aEU3a0NTcwoNCgthT3RMQ2ZoOGJOZwoNCgsyMXlBanNSSHJxYwoNCgt3VnEzRVM2U3FrYwoNCgtMTGlPdEZ4Y1pwRQoNCgt3YmpJUFg1V3VPNBAAGBQiGAoLIgnslYTsnbTsnKASCeyVhOydtOycoDABcGSAAQGqAQYIBRoCGADaAcIMCgnslYTsnbTsnKASBWtvLUtSGo0ECoAEAADuvAAAzb0AAHI8AADWPQAAezoAAMG9AABQvQAA9zwAAKm9AAAuPgAAGD0AAFy6AAAdvAAA2T0AAHQ9AAAbPgAAjjwAAHW-AABjvQAAZrwAAAY9AAAnOwAAmr0AAM68AACTvQAAg7wAAIy9AACzvQAAZ70AAL09AAAWvgAAWb4AAHK9AACbvQAADb4AAKi7AACtOwAAtT0AAGG9AACOvQAAOb4AAJU9AABPPQAA3zwAAAg-AAD6vQAAF74AAAi7AADEPQAAhT0AALw8AACSPAAAHTwAAAC-AAAUvgAAj70AACg-AABJPAAAUL0AAFY9AAChvQAAjz0AADS8AAB2PAAA_TwAAD29AACCPQAA77sAANU8AAAKvgAAQz0AAGg6AAAQPgAAgLwAAGw8AAAsvQAA_70AABM-AADaPQAAsr0AANg8AABAvQAAqz0AABK-AAB_vAAADb4AAMq9AAALPQAA0rwAAMu9AAAHvgAAPz0AAGy9AACEvAAAYL0AAGE9AABKPQAA9L0AACA9AABsvgAAEr4AAIg8AAD6PQAADj0AAII9AAArPgAAG70AAKE9AACnvQAAGD0AAIA9AAAMvgAAubwAAKy7AACDvQAAFTwAACk8AABRPQAA9L0AAOM9AAA1PgAAkj0AAOq9AACwPQAAXD0AABW9AACdvQAA3TwYNyACQgQIABABKo0ECoAEAABGPQAArj0AAAa-AAAuPgAABr4AAOu9AAAOvgAAWD0AABa-AAArvgAAtD0AAFG9AAAdPAAA8L0AALm7AADDPQAAcj0AAMK9AACLPQAAujsAAKM9AADpPQAAFT0AAGU9AACIPQAAEj0AAOC8AACGvQAAPD4AAOG8AAAGPQAA970AAB-9AAAOPAAAgD0AACK9AADmPQAAnD0AAAa9AAA-vAAAsDwAAP09AAAJPgAA3rwAAA89AABMPgAAJD0AAIg8AADQvQAA670AAOU8AAAiPQAAhDsAAAs9AAAqvQAAHD4AAAg-AADDOwAA6zsAAIg8AAC9uwAAN70AAAw9AAAFPQAARL0AAFg-AAAPPgAApL0AAGm9AACYPQAAcj0AADS9AADlvAAA2D0AAEA9AADBvQAApj0AAPC8AAA3vgAAK70AAMW8AACTPQAAyr0AAJy8AACgvQAAhb0AAIA8AAALPQAAvD0AAAy-AAD6vQAAyzoAAPI9AACtOwAAMDsAADo9AABPPQAAIj4AAAe9AABKvQAAOb0AAKu9AACVPQAAcr0AAMM9AAAvPgAAvDwAAJA9AAArPQAAHb4AAFY9AABJvAAAxzwAAAK9AABtOwAARrwAAGW-AADGvAAAaz0AAAO9AACAPQAAlz4AALW9AACrPQAA4LwAALI9AADlPAAAwbwYNiACQgQIABABMo0ECoAEAACaPQAARTsAAE49AAACPgAApjsAAIC-AADzvQAAIL4AALa9AAApPgAA1z0AAEE9AAAqPQAAlDwAADU-AAArPQAAJzwAADy-AAAuPgAA0bwAAIC9AABUPQAAE70AAIm9AADBvQAACT0AAKs9AAB5vQAALjwAAC89AACTvQAAY70AAEq8AAAovAAAFzwAAMG9AADZPQAAAD4AAAG-AACtvQAABz0AADU-AADdvQAArz0AAIi9AACGOgAA2jsAALo9AADwvQAA3b0AAIm9AAAJvgAAib4AAFC8AAApvgAA6D0AABw8AAAgvQAAUL0AACy9AADpvAAA5j0AALm8AACxvQAAAz4AAMg8AACJPQAA5rsAAAS8AADFOwAAurwAAAK-AABguwAAtL0AANY8AACdPQAA9j0AADg9AAA6PAAAX7wAAEI9AACaPQAAbr0AAFo9AACDvQAARTgAADo-AACjvQAAprwAALg9AAC0PQAAYr4AALK9AAALPQAAtT0AACY8AADjOwAAkT0AAGk9AADpPQAAxT0AALW9AABBuwAA1D0AALK8AAD_PAAAZr0AAPy9AAADPgAAU70AAAs8AAA6PAAAE74AAFS9AABuPAAAoL0AAK68AAAgPAAA1L0AAFE9AABCPQAApDwAAAO-AABlvQAAOj0AAOw9AACCvAAAibkYNyABQgQIABAB",
+             "ustreamerConfig": "CAw="
+            }
+           }
+          },
+          "badge": {
+           "badgeViewModel": {
+            "badgeText": "새 동영상",
+            "badgeStyle": "BADGE_OVERLAY_WHITE",
+            "accessibilityLabel": "새 동영상"
+           }
+          },
+          "inlinePlayerData": {
+           "onVisible": {
+            "innertubeCommand": {
+             "commandMetadata": {
+              "webCommandMetadata": {
+               "url": "/watch?v=zm6V2uZb2PQ&pp=YAHIAQHwAQG6AwIYAqIGFQFOuZ0UxUUhc1x6IQie8XtO0-M4wZAHAg%3D%3D",
+               "webPageType": "WEB_PAGE_TYPE_WATCH",
+               "rootVe": 3832
+              }
+             },
+             "watchEndpoint": {
+              "videoId": "zm6V2uZb2PQ",
+              "playerExtraUrlParams": [
+               {
+                "key": "inline",
+                "value": "1"
+               }
+              ]
+             }
+            }
+           },
+           "maxPlaybackLengthSec": 0,
+           "enableAudioControl": true
+          },
+          "menuOnTap": {
+           "innertubeCommand": {
+            "showSheetCommand": {
+             "panelLoadingStrategy": {
+              "inlineContent": {
+               "sheetViewModel": {
+                "content": {
+                 "listViewModel": {
+                  "listItems": [
+                   {
+                    "listItemViewModel": {
+                     "title": {
+                      "content": "현재 재생목록에 추가"
+                     },
+                     "leadingImage": {
+                      "sources": [
+                       {
+                        "clientResource": {
+                         "imageName": "ADD_TO_QUEUE_TAIL"
+                        }
+                       }
+                      ]
+                     },
+                     "rendererContext": {
+                      "commandContext": {
+                       "onTap": {
+                        "innertubeCommand": {
+                         "commandMetadata": {
+                          "webCommandMetadata": {
+                           "sendPost": true
+                          }
+                         },
+                         "signalServiceEndpoint": {
+                          "signal": "CLIENT_SIGNAL",
+                          "actions": [
+                           {
+                            "addToPlaylistCommand": {
+                             "openMiniplayer": true,
+                             "videoId": "zm6V2uZb2PQ",
+                             "listType": "PLAYLIST_EDIT_LIST_TYPE_QUEUE",
+                             "onCreateListCommand": {
+                              "commandMetadata": {
+                               "webCommandMetadata": {
+                                "sendPost": true,
+                                "apiUrl": "/youtubei/v1/playlist/create"
+                               }
+                              },
+                              "createPlaylistServiceEndpoint": {
+                               "videoIds": [
+                                "zm6V2uZb2PQ"
+                               ]
+                              }
+                             },
+                             "videoIds": [
+                              "zm6V2uZb2PQ"
+                             ],
+                             "videoCommand": {
+                              "commandMetadata": {
+                               "webCommandMetadata": {
+                                "url": "/watch?v=zm6V2uZb2PQ",
+                                "webPageType": "WEB_PAGE_TYPE_WATCH",
+                                "rootVe": 3832
+                               }
+                              },
+                              "watchEndpoint": {
+                               "videoId": "zm6V2uZb2PQ"
+                              }
+                             }
+                            }
+                           }
+                          ]
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   },
+                   {
+                    "listItemViewModel": {
+                     "title": {
+                      "content": "의견 보내기"
+                     },
+                     "leadingImage": {
+                      "sources": [
+                       {
+                        "clientResource": {
+                         "imageName": "FEEDBACK"
+                        }
+                       }
+                      ]
+                     },
+                     "rendererContext": {
+                      "commandContext": {
+                       "onTap": {
+                        "innertubeCommand": {
+                         "commandMetadata": {
+                          "webCommandMetadata": {
+                           "ignoreNavigation": true
+                          }
+                         },
+                         "userFeedbackEndpoint": {
+                          "additionalDatas": [
+                           {
+                            "userFeedbackEndpointProductSpecificValueData": {
+                             "key": "video_id",
+                             "value": "zm6V2uZb2PQ"
+                            }
+                           },
+                           {
+                            "userFeedbackEndpointProductSpecificValueData": {
+                             "key": "lockup",
+                             "value": "shelf"
+                            }
+                           }
+                          ]
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "menuOnTapA11yLabel": "추가 작업",
+          "thumbnailViewModel": {
+           "thumbnailViewModel": {}
+          },
+          "stackedFrameData": {},
+          "titleTruncationStyle": "SHORTS_LOCKUP_TITLE_TRUNCATION_STYLE_UNKNOWN",
+          "inlinePopStateEntityKey": "Eh1zaG9ydHMtc2hlbGYtaXRlbS16bTZWMnVaYjJQUSDMAygB0.242326"
+         }
+        },
+        {
+         "shortsLockupViewModel": {
+          "entityId": "shorts-shelf-item-pGGZUEVhkDA",
+          "accessibilityText": "아이유 콘서트에는 무조건 비가 와야 하는 이유, 조회수 2.4천회 - Shorts 동영상 재생",
+          "onTap": {
+           "innertubeCommand": {
+            "commandMetadata": {
+             "webCommandMetadata": {
+              "url": "/shorts/pGGZUEVhkDA",
+              "webPageType": "WEB_PAGE_TYPE_SHORTS",
+              "rootVe": 37414
+             }
+            },
+            "reelWatchEndpoint": {
+             "videoId": "pGGZUEVhkDA",
+             "overlay": {
+              "reelPlayerOverlayRenderer": {
+               "style": "REEL_PLAYER_OVERLAY_STYLE_SHORTS",
+               "reelPlayerNavigationModel": "REEL_PLAYER_NAVIGATION_MODEL_UNSPECIFIED"
+              }
+             },
+             "sequenceProvider": "REEL_WATCH_SEQUENCE_PROVIDER_RPC",
+             "sequenceParams": "CgtwR0daVUVWaGtEQSr4BAoNCgtOend6VjdnQnpaQQoNCgs3alBSUGZkQ1lJYwoNCgsxMFQ0SE9IblpZawoNCgtyWHF5ODQ5eFJXcwoNCgs5Qk4wMVBOWDVTQQoNCgtGZ0h3cFhrUUt4cwoNCgtQemRXeW5hRVhzSQoNCgtFOS1fLUczQWlTcwoNCgsyeGNzTG5FOHNWdwoNCgtrczhOOGlHRjJHRQoNCgtyUHdROTh0aGNwWQoNCgswVTRTeWNFR2h0MAoNCgtKUGtObUFQZzVfbwoNCgttRDNJSGVUc1BKTQoNCgs0MjBkbTVsSDVEWQoNCgt2MDgwTDljc3pUWQoNCgtzOFlHQ1ktTnFVOAoNCgtGeE5GVjR6YmRSRQoNCgtOMmZLejZkUUlUQQoNCgt0dm5WTFpXd3E2UQoNCgtMWUxqbFVuQ0J0QQoNCgtZQk9VeVl1MTBCWQoNCgtxVjZzLTFWZjI2YwoNCgtZUE1FRXE4NXU2UQoNCgtoSG9mVVpYREVOawoNCgtzckRjeDhoUGZYMAoNCgttX0NJeWl6VEd3awoNCgtzbXVPMk1xaE5HTQoNCgtIdGNMcnlVZllXcwoNCgtVNm1kdVF6NnJlYwoNCgtOVkp5ZnJKbVlIdwoNCgthbDJwMVo1ZHhSVQoNCgtHQTFxeGpkUXNOawoNCgtzYTl2aEU3a0NTcwoNCgthT3RMQ2ZoOGJOZwoNCgsyMXlBanNSSHJxYwoNCgt3VnEzRVM2U3FrYwoNCgtMTGlPdEZ4Y1pwRQoNCgt3YmpJUFg1V3VPNAoNCgtyb3RoVG96SFIxcxABGBQiGAoLIgnslYTsnbTsnKASCeyVhOydtOycoDABcGSAAQGqAQYIBBoCGADaAcIMCgnslYTsnbTsnKASBWtvLUtSGo0ECoAEAADuvAAAzb0AAHI8AADWPQAAezoAAMG9AABQvQAA9zwAAKm9AAAuPgAAGD0AAFy6AAAdvAAA2T0AAHQ9AAAbPgAAjjwAAHW-AABjvQAAZrwAAAY9AAAnOwAAmr0AAM68AACTvQAAg7wAAIy9AACzvQAAZ70AAL09AAAWvgAAWb4AAHK9AACbvQAADb4AAKi7AACtOwAAtT0AAGG9AACOvQAAOb4AAJU9AABPPQAA3zwAAAg-AAD6vQAAF74AAAi7AADEPQAAhT0AALw8AACSPAAAHTwAAAC-AAAUvgAAj70AACg-AABJPAAAUL0AAFY9AAChvQAAjz0AADS8AAB2PAAA_TwAAD29AACCPQAA77sAANU8AAAKvgAAQz0AAGg6AAAQPgAAgLwAAGw8AAAsvQAA_70AABM-AADaPQAAsr0AANg8AABAvQAAqz0AABK-AAB_vAAADb4AAMq9AAALPQAA0rwAAMu9AAAHvgAAPz0AAGy9AACEvAAAYL0AAGE9AABKPQAA9L0AACA9AABsvgAAEr4AAIg8AAD6PQAADj0AAII9AAArPgAAG70AAKE9AACnvQAAGD0AAIA9AAAMvgAAubwAAKy7AACDvQAAFTwAACk8AABRPQAA9L0AAOM9AAA1PgAAkj0AAOq9AACwPQAAXD0AABW9AACdvQAA3TwYNyACQgQIABABKo0ECoAEAABGPQAArj0AAAa-AAAuPgAABr4AAOu9AAAOvgAAWD0AABa-AAArvgAAtD0AAFG9AAAdPAAA8L0AALm7AADDPQAAcj0AAMK9AACLPQAAujsAAKM9AADpPQAAFT0AAGU9AACIPQAAEj0AAOC8AACGvQAAPD4AAOG8AAAGPQAA970AAB-9AAAOPAAAgD0AACK9AADmPQAAnD0AAAa9AAA-vAAAsDwAAP09AAAJPgAA3rwAAA89AABMPgAAJD0AAIg8AADQvQAA670AAOU8AAAiPQAAhDsAAAs9AAAqvQAAHD4AAAg-AADDOwAA6zsAAIg8AAC9uwAAN70AAAw9AAAFPQAARL0AAFg-AAAPPgAApL0AAGm9AACYPQAAcj0AADS9AADlvAAA2D0AAEA9AADBvQAApj0AAPC8AAA3vgAAK70AAMW8AACTPQAAyr0AAJy8AACgvQAAhb0AAIA8AAALPQAAvD0AAAy-AAD6vQAAyzoAAPI9AACtOwAAMDsAADo9AABPPQAAIj4AAAe9AABKvQAAOb0AAKu9AACVPQAAcr0AAMM9AAAvPgAAvDwAAJA9AAArPQAAHb4AAFY9AABJvAAAxzwAAAK9AABtOwAARrwAAGW-AADGvAAAaz0AAAO9AACAPQAAlz4AALW9AACrPQAA4LwAALI9AADlPAAAwbwYNiACQgQIABABMo0ECoAEAACaPQAARTsAAE49AAACPgAApjsAAIC-AADzvQAAIL4AALa9AAApPgAA1z0AAEE9AAAqPQAAlDwAADU-AAArPQAAJzwAADy-AAAuPgAA0bwAAIC9AABUPQAAE70AAIm9AADBvQAACT0AAKs9AAB5vQAALjwAAC89AACTvQAAY70AAEq8AAAovAAAFzwAAMG9AADZPQAAAD4AAAG-AACtvQAABz0AADU-AADdvQAArz0AAIi9AACGOgAA2jsAALo9AADwvQAA3b0AAIm9AAAJvgAAib4AAFC8AAApvgAA6D0AABw8AAAgvQAAUL0AACy9AADpvAAA5j0AALm8AACxvQAAAz4AAMg8AACJPQAA5rsAAAS8AADFOwAAurwAAAK-AABguwAAtL0AANY8AACdPQAA9j0AADg9AAA6PAAAX7wAAEI9AACaPQAAbr0AAFo9AACDvQAARTgAADo-AACjvQAAprwAALg9AAC0PQAAYr4AALK9AAALPQAAtT0AACY8AADjOwAAkT0AAGk9AADpPQAAxT0AALW9AABBuwAA1D0AALK8AAD_PAAAZr0AAPy9AAADPgAAU70AAAs8AAA6PAAAE74AAFS9AABuPAAAoL0AAK68AAAgPAAA1L0AAFE9AABCPQAApDwAAAO-AABlvQAAOj0AAOw9AACCvAAAibkYNyABQgQIABAB",
+             "ustreamerConfig": "CAw="
+            }
+           }
+          },
+          "badge": {
+           "badgeViewModel": {
+            "badgeText": "새 동영상",
+            "badgeStyle": "BADGE_OVERLAY_WHITE",
+            "accessibilityLabel": "새 동영상"
+           }
+          },
+          "inlinePlayerData": {
+           "onVisible": {
+            "innertubeCommand": {
+             "commandMetadata": {
+              "webCommandMetadata": {
+               "url": "/watch?v=pGGZUEVhkDA&pp=YAHIAQHwAQG6AwIYAqIGFQFOuZ0U75fHO-TbMI_7UCg5IVZLVpAHAg%3D%3D",
+               "webPageType": "WEB_PAGE_TYPE_WATCH",
+               "rootVe": 3832
+              }
+             },
+             "watchEndpoint": {
+              "videoId": "pGGZUEVhkDA",
+              "playerExtraUrlParams": [
+               {
+                "key": "inline",
+                "value": "1"
+               }
+              ]
+             }
+            }
+           },
+           "maxPlaybackLengthSec": 0,
+           "enableAudioControl": true
+          },
+          "menuOnTap": {
+           "innertubeCommand": {
+            "showSheetCommand": {
+             "panelLoadingStrategy": {
+              "inlineContent": {
+               "sheetViewModel": {
+                "content": {
+                 "listViewModel": {
+                  "listItems": [
+                   {
+                    "listItemViewModel": {
+                     "title": {
+                      "content": "현재 재생목록에 추가"
+                     },
+                     "leadingImage": {
+                      "sources": [
+                       {
+                        "clientResource": {
+                         "imageName": "ADD_TO_QUEUE_TAIL"
+                        }
+                       }
+                      ]
+                     },
+                     "rendererContext": {
+                      "commandContext": {
+                       "onTap": {
+                        "innertubeCommand": {
+                         "commandMetadata": {
+                          "webCommandMetadata": {
+                           "sendPost": true
+                          }
+                         },
+                         "signalServiceEndpoint": {
+                          "signal": "CLIENT_SIGNAL",
+                          "actions": [
+                           {
+                            "addToPlaylistCommand": {
+                             "openMiniplayer": true,
+                             "videoId": "pGGZUEVhkDA",
+                             "listType": "PLAYLIST_EDIT_LIST_TYPE_QUEUE",
+                             "onCreateListCommand": {
+                              "commandMetadata": {
+                               "webCommandMetadata": {
+                                "sendPost": true,
+                                "apiUrl": "/youtubei/v1/playlist/create"
+                               }
+                              },
+                              "createPlaylistServiceEndpoint": {
+                               "videoIds": [
+                                "pGGZUEVhkDA"
+                               ]
+                              }
+                             },
+                             "videoIds": [
+                              "pGGZUEVhkDA"
+                             ],
+                             "videoCommand": {
+                              "commandMetadata": {
+                               "webCommandMetadata": {
+                                "url": "/watch?v=pGGZUEVhkDA",
+                                "webPageType": "WEB_PAGE_TYPE_WATCH",
+                                "rootVe": 3832
+                               }
+                              },
+                              "watchEndpoint": {
+                               "videoId": "pGGZUEVhkDA"
+                              }
+                             }
+                            }
+                           }
+                          ]
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   },
+                   {
+                    "listItemViewModel": {
+                     "title": {
+                      "content": "의견 보내기"
+                     },
+                     "leadingImage": {
+                      "sources": [
+                       {
+                        "clientResource": {
+                         "imageName": "FEEDBACK"
+                        }
+                       }
+                      ]
+                     },
+                     "rendererContext": {
+                      "commandContext": {
+                       "onTap": {
+                        "innertubeCommand": {
+                         "commandMetadata": {
+                          "webCommandMetadata": {
+                           "ignoreNavigation": true
+                          }
+                         },
+                         "userFeedbackEndpoint": {
+                          "additionalDatas": [
+                           {
+                            "userFeedbackEndpointProductSpecificValueData": {
+                             "key": "video_id",
+                             "value": "pGGZUEVhkDA"
+                            }
+                           },
+                           {
+                            "userFeedbackEndpointProductSpecificValueData": {
+                             "key": "lockup",
+                             "value": "shelf"
+                            }
+                           }
+                          ]
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          },
+          "menuOnTapA11yLabel": "추가 작업",
+          "thumbnailViewModel": {
+           "thumbnailViewModel": {}
+          },
+          "stackedFrameData": {},
+          "titleTruncationStyle": "SHORTS_LOCKUP_TITLE_TRUNCATION_STYLE_UNKNOWN",
+          "inlinePopStateEntityKey": "Eh1zaG9ydHMtc2hlbGYtaXRlbS1wR0daVUVWaGtEQSDMAygB0.620899"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "videoRenderer": {
+       "videoId": "ax1csKKQnns",
+       "title": {
+        "runs": [
+         {
+          "text": "IU 'Love wins all' Live Clip (2024 IU HEREH WORLD TOUR CONCERT IN SEOUL)"
+         }
+        ]
+       },
+       "longBylineText": {
+        "runs": [
+         {
+          "text": "이지금 [IU Official]",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/channel/UC3SyT4_WLHzN7JmHQwKQZww",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UC3SyT4_WLHzN7JmHQwKQZww",
+            "canonicalBaseUrl": "/channel/UC3SyT4_WLHzN7JmHQwKQZww"
+           }
+          }
+         }
+        ]
+       },
+       "publishedTimeText": {
+        "simpleText": "2년 전"
+       },
+       "lengthText": {
+        "simpleText": "5:07"
+       },
+       "viewCountText": {
+        "simpleText": "조회수 27,830,377회"
+       },
+       "navigationEndpoint": {
+        "commandMetadata": {
+         "webCommandMetadata": {
+          "url": "/watch?v=ax1csKKQnns&list=RDax1csKKQnns&start_radio=1&pp=ygUJ7JWE7J207JygoAcB0gcJCRoMAYcqIYzv",
+          "webPageType": "WEB_PAGE_TYPE_WATCH",
+          "rootVe": 3832
+         }
+        },
+        "watchEndpoint": {
+         "videoId": "ax1csKKQnns",
+         "playlistId": "RDax1csKKQnns"
+        }
+       },
+       "ownerText": {
+        "runs": [
+         {
+          "text": "이지금 [IU Official]",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/channel/UC3SyT4_WLHzN7JmHQwKQZww",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UC3SyT4_WLHzN7JmHQwKQZww",
+            "canonicalBaseUrl": "/channel/UC3SyT4_WLHzN7JmHQwKQZww"
+           }
+          }
+         }
+        ]
+       },
+       "shortBylineText": {
+        "runs": [
+         {
+          "text": "이지금 [IU Official]",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/channel/UC3SyT4_WLHzN7JmHQwKQZww",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UC3SyT4_WLHzN7JmHQwKQZww",
+            "canonicalBaseUrl": "/channel/UC3SyT4_WLHzN7JmHQwKQZww"
+           }
+          }
+         }
+        ]
+       },
+       "showActionMenu": false,
+       "shortViewCountText": {
+        "simpleText": "조회수 2783만회"
+       }
+      }
+     },
+     {
+      "videoRenderer": {
+       "videoId": "pDvBiB1waBk",
+       "title": {
+        "runs": [
+         {
+          "text": "IU '바이, 썸머 (Bye, Summer)' Live Clip (2024 IU HEREH WORLD TOUR CONCERT ENCORE : THE WINNING)"
+         }
+        ]
+       },
+       "longBylineText": {
+        "runs": [
+         {
+          "text": "이지금 [IU Official]",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/channel/UC3SyT4_WLHzN7JmHQwKQZww",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UC3SyT4_WLHzN7JmHQwKQZww",
+            "canonicalBaseUrl": "/channel/UC3SyT4_WLHzN7JmHQwKQZww"
+           }
+          }
+         }
+        ]
+       },
+       "publishedTimeText": {
+        "simpleText": "1년 전"
+       },
+       "lengthText": {
+        "simpleText": "4:24"
+       },
+       "viewCountText": {
+        "simpleText": "조회수 11,612,493회"
+       },
+       "navigationEndpoint": {
+        "commandMetadata": {
+         "webCommandMetadata": {
+          "url": "/shorts/pDvBiB1waBk",
+          "webPageType": "WEB_PAGE_TYPE_WATCH",
+          "rootVe": 3832
+         }
+        },
+        "watchEndpoint": {
+         "videoId": "pDvBiB1waBk",
+         "playlistId": "RDpDvBiB1waBk"
+        }
+       },
+       "ownerText": {
+        "runs": [
+         {
+          "text": "이지금 [IU Official]",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/channel/UC3SyT4_WLHzN7JmHQwKQZww",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UC3SyT4_WLHzN7JmHQwKQZww",
+            "canonicalBaseUrl": "/channel/UC3SyT4_WLHzN7JmHQwKQZww"
+           }
+          }
+         }
+        ]
+       },
+       "shortBylineText": {
+        "runs": [
+         {
+          "text": "이지금 [IU Official]",
+          "navigationEndpoint": {
+           "commandMetadata": {
+            "webCommandMetadata": {
+             "url": "/channel/UC3SyT4_WLHzN7JmHQwKQZww",
+             "webPageType": "WEB_PAGE_TYPE_CHANNEL",
+             "rootVe": 3611,
+             "apiUrl": "/youtubei/v1/browse"
+            }
+           },
+           "browseEndpoint": {
+            "browseId": "UC3SyT4_WLHzN7JmHQwKQZww",
+            "canonicalBaseUrl": "/channel/UC3SyT4_WLHzN7JmHQwKQZww"
+           }
+          }
+         }
+        ]
+       },
+       "showActionMenu": false,
+       "shortViewCountText": {
+        "simpleText": "조회수 1161만회"
+       }
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -79,6 +79,27 @@ export function thumbnail(videoId: string): string {
   return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
 }
 
+/**
+ * Whether a row is a Short.
+ *
+ * Shorts are excluded everywhere, on purpose: this is meant to feel like
+ * YouTube on a television, and a vertical clip that autoplays into the next
+ * one is the opposite of that.
+ *
+ * Mostly they never arrive — search is asked for videos only, and the renderer
+ * Shorts come in (`shortsLockupViewModel`) is not one this file collects. This
+ * is the guarantee behind that accident, for the feeds where the same row can
+ * be either. Two tells, because YouTube uses both: a reel endpoint, and a
+ * `/shorts/` link.
+ */
+function isShort(item: unknown): boolean {
+  if (collect(item, 'reelWatchEndpoint').length > 0) return true
+  for (const meta of collect(item, 'webCommandMetadata')) {
+    if (isObject(meta) && typeof meta.url === 'string' && meta.url.startsWith('/shorts/')) return true
+  }
+  return false
+}
+
 function watchVideoId(node: unknown): string | undefined {
   for (const endpoint of collect(node, 'watchEndpoint')) {
     if (isObject(endpoint) && typeof endpoint.videoId === 'string') return endpoint.videoId
@@ -104,6 +125,7 @@ function tracksFromVideoRenderers(root: unknown, key: string): Track[] {
   const out: Track[] = []
   for (const item of collect(root, key)) {
     if (!isObject(item) || typeof item.videoId !== 'string') continue
+    if (isShort(item)) continue
     out.push({
       videoId: item.videoId,
       title: text(item.title),
@@ -122,7 +144,7 @@ function tracksFromQueue(root: unknown): Track[] {
   for (const item of collect(root, 'playlistPanelVideoRenderer')) {
     if (!isObject(item)) continue
     const videoId = typeof item.videoId === 'string' ? item.videoId : watchVideoId(item)
-    if (!videoId) continue
+    if (!videoId || isShort(item)) continue
     out.push({
       videoId,
       title: text(item.title),
@@ -175,7 +197,7 @@ function tracksFromLockups(root: unknown): Track[] {
   const out: Track[] = []
   for (const item of lockups(root, 'LOCKUP_CONTENT_TYPE_VIDEO')) {
     const videoId = (typeof item.contentId === 'string' && item.contentId) || watchVideoId(item)
-    if (!videoId) continue
+    if (!videoId || isShort(item)) continue
     out.push({
       videoId,
       title: lockupTitle(item),
