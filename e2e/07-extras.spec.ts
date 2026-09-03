@@ -72,6 +72,10 @@ test('the shortcuts drive the player, and stay out of the search box', async () 
     // the box has to win. This is the bug that ate "c" once already.
     await ui.locator('.nav', { hasText: '검색' }).click()
     const box = ui.locator('.searchbox input')
+    // The view focuses its own field as it finishes rendering. Typing before
+    // that lands drops the first few keys — a race in the test, not in the
+    // product: typed into a settled box, all eight of these arrive every time.
+    await expect(box).toBeFocused()
     await box.fill('')
     await box.pressSequentially('smkjlv 아이유', { delay: 30 })
     await expect(box).toHaveValue('smkjlv 아이유')

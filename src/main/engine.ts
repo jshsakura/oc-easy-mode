@@ -136,6 +136,20 @@ export class Engine {
       // rate chosen while the current one was still loading.
       this.applyRate()
     }
+    // The rate is re-asserted, not set. YouTube's player drops it back to 1 at
+    // moments of its own choosing — a new video becoming ready, a quality
+    // change — and applying it once at any single point loses that race
+    // sooner or later. Measured: set beside loadVideoById it never survived,
+    // and set when the load landed it still went missing intermittently.
+    // Only asked while a speed is actually chosen, so a player left at 1 is
+    // never touched.
+    if (this.state.rate !== 1) {
+      try {
+        if (p.getPlaybackRate() !== this.state.rate) this.applyRate()
+      } catch {
+        // A player build without the getter keeps whatever rate it has.
+      }
+    }
     const pending = this.loading !== undefined && s !== State.Playing && s !== State.Paused
     // Checked here rather than on a timer of its own: this already runs twice a
     // second, and a sleep timer is not a thing that needs to be punctual to the
