@@ -345,6 +345,7 @@ svg {
   border: 1px solid var(--border);
   background-color: var(--surface);
   border-radius: 16px;
+  overflow: hidden;
   /* The screenshot sits inside the card rather than filling it edge to edge.
      A picture flush against a border reads as a picture that has been cut. */
   padding: 12px;
@@ -354,12 +355,17 @@ svg {
   display: block;
   width: 100%;
   height: auto;
-  border: 1px solid var(--border);
   border-radius: 8px;
+  /* No border of its own. The card already has one, and two lines a few
+     pixels apart read as a mistake. */
 }
 
 .showcase-caption {
-  padding: 14px 8px 4px;
+  /* A footer on the card: full width at the bottom, one rule above it. The
+     negative margins undo the card's padding so it reaches both edges. */
+  margin: 12px -12px -12px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--border);
   font-size: 14px;
   color: var(--text-muted);
   text-align: center;
