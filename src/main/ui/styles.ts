@@ -290,15 +290,6 @@ input { font: inherit; color: inherit; }
 .empty { color: var(--muted-foreground); padding: 56px 0; text-align: center; font-size: 14px; }
 .empty svg { display: block; margin: 0 auto 14px; opacity: .45; }
 
-/* Waiting has a shape. A line of text that says 가져오는 중 reads like a
-   result; a turning ring reads like a wait. */
-.spinner {
-  width: 26px; height: 26px; margin: 0 auto 14px;
-  border: 2px solid var(--secondary); border-top-color: var(--primary);
-  border-radius: 999px; animation: spin .8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
 /* Skeletons: the shape of what is coming, in the palette's quiet grey,
    breathing until it is replaced. A pulse, not a shimmer — nothing travels
    across the page; a block only dims and returns. */

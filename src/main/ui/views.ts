@@ -59,17 +59,25 @@ function listOf(ctx: Ctx, first: api.Page): HTMLElement {
 
   const more = h('button', { class: 'btn ghost', 'data-nav': '', style: 'margin: 16px auto 0; display: flex' }, t('더 보기'))
   more.addEventListener('click', async () => {
-    more.textContent = t('가져오는 중…')
-    more.disabled = true
+    // The next page arrives as more of the same, so it is awaited as more of
+    // the same: the button steps aside and the rows it is about to fetch stand
+    // there in outline. A button relabelled "가져오는 중…" says a wait is
+    // happening somewhere; this says where, and how much.
+    const waiting = ctx.engine.state.mode === 'video'
+      ? Array.from({ length: 6 }, () => skTile())
+      : Array.from({ length: 4 }, () => skRow())
+    more.remove()
+    rows.append(...waiting)
     try {
       const next = await api.more(ctx.cfg, page)
       all = all.concat(next.tracks)
       page = next
+      // draw() replaces the whole container, skeletons included.
       draw()
     } catch (err) {
       ctx.say(explain(err), true)
-      more.textContent = t('더 보기')
-      more.disabled = false
+      for (const el of waiting) el.remove()
+      rows.appendChild(more)
     }
   })
 
@@ -143,7 +151,7 @@ function relayoutOnModeChange(ctx: Ctx, el: HTMLElement, draw: () => void): void
  * layout classes and puts grey blocks inside them, so when the data lands the
  * screen does not change shape — it fills in.
  */
-function skRow(): HTMLElement {
+export function skRow(): HTMLElement {
   return h(
     'div',
     { class: 'row', 'aria-hidden': 'true' },

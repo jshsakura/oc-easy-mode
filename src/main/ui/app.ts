@@ -494,7 +494,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     const track = engine.current
     if (!track || lyricsOf === track.videoId) return
     lyricsOf = track.videoId
-    replace(lyricsPane, h('div', { class: 'lyricsEmpty' }, t('가져오는 중…')))
+    // The words arrive as lines, so they are awaited as lines: grey bars of
+    // varying width standing where the verses will land.
+    replace(
+      lyricsPane,
+      ...Array.from({ length: 5 }, (_, i) =>
+        h('div', { class: 'lyricLine sk', style: `width: ${46 + ((i * 17) % 3) * 14}%; margin: 0 auto; height: 16px` }),
+      ),
+    )
     try {
       lyricLines = await api.lyrics(ctx.cfg, track.videoId)
     } catch {

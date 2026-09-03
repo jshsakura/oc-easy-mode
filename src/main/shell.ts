@@ -33,7 +33,6 @@
 // simply not running is indistinguishable from plain YouTube.
 
 import { youtubeIsDark } from './store.ts'
-import { mark } from './ui/dom.ts'
 import { overlayIsOpen } from './ui/overlay.ts'
 
 const STYLE_ID = 'oc-easy-mode'
@@ -178,33 +177,74 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   // whatever geometry the page left it — and stays that way through the ytcfg
   // wait and the player wait, reading as a black rectangle in the middle of an
   // otherwise blank page. The only node that outranks the picture is the
-  // overlay host, so the splash lives there: a solid field, the mark, a
-  // turning ring, and none of the half-built app underneath. app.ts lifts it
-  // once the first view has painted.
+  // overlay host, so the splash lives there, covering the half-built app.
+  //
+  // It is the shape of the app rather than a logo and a turning ring: a
+  // sidebar, a screen of rows, a player bar. A skeleton says what is arriving
+  // and roughly when; a spinner only says "wait". The same pulse the views
+  // use, so the splash lifting into the real skeletons is one continuous
+  // motion instead of two different waits.
   //
   // The colours are written out rather than tokened because the app's own
   // stylesheet has not been injected into this root yet — the splash has to
   // stand alone, and does.
   const dark = youtubeIsDark()
+  const ink = dark ? '#26221d' : '#e6e2db'
   const splashStyle = document.createElement('style')
   splashStyle.textContent = `
-    .splash { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 22px;
-      background: ${dark ? '#0e0e12' : '#f0f0f4'}; color: ${dark ? '#9c9ca9' : '#5e5e6e'};
+    .splash { position: fixed; inset: 0; z-index: 1; display: grid;
+      grid-template-columns: 244px 1fr; grid-template-rows: 1fr 76px;
+      gap: 8px; padding: 8px; box-sizing: border-box;
+      background: ${dark ? '#141210' : '#faf8f4'};
       transition: opacity .3s ease; }
     .splash.gone { opacity: 0; pointer-events: none; }
-    .splash .ring { width: 28px; height: 28px; border-radius: 999px;
-      border: 2px solid ${dark ? '#1e1e28' : '#e6e6ec'};
-      border-top-color: ${dark ? '#8578a6' : '#776aa6'};
-      animation: splash-spin .8s linear infinite; }
-    @keyframes splash-spin { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .splash .ring { animation-duration: 2.4s; } }
+    .splash > div { background: ${dark ? '#1b1815' : '#ffffff'}; border-radius: 14px;
+      padding: 20px; box-sizing: border-box; overflow: hidden; }
+    .splash .sideCol { display: flex; flex-direction: column; gap: 14px; }
+    .splash .body { grid-column: 2; display: flex; flex-direction: column; gap: 16px; }
+    .splash .barRow { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+    .splash i { display: block; background: ${ink}; border-radius: 8px;
+      animation: splash-pulse 1.2s ease-in-out infinite; }
+    @keyframes splash-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+    @media (prefers-reduced-motion: reduce) {
+      .splash i { animation: none; opacity: .6; }
+    }
+    /* One column on a phone, the way the app itself collapses. */
+    @media (max-width: 899px) {
+      .splash { grid-template-columns: 1fr; }
+      .splash .sideCol { display: none; }
+      .splash .body { grid-column: 1; }
+    }
   `
+  // Built node by node. **Never innerHTML**: YouTube enforces Trusted Types,
+  // the setter throws under it, and the throw happens during mount — which is
+  // a blank page rather than a missing splash. This has cost a mount before.
+  const bar = (w: string, height = '12px', extra?: Partial<CSSStyleDeclaration>) => {
+    const el = document.createElement('i')
+    el.style.width = w
+    el.style.height = height
+    if (extra) Object.assign(el.style, extra)
+    return el
+  }
+  const column = (cls: string, kids: HTMLElement[]) => {
+    const el = document.createElement('div')
+    el.className = cls
+    el.append(...kids)
+    return el
+  }
   const splash = document.createElement('div')
   splash.className = 'splash'
-  const ring = document.createElement('div')
-  ring.className = 'ring'
-  splash.append(mark(56), ring)
+  splash.append(
+    column('sideCol', [
+      bar('60%', '16px', { marginBottom: '8px' }),
+      ...Array.from({ length: 6 }, () => bar('80%')),
+    ]),
+    column('body', [
+      bar('180px', '22px', { marginBottom: '6px' }),
+      ...Array.from({ length: 7 }, () => bar('100%', '44px')),
+    ]),
+    column('barRow', [bar('44px', '44px'), bar('180px'), bar('90px', '10px', { marginLeft: 'auto' })]),
+  )
   overlay.append(splashStyle, splash)
 
   const hideSplash = (): void => {
