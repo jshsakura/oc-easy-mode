@@ -231,7 +231,20 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     if (!player) return
     const target = ev.composedPath()[0] as Node | undefined
     if (!target || !player.contains(target)) return
-    player.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 0, clientY: 0 }))
+    // **The coordinates matter.** A mousemove at 0,0 is a mouse that left the
+    // player, and YouTube hides the chrome for exactly that — which is why the
+    // first attempt at this changed nothing. Sent at the middle of the picture
+    // it reads as a mouse arriving, and the chrome comes up.
+    const box = player.getBoundingClientRect()
+    const at = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2, bubbles: true }
+    const nudge = () => {
+      player.dispatchEvent(new MouseEvent('mouseover', at))
+      player.dispatchEvent(new MouseEvent('mousemove', at))
+    }
+    nudge()
+    // Again a moment later: the player settles its own state after a tap, and
+    // one nudge in the middle of that can be thrown away.
+    window.setTimeout(nudge, 140)
   }
   document.addEventListener('touchend', wake, { passive: true, capture: true })
 

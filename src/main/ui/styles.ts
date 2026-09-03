@@ -172,7 +172,7 @@ input { font: inherit; color: inherit; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 
 /* One hover, everywhere something can be pressed. */
-.nav:hover, .exit:hover, .row:hover,
+.nav:hover, .row:hover,
 .menu button:hover, .modal .list button:hover, .ctl button:hover,
 .right button:hover, .row .more:hover, .drawerToggle:hover, .btn.ghost:hover {
   background: var(--hover);
@@ -194,7 +194,13 @@ input { font: inherit; color: inherit; }
   background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
-  padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+  padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
+  /* It has to scroll, and on a phone that needs saying twice: min-height so a
+     column of buttons that will not shrink can overflow rather than push the
+     box open, and overscroll-behavior so a flick that reaches the end does not
+     hand the page underneath a scroll it will do nothing with. */
+  overflow-y: auto; min-height: 0; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 /* Everything in this column shares one left edge and one icon-to-label gap:
    10px of padding, an 18px glyph, 12px of gap. They had been 8/20/8, 10/18/10
@@ -241,16 +247,9 @@ input { font: inherit; color: inherit; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
 }
 .side .spacer { flex: 1; }
-/* A bordered button, not another line in the list. Leaving is the one thing
-   in here that is not a destination, and it should not look like one. */
-.exit {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; height: 38px; margin-top: 12px;
-  border: 1px solid var(--border); border-radius: var(--radius-md);
-  font-size: 14px; font-weight: 500; color: var(--muted-foreground);
-  transition: color var(--ease), background var(--ease), border-color var(--ease);
-}
-.exit:hover { color: var(--foreground); background: var(--hover); border-color: var(--muted-foreground); }
+/* One more line in the list, with the same indent and the same gap. It was a
+   bordered button under the menu, which read as a different kind of thing. */
+.exit { margin-top: 4px; }
 
 /* ── The header strip, on a narrow screen only ───────────────────────────── */
 .top { display: none; }
@@ -328,7 +327,30 @@ input { font: inherit; color: inherit; }
   border-radius: var(--radius-md); cursor: pointer;
   transition: background var(--ease);
 }
-.row.now { background: var(--secondary); }
+/* The playing row.
+ *
+ * A flat tint was easy to miss in a list of forty; this is tinted, edged on
+ * the left in the accent, and carries three bars that move. Motion is the
+ * thing the eye finds without looking for it. */
+.row.now {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 16%, transparent), transparent 60%);
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+.row.now .title { color: var(--primary); font-weight: 600; }
+.eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 13px; }
+.eq i { width: 3px; border-radius: 1px; background: var(--primary); animation: eq .9s ease-in-out infinite; }
+.eq i:nth-child(1) { height: 40%; animation-delay: -.2s; }
+.eq i:nth-child(2) { height: 100%; animation-delay: -.5s; }
+.eq i:nth-child(3) { height: 65%; }
+@keyframes eq {
+  0%, 100% { transform: scaleY(.35); }
+  50% { transform: scaleY(1); }
+}
+.eq i { transform-origin: bottom; }
+/* A reader who has asked for less movement gets the bars, standing still. */
+@media (prefers-reduced-motion: reduce) {
+  .eq i { animation: none; }
+}
 .row.dead { opacity: .4; }
 .row .idx { color: var(--muted-foreground); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
 .row .thumb { width: 56px; height: 32px; border-radius: 4px; background: var(--secondary) center/cover; }
@@ -517,6 +539,19 @@ input[type=range]::-moz-range-thumb {
   width: 12px; height: 12px; border: 0; border-radius: 999px; background: var(--foreground);
 }
 
+/* ── The words ───────────────────────────────────────────────────────────── */
+.lyrics { display: none; }
+.lyricsEmpty { color: var(--muted-foreground); font-size: 14px; text-align: center; padding: 40px 0; }
+.lyricLine {
+  display: block; width: 100%; text-align: center;
+  padding: 7px 4px; font-size: 16px; line-height: 1.45; font-weight: 500;
+  color: var(--muted-foreground); opacity: .55;
+  transition: color var(--ease), opacity var(--ease), transform var(--ease);
+}
+/* The line being sung, and only it. Everything else recedes rather than
+   disappearing, so the shape of the song stays visible. */
+.lyricLine.on { color: var(--foreground); opacity: 1; transform: scale(1.04); }
+
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
 .menu {
   position: fixed; z-index: 2147483100; min-width: 208px; padding: 4px;
@@ -662,6 +697,7 @@ input[type=range]::-moz-range-thumb {
    literal.) */
 .app.narrow .side {
   position: fixed; left: -302px; top: 0; height: 100dvh; width: 302px; z-index: 20;
+  overflow-y: auto; overscroll-behavior: contain;
   background: var(--glass-strong);
   border: 0; border-right: 1px solid var(--glass-line); border-radius: 0;
   transition: left .22s ease;
@@ -671,7 +707,7 @@ input[type=range]::-moz-range-thumb {
 .app.narrow .brand { padding: 4px 4px 14px; }
 /* A finger is not a cursor: every line in the drawer is a target. */
 .app.narrow .nav { padding: 11px 12px; font-size: 15px; }
-.app.narrow .exit { height: 42px; margin-top: 14px; font-size: 14px; }
+.app.narrow .exit { padding: 11px 12px; font-size: 15px; }
 .app.narrow .side .pl { padding: 9px 12px; font-size: 14px; }
 
 /* Sized like the app, and for the same reason: inset: 0 measures a box that
@@ -779,6 +815,22 @@ input[type=range]::-moz-range-thumb {
 /* The picture is already on screen above; a cover under it would be a second
    answer to the same question. */
 .app.narrow.sheet-open.has-stage .now .thumb { display: none; }
+
+/* With the words open they are what the pane is for: the artwork steps aside
+   and the list takes the room the transport is not using. */
+.app.narrow.sheet-open.lyrics-open .now .thumb { display: none; }
+.app.narrow.sheet-open.lyrics-open .lyrics {
+  display: block; flex: 1; min-height: 0; overflow-y: auto;
+  overscroll-behavior: contain; padding: 8px 0 4px; margin-top: 10px;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+}
+.app.narrow.sheet-open.lyrics-open .center { flex: none; gap: 18px; }
+.app.narrow.sheet-open.lyrics-open .now { flex: none; }
+
+/* iOS will not let script move the volume — it is a hardware control there —
+   so the slider is a dead thing on a phone. The mute button still works. */
+.app.narrow .right .vol { display: none; }
 .app.narrow.sheet-open .now .nowText { width: 100%; }
 /* Two lines of room here too: a one-line title otherwise pulled the artist and
    everything under it up by a line, so the transport moved depending on which

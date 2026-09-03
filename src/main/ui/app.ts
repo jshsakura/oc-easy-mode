@@ -7,6 +7,7 @@
 // redrew.
 
 import { t, tn } from '../../shared/i18n.ts'
+import * as api from '../api.ts'
 import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
@@ -88,18 +89,23 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     }
   }
 
-  function themeButton(): HTMLElement {
+  function themeButton(compact: boolean): HTMLElement {
     const dark = youtubeIsDark()
+    const press = () => {
+      setYouTubeDark(!youtubeIsDark())
+      drawTop()
+      drawSide()
+    }
+    if (compact) {
+      return h(
+        'button',
+        { class: 'themeButton', 'data-nav': '', title: t('테마'), 'aria-label': t('테마'), onclick: press },
+        icon(dark ? 'sun' : 'moon', 18),
+      )
+    }
     return h(
       'button',
-      {
-        class: 'nav themeRow',
-        'data-nav': '',
-        onclick: () => {
-          setYouTubeDark(!youtubeIsDark())
-          drawSide()
-        },
-      },
+      { class: 'nav', 'data-nav': '', onclick: press },
       icon(dark ? 'sun' : 'moon', 18),
       h('span', null, dark ? t('밝게') : t('어둡게')),
     )
@@ -236,6 +242,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       top,
       menuButton,
       h('div', { class: 'name' }, titleOf(ctx.view)),
+      themeButton(true),
     )
   }
 
@@ -290,12 +297,16 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         ),
       ),
       h('div', { class: 'spacer' }),
-      themeButton(),
+      // The theme lives in the header on a phone; here it is one more line.
+      !narrowNow() && themeButton(false),
+      // Leaving is a line in the list too, with a glyph that leaves. The
+      // bordered button read as a different kind of thing sitting under the
+      // menu, and the back arrow said "previous screen", not "out".
       h(
         'button',
-        { class: 'exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
-        icon('back', 18),
-        h('span', null, t('이지 모드 종료')),
+        { class: 'nav exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
+        icon('leave', 18),
+        h('span', null, t('유튜브로 돌아가기')),
       ),
     )
   }
@@ -389,6 +400,72 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const queueButton = h('button', { 'data-nav': '', title: t('대기열') }, icon('queue', 18))
   queueButton.addEventListener('click', () => ctx.go({ kind: 'queue' }))
 
+  // ── The words ────────────────────────────────────────────────────────────
+  //
+  // youtube.com has no lyrics; it has captions, and for a song those are the
+  // same words with timings on them. So the pane is the transcript, followed
+  // along as it plays. A video without captions says so rather than spinning.
+  const lyricsPane = h('div', { class: 'lyrics' })
+  let lyricLines: api.Line[] = []
+  let lyricsOf = ''
+  let lyricAt = -1
+
+  function drawLyrics(): void {
+    replace(
+      lyricsPane,
+      lyricLines.length === 0
+        ? h('div', { class: 'lyricsEmpty' }, t('가사를 찾지 못했습니다.'))
+        : lyricLines.map((line, i) =>
+            h(
+              'button',
+              {
+                class: 'lyricLine',
+                'data-nav': '',
+                onclick: () => engine.seek(line.at),
+              },
+              line.text,
+            ),
+          ),
+    )
+    lyricAt = -1
+  }
+
+  async function loadLyrics(): Promise<void> {
+    const track = engine.current
+    if (!track || lyricsOf === track.videoId) return
+    lyricsOf = track.videoId
+    replace(lyricsPane, h('div', { class: 'lyricsEmpty' }, t('가져오는 중…')))
+    try {
+      lyricLines = await api.lyrics(ctx.cfg, track.videoId)
+    } catch {
+      lyricLines = []
+    }
+    if (lyricsOf === engine.current?.videoId) drawLyrics()
+  }
+
+  const lyricsButton = h('button', { 'data-nav': '', title: t('가사') }, icon('note', 18))
+  lyricsButton.addEventListener('click', () => {
+    const open = !app.classList.contains('lyrics-open')
+    app.classList.toggle('lyrics-open', open)
+    lyricsButton.classList.toggle('on', open)
+    if (open) void loadLyrics()
+  })
+
+  /** Moves the highlight, and keeps it in the middle of the pane. */
+  function followLyrics(seconds: number): void {
+    if (!app.classList.contains('lyrics-open') || lyricLines.length === 0) return
+    let i = lyricLines.length - 1
+    while (i > 0 && lyricLines[i]!.at > seconds) i--
+    if (i === lyricAt) return
+    lyricAt = i
+    const kids = lyricsPane.children
+    for (let k = 0; k < kids.length; k++) kids[k]!.classList.toggle('on', k === i)
+    const line = kids[i] as HTMLElement | undefined
+    if (line) {
+      lyricsPane.scrollTo({ top: line.offsetTop - lyricsPane.clientHeight / 2 + line.clientHeight / 2, behavior: 'smooth' })
+    }
+  }
+
   // ── The bar, and the full player it becomes on a phone ───────────────────
   //
   // **One set of controls, two layouts.** A phone has no room for a track, a
@@ -421,11 +498,16 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       h('div', { class: 'ctl' }, shuffleButton, prevButton, playButton, nextButton, repeatButton),
       h('div', { class: 'seek' }, elapsed, seek, total),
     ),
-    h('div', { class: 'right' }, videoButton, queueButton, muteButton, volume),
+    lyricsPane,
+    h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, muteButton, volume),
   )
 
   function setSheet(open: boolean): void {
     app.classList.toggle('sheet-open', open)
+    if (!open) {
+      app.classList.remove('lyrics-open')
+      lyricsButton.classList.remove('on')
+    }
     if (open) sheetClose.focus()
   }
 
@@ -452,6 +534,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     total.textContent = clock(p.duration)
     if (!scrubbing) {
       elapsed.textContent = clock(p.current)
+      followLyrics(p.current)
       const ratio = p.duration > 0 ? p.current / p.duration : 0
       seek.value = String(Math.round(ratio * 1000))
       fill(seek, ratio)
@@ -622,6 +705,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     if (id !== showing) {
       showing = id
       setLayout(pictureNow())
+      if (app.classList.contains('lyrics-open')) void loadLyrics()
     }
     drawBar()
     if (ctx.view.kind === 'queue') ctx.reload()

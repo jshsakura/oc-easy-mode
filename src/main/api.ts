@@ -46,6 +46,49 @@ export async function mix(cfg: YtCfg, videoId: string): Promise<Page> {
   return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: 'next' }
 }
 
+/** One line of the song, and when it is sung. */
+export interface Line {
+  /** Seconds from the start. */
+  at: number
+  text: string
+}
+
+/**
+ * The words, from the video's own caption track.
+ *
+ * **YouTube Music has lyrics; youtube.com does not** — what it has is
+ * captions, and for a music video that is the same words with timings on
+ * them. So this is the transcript, followed along as it plays, which is what
+ * a player's lyrics pane does anyway.
+ *
+ * Asked as the web client on purpose: the mobile one answers this without a
+ * caption list. A video with no captions returns nothing, which is a normal
+ * answer and not an error — plenty of music videos have none.
+ */
+export async function lyrics(cfg: YtCfg, videoId: string): Promise<Line[]> {
+  const res = (await call(cfg, 'player', { videoId }, true)) as {
+    captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: Array<{ baseUrl?: string; kind?: string; languageCode?: string }> } }
+  }
+  const tracks = res.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []
+  if (tracks.length === 0) return []
+  // A track someone wrote beats one a machine guessed, and the video's own
+  // language beats a translation of it.
+  const written = tracks.filter((t) => t.kind !== 'asr')
+  const chosen = written[0] ?? tracks[0]
+  if (!chosen?.baseUrl) return []
+  const url = `${chosen.baseUrl}&fmt=json3`
+  const body = (await (await fetch(url, { credentials: 'include' })).json()) as {
+    events?: Array<{ tStartMs?: number; segs?: Array<{ utf8?: string }> }>
+  }
+  const out: Line[] = []
+  for (const event of body.events ?? []) {
+    const text = (event.segs ?? []).map((seg) => seg.utf8 ?? '').join('').replace(/\n/g, ' ').trim()
+    if (!text) continue
+    out.push({ at: (event.tStartMs ?? 0) / 1000, text })
+  }
+  return out
+}
+
 /** The next page of any of the above. */
 export async function more(cfg: YtCfg, page: Page): Promise<Page> {
   if (!page.continuation) return { tracks: [], shelves: [], endpoint: page.endpoint }

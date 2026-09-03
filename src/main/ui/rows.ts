@@ -47,7 +47,15 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
   return h(
     'div',
     { class: classes, 'data-nav': '', tabindex: '0', role: 'button', onclick: open },
-    h('div', { class: 'idx' }, playing ? '▶' : opts.index !== undefined ? String(opts.index) : ''),
+    h(
+      'div',
+      { class: 'idx' },
+      playing
+        ? h('span', { class: 'eq' }, h('i'), h('i'), h('i'))
+        : opts.index !== undefined
+          ? String(opts.index)
+          : '',
+    ),
     h('div', {
       class: 'thumb',
       style: `background-image: url(${thumbnail(track.videoId)})`,
