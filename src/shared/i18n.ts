@@ -30,6 +30,8 @@ const EN: Record<string, string> = {
   '이지 모드 종료': 'Exit Easy Mode',
   '메뉴': 'Menu',
   '테마': 'Theme',
+  '밝게': 'Light',
+  '어둡게': 'Dark',
 
   // Transport
   '재생 중인 항목 없음': 'Nothing playing',

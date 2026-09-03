@@ -424,7 +424,7 @@ input { font: inherit; color: inherit; }
 .head .sub { font-size: 14px; }
 
 /* ── The slot YouTube's player is positioned over ────────────────────────── */
-.slot { position: fixed; pointer-events: none; border-radius: var(--radius-lg); background: #000; }
+.slot { position: fixed; pointer-events: none; background: #000; }
 .slot.hidden { display: none; }
 .slot.corner {
   left: calc(100dvw - 280px - var(--gap)); bottom: calc(var(--bar) + var(--gap)); width: 280px;
@@ -436,7 +436,6 @@ input { font: inherit; color: inherit; }
 .slot.stage {
   left: calc(var(--side) + var(--gap) * 2); top: var(--gap);
   width: calc(100dvw - var(--side) - var(--gap) * 3); height: var(--stage-h);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .app.has-stage .main { padding-top: calc(var(--stage-h) + 20px); }
 .app.has-corner .main { padding-bottom: 220px; }

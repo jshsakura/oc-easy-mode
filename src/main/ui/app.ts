@@ -93,17 +93,15 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     return h(
       'button',
       {
-        class: 'themeButton',
+        class: 'nav themeRow',
         'data-nav': '',
-        title: t('테마'),
-        'aria-label': t('테마'),
         onclick: () => {
           setYouTubeDark(!youtubeIsDark())
-          drawTop()
           drawSide()
         },
       },
       icon(dark ? 'sun' : 'moon', 18),
+      h('span', null, dark ? t('밝게') : t('어둡게')),
     )
   }
   const themeWatch = new MutationObserver(applyTheme)
@@ -238,7 +236,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       top,
       menuButton,
       h('div', { class: 'name' }, titleOf(ctx.view)),
-      narrowNow() && themeButton(),
     )
   }
 
@@ -251,9 +248,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         mark(20),
         h('span', null, 'Easy Mode'),
         h('div', { class: 'spacer' }),
-        // The header carries this on a phone, where the sidebar is a drawer
-        // and out of the way most of the time.
-        !narrowNow() && themeButton(),
         // Only ever visible in the drawer. Reaching the scrim means reaching
         // across the screen, and a drawer with no close button reads as stuck.
         h(
@@ -296,6 +290,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         ),
       ),
       h('div', { class: 'spacer' }),
+      themeButton(),
       h(
         'button',
         { class: 'exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
@@ -614,8 +609,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
    */
   function pictureNow(): VideoLayout {
     if (!engine.current) return 'hidden'
-    if (narrowNow()) return 'stage'
-    return engine.state.mode === 'video' ? 'stage' : 'corner'
+    if (engine.state.mode === 'video') return 'stage'
+    // Music: a corner window where there is room for one, and nothing at all
+    // on a phone. Leaving the stage up with the switch off was the bug —
+    // pressing it has to change something.
+    return narrowNow() ? 'hidden' : 'corner'
   }
 
   let showing = engine.current?.videoId

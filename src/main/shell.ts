@@ -82,7 +82,12 @@ body > *:not(${HOST_TAG}):not(${OVERLAY_TAG}) { visibility: hidden !important; }
   width: var(--oc-w, 320px) !important;
   height: var(--oc-h, 180px) !important;
   z-index: var(--oc-z, 2147482100) !important;
-  border-radius: var(--oc-radius, 10px) !important;
+  /* Taps go through it while something of ours is over it. Whatever the
+     stacking works out to, the drawer has to be pressable. */
+  pointer-events: var(--oc-pe, auto) !important;
+  /* No radius on the video. Rounding the picture itself crops the picture —
+     said twice, and rightly. Whatever frame it needs is the slot's business,
+     and the slot is behind it. */
   overflow: hidden !important;
   transform: translate(var(--oc-dx, 0px), var(--oc-dy, 0px)) !important;
   transition: none !important;
@@ -210,6 +215,25 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     }
   }
   document.addEventListener('keydown', onKey, true)
+
+  // ── Showing the player's chrome on a touch screen ────────────────────────
+  //
+  // **Orion on iPhone is served the desktop page**, so the player in front of
+  // the viewer is the desktop player: a click plays or pauses, and the
+  // scrubber and its buttons appear on *mousemove*. A finger produces no
+  // mousemove, so tapping the picture only ever played and paused it and the
+  // controls could not be reached at all.
+  //
+  // One synthetic mousemove on the player is what it is waiting for. It shows
+  // the chrome and starts YouTube's own hide timer, exactly as a mouse would.
+  const wake = (ev: Event) => {
+    const player = document.getElementById('movie_player')
+    if (!player) return
+    const target = ev.composedPath()[0] as Node | undefined
+    if (!target || !player.contains(target)) return
+    player.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 0, clientY: 0 }))
+  }
+  document.addEventListener('touchend', wake, { passive: true, capture: true })
 
   // ── The watchdog ─────────────────────────────────────────────────────────
   //
@@ -342,6 +366,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
       // Nowhere to be: park it behind the app, still playing, never seen.
       unlift()
       vars.setProperty('--oc-z', '1')
+      vars.setProperty('--oc-pe', 'none')
       vars.setProperty('--oc-x', '0px')
       vars.setProperty('--oc-y', '0px')
       vars.setProperty('--oc-w', '320px')
@@ -365,12 +390,14 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
       // has to be reachable even if it has not.
       unlift()
       vars.setProperty('--oc-z', '1')
+      vars.setProperty('--oc-pe', 'none')
       // The picture is behind the app now, so its button has nothing to be
       // the button of — and being drawn above everything, it would be the one
       // thing of the player still on screen.
       vars.setProperty('--oc-pip', 'none')
     } else {
       vars.setProperty('--oc-z', PLAYER_Z)
+      vars.setProperty('--oc-pe', 'auto')
       vars.setProperty('--oc-pip', 'grid')
       schedule()
     }
@@ -386,6 +413,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     observer.disconnect()
     window.removeEventListener('resize', schedule, true)
     document.removeEventListener('keydown', onKey, true)
+    document.removeEventListener('touchend', wake, true)
     // Removing the sheet takes the custom properties with it; there is nothing
     // to unset, which is the point.
     style.remove()

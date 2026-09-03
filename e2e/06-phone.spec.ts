@@ -139,13 +139,21 @@ test('the picture never covers the header', async () => {
     const first = ui.locator('.tile, .row').first()
     await first.waitFor({ timeout: 60_000 })
     await first.click()
+    // The switch decides whether there is a picture; playing alone is not
+    // enough on a track list, where a phone shows none.
+    await ui.locator('.drawerToggle').click()
+    await ui.locator('.modeToggle').click()
     await expect(ui.locator('.slot')).toHaveClass(/stage/)
 
     const top = (await ui.locator('.top').boundingBox())!
     const stage = (await ui.locator('.slot').boundingBox())!
     expect(stage.y).toBeGreaterThanOrEqual(top.y + top.height - 1)
 
-    // And the way back is still there to be pressed.
+    // And the way back is still there to be pressed — which was the whole
+    // point: the video used to cover the button that opens this.
+    await ui.locator('.drawerClose').click().catch(async () => {
+      await ui.locator('.drawerToggle').click()
+    })
     await ui.locator('.drawerToggle').click()
     await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBe(0)
   } finally {
