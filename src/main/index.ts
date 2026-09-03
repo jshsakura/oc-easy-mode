@@ -218,19 +218,34 @@ function leave(persist: boolean): void {
   if (!state) return
 
   const playing = state.engine.current?.videoId
+  // Asked before the engine is taken apart, because afterwards there is
+  // nothing left to ask.
+  //
+  // The video element rather than the player's own state, because the two
+  // disagree: `getPlayerState()` reports -1 while the element is plainly
+  // playing — measured, with `paused` false and `currentTime` climbing. The
+  // element cannot be wrong about whether sound is coming out of it.
+  const el = document.querySelector('video')
+  const sounding = state.engine.position.playing || (el !== null && !el.paused && !el.ended)
   save(state.engine.state)
   state.destroy()
   state.shell.teardown()
 
-  // The URL is corrected, not followed.
+  // The URL is corrected only when correcting it is free.
   //
   // Navigating here reloaded the page, and a reload stops the music — you
   // leave the mode and the song you were listening to dies with it, which is
-  // the one thing leaving should not do. replaceState makes the address agree
-  // with what is playing without touching the player. YouTube's own titles
-  // around it stay stale until the next navigation; that is a smaller lie than
-  // silence.
-  if (playing && playing !== videoIdInUrl()) {
+  // the one thing leaving must not do. replaceState looked like the way to
+  // make the address agree without touching the player, and it is not:
+  // **YouTube watches its own URL.** Pointing it at a different video makes
+  // the page tear the player down and build it again — measured as pause,
+  // emptied, loadstart, and the track starting over from zero. Quieter than a
+  // reload, the same wound.
+  //
+  // So the address is only put right when nothing is playing. A stale address
+  // beside a playing song is the smaller lie, and the next navigation clears
+  // it anyway.
+  if (playing && !sounding && playing !== videoIdInUrl()) {
     try {
       history.replaceState(history.state, '', `/watch?v=${playing}`)
     } catch {

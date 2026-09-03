@@ -10,11 +10,16 @@ import { load, remember, save, setQuickOn, type Mode, type Persisted, type Repea
 
 export type Listener = () => void
 
+/** How long one continuous wait may last before the transport calls it a stall. */
+const STALL_AFTER_MS = 6000
+
 export interface Position {
   current: number
   duration: number
   playing: boolean
   buffering: boolean
+  /** A wait that has outlasted STALL_AFTER_MS: the transport's stop state. */
+  stalled: boolean
 }
 
 export class Engine {
@@ -23,11 +28,13 @@ export class Engine {
   private listeners = new Set<Listener>()
   private tickListeners = new Set<Listener>()
   private tickTimer: number | undefined
-  position: Position = { current: 0, duration: 0, playing: false, buffering: false }
+  position: Position = { current: 0, duration: 0, playing: false, buffering: false, stalled: false }
   /** The load that has not landed yet: set when we ask, cleared in tick() once
    *  the player is underway on that very id. Guards against a stale ENDED,
    *  and doubles as "show a wait" for the transport in the meantime. */
   private loading: string | undefined
+  /** When the current continuous wait began; undefined while not waiting. */
+  private bufferingSince: number | undefined
 
   /** Subscribe to queue and settings changes. Returns the unsubscribe. */
   subscribe(fn: Listener): () => void {
@@ -114,6 +121,26 @@ export class Engine {
     this.tick()
   }
 
+  /**
+   * Whether sound is actually coming out, asked of the element.
+   *
+   * `getPlayerState()` is not reliable enough to decide on: it reports -1
+   * while the video is plainly playing, with `paused` false and `currentTime`
+   * climbing. Measured — and it is the reason pressing pause in the first
+   * couple of seconds of a track did nothing at all. `toggle()` read the state,
+   * concluded nothing was playing, and called playVideo() on a video that was
+   * already playing.
+   *
+   * The element cannot be wrong about this, so it is the answer, and the
+   * player's own state is only the fallback for when there is no element yet.
+   */
+  private sounding(): boolean {
+    const el = document.querySelector('video')
+    if (el) return !el.paused && !el.ended
+    const s = this.player?.getPlayerState()
+    return s === State.Playing || s === State.Buffering
+  }
+
   private tick = (): void => {
     const p = this.player
     if (!p) return
@@ -129,6 +156,11 @@ export class Engine {
       p.getVideoData()?.video_id === this.loading
     ) {
       this.loading = undefined
+      // Whoever pressed pause while this was loading meant it.
+      if (this.wantPaused) {
+        this.wantPaused = false
+        p.pauseVideo()
+      }
       // The rate is re-applied *here*, where the load has actually landed.
       // Setting it next to loadVideoById is too early: the player resets its
       // rate as the new video becomes ready, so the speed chosen a moment
@@ -155,11 +187,19 @@ export class Engine {
     // second, and a sleep timer is not a thing that needs to be punctual to the
     // millisecond.
     if (this.sleep && 'at' in this.sleep && Date.now() >= this.sleep.at) this.fallAsleep()
+    // The stall clock: a short wait is a load, and the bar says so with a pause
+    // glyph the way YouTube's own does. Past STALL_AFTER_MS of one unbroken
+    // wait the story changes — nothing is coming — and the transport switches
+    // to stop. Any break in the wait resets the clock.
+    const buffering = s === State.Buffering || pending
+    this.bufferingSince = buffering ? this.bufferingSince ?? Date.now() : undefined
+    const stalled = this.bufferingSince !== undefined && Date.now() - this.bufferingSince > STALL_AFTER_MS
     this.position = {
       current: p.getCurrentTime() || 0,
       duration: p.getDuration() || 0,
-      playing: s === State.Playing || s === State.Buffering,
-      buffering: s === State.Buffering || pending,
+      playing: this.sounding(),
+      buffering,
+      stalled,
     }
     for (const fn of this.tickListeners) fn()
   }
@@ -263,6 +303,7 @@ export class Engine {
     const track = this.current
     if (!track) return
     this.loading = track.videoId
+    this.wantPaused = false
     remember(track)
     if (this.player) {
       this.unlockPlayback()
@@ -284,13 +325,22 @@ export class Engine {
       this.load()
       return
     }
-    const s = p.getPlayerState()
-    if (s === State.Playing || s === State.Buffering) p.pauseVideo()
-    else {
+    if (this.sounding()) {
+      p.pauseVideo()
+      // A pause during a load has to outlive the load. `load()` asked the
+      // player to play, and the player obeys that when the video becomes
+      // ready — so without this the track starts anyway a second later and the
+      // press looks ignored, which is exactly how it looked.
+      this.wantPaused = true
+    } else {
+      this.wantPaused = false
       this.unlockPlayback()
       p.playVideo()
     }
   }
+
+  /** Set when someone pauses a track that has not finished loading. */
+  private wantPaused = false
 
   seek(seconds: number): void {
     this.player?.seekTo(seconds, true)

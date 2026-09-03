@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Easy Mode",
-  "version": "0.6.9",
+  "version": "0.7.0",
   "description": "유튜브 화면을 내 UI로 바꿉니다. 음악과 영상을 함께 다루고, 언제든 원래 화면으로 돌아갑니다.",
   "minimum_chrome_version": "120",
   "icons": {
