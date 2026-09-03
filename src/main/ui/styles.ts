@@ -153,7 +153,7 @@ input { font: inherit; color: inherit; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 
 /* One hover, everywhere something can be pressed. */
-.nav:hover, .exit:hover, .row:hover, .tile:hover, .card:hover,
+.nav:hover, .exit:hover, .row:hover,
 .menu button:hover, .modal .list button:hover, .ctl button:hover,
 .right button:hover, .row .more:hover, .drawerToggle:hover, .btn.ghost:hover {
   background: var(--hover);
@@ -187,26 +187,26 @@ input { font: inherit; color: inherit; }
 /* One switch, not two buttons. There are two states and one of them is on;
    a segmented pair made that binary look like a choice between two places. */
 .modeToggle {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 8px 10px; margin: 0 0 12px; border-radius: var(--radius-md);
-  font-size: 14px; font-weight: 500; color: var(--muted-foreground);
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 5px 10px; margin: 0 0 10px; border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 500; color: var(--muted-foreground);
   transition: color var(--ease), background var(--ease);
 }
 .modeToggle .lbl { flex: 1; text-align: left; }
 .modeToggle .sw {
-  position: relative; flex: none; width: 36px; height: 20px;
+  position: relative; flex: none; width: 30px; height: 17px;
   border-radius: 999px; background: var(--secondary);
   transition: background var(--ease);
 }
 .modeToggle .knob {
-  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  position: absolute; top: 2px; left: 2px; width: 13px; height: 13px;
   border-radius: 999px; background: var(--muted-foreground);
   transition: left var(--ease), background var(--ease);
 }
 .modeToggle:hover { color: var(--foreground); background: var(--hover); }
 .modeToggle.on { color: var(--foreground); }
 .modeToggle.on .sw { background: var(--primary); }
-.modeToggle.on .knob { left: 18px; background: var(--primary-foreground); }
+.modeToggle.on .knob { left: 15px; background: var(--primary-foreground); }
 .nav {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 8px 10px; border-radius: var(--radius-md);
@@ -234,9 +234,11 @@ input { font: inherit; color: inherit; }
 
 /* ── The header strip, on a narrow screen only ───────────────────────────── */
 .top { display: none; }
+/* The screen's name, at the size a header wants rather than the size a page
+   title wants. It replaces the 22px heading that used to sit in the content. */
 .top .name {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+  min-width: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .drawerClose {
   display: none; width: 34px; height: 34px; border-radius: var(--radius-md);
@@ -256,6 +258,7 @@ input { font: inherit; color: inherit; }
 .sub { color: var(--muted-foreground); font-size: 14px; }
 .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 10px; }
 .empty { color: var(--muted-foreground); padding: 56px 0; text-align: center; font-size: 14px; }
+.empty svg { display: block; margin: 0 auto 14px; opacity: .45; }
 .err { color: var(--destructive); font-size: 14px; padding: 16px 0 20px; }
 
 .searchbox {
@@ -314,13 +317,23 @@ input { font: inherit; color: inherit; }
 .row:hover .more, .row.now .more, .row .more:focus-visible { opacity: 1; }
 .row .more:hover { color: var(--foreground); }
 
-/* ── Artwork ─────────────────────────────────────────────────────────────── */
-/* No frame around a picture. The artwork is the object; a border around it is
-   one more line for the eye to resolve and it buys nothing. */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 24px 16px; }
-.card, .tile { text-align: left; border-radius: var(--radius-md); transition: background var(--ease); }
+/* ── Artwork ───────────────────────────────────────────────────────────────
+   One card, not a picture with a caption floating under it. The artwork is
+   flush to the card's top edge with square corners of its own, and the title
+   sits on the card directly beneath it — asked for, and it is what an app
+   looks like. The rounding lives on the card, so the corners the eye sees are
+   the card's; the picture is not cropped round.
+
+   (This replaces an earlier rule that put a radius on the picture itself and
+   left a gap under it. That read as a loose photo above some text.) */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 20px 14px; }
+.card, .tile {
+  text-align: left; border-radius: var(--radius-md); overflow: hidden;
+  background: var(--secondary); transition: background var(--ease);
+}
+.card:hover, .tile:hover, .card:focus-visible, .tile:focus-visible { background: var(--secondary-hover); }
 .card .cover, .tile .cover {
-  position: relative; aspect-ratio: 16/9; border-radius: var(--radius-lg);
+  position: relative; aspect-ratio: 16/9; border-radius: 0;
   background: var(--secondary) center/cover;
   display: flex; align-items: center; justify-content: center; color: var(--muted-foreground);
 }
@@ -350,10 +363,16 @@ input { font: inherit; color: inherit; }
   font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums;
 }
 .cards .card .cover, .tile.square .cover { aspect-ratio: 1; }
-.card .t, .tile .t { margin-top: 10px; font-size: 14px; font-weight: 500; }
+.card .t, .tile .t { margin-top: 0; padding: 8px 10px 0; font-size: 14px; font-weight: 500; }
 .card .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile .t { line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.card .s, .tile .s { margin-top: 2px; color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Two lines of room whether the title needs them or not. A grid holds titles
+   of one line beside titles of two, and without this the second line of one
+   card sits where its neighbour's subtitle is — the row stops being a row. */
+.tile .t {
+  line-height: 1.35; min-height: calc(14px * 1.35 * 2 + 8px);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.card .s, .tile .s { margin-top: 2px; padding: 0 10px 10px; color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .shelf { margin-bottom: 36px; }
 .shelf h3 { margin: 0 0 14px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
@@ -574,11 +593,12 @@ input[type=range]::-moz-range-thumb {
    starts below it. */
 .app.narrow .top {
   grid-row: 1; grid-column: 1;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 9px;
   height: var(--top-all); padding: env(safe-area-inset-top) 10px 0;
   background: var(--side-panel); border-bottom: 1px solid var(--border);
 }
-.app.narrow .drawerToggle { display: inline-flex; width: 40px; height: 40px; }
+.app.narrow .drawerToggle { display: inline-flex; width: 38px; height: 38px; margin-right: -3px; }
+.app.narrow .top > svg { flex: none; color: var(--muted-foreground); }
 .app.narrow .drawerClose { display: inline-flex; }
 
 .app.narrow .main {
@@ -586,6 +606,11 @@ input[type=range]::-moz-range-thumb {
   border: 0; border-radius: 0;
   padding: 20px 16px 24px;
 }
+/* Only the screen's own title, which the header now carries. A playlist's
+   heading lives inside .head and is content, not a screen name. */
+.app.narrow .main > h2, .app.narrow .head h2 { display: none; }
+.app.narrow .btn { height: 34px; padding: 0 12px; font-size: 13.5px; }
+.app.narrow .toolbar { gap: 6px; }
 .app.narrow .main h2 { font-size: 22px; margin-bottom: 16px; }
 
 /* ── The drawer ─────────────────────────────────────────────────────────── */
@@ -632,19 +657,19 @@ input[type=range]::-moz-range-thumb {
   grid-row: 3; grid-column: 1; position: relative;
   display: flex; align-items: center; gap: 10px;
   background: var(--side-panel); border-top: 1px solid var(--border);
-  padding: 8px 8px calc(16px + env(safe-area-inset-bottom));
+  padding: 6px 8px calc(13px + env(safe-area-inset-bottom));
 }
 .app.narrow .now {
   flex: 1; min-width: 0; gap: 10px; padding: 4px; margin: -4px;
   border-radius: var(--radius-md); cursor: pointer;
 }
-.app.narrow .now .thumb { width: 44px; height: 44px; }
-.app.narrow .now .t { font-size: 14px; }
-.app.narrow .now .b { font-size: 12px; }
+.app.narrow .now .thumb { width: 38px; height: 38px; }
+.app.narrow .now .t { font-size: 13.5px; }
+.app.narrow .now .b { font-size: 11.5px; margin-top: 1px; }
 .app.narrow .center { flex-direction: row; gap: 0; }
-.app.narrow .ctl { gap: 2px; }
-.app.narrow .ctl button { width: 42px; height: 42px; }
-.app.narrow .ctl .big { width: 46px; height: 46px; }
+.app.narrow .ctl { gap: 0; }
+.app.narrow .ctl button { width: 38px; height: 38px; }
+.app.narrow .ctl .big { width: 42px; height: 42px; }
 
 /* Shuffle and repeat put away, which is where they already were. Previous,
    play and next stay exactly where they have always been. */
@@ -654,14 +679,19 @@ input[type=range]::-moz-range-thumb {
 /* The elapsed line goes along the *bottom* edge, under everything — asked for
    twice. Above the controls it was a second horizontal rule in a bar that
    already has one. */
+/* Inset, and with its handle. Run to the edges it read as a rule under the
+   bar rather than as a control, and a progress bar with no handle gives a
+   thumb nothing to take hold of. */
 .app.narrow:not(.sheet-open) .seek {
-  position: absolute; left: 0; right: 0; top: auto;
-  bottom: calc(env(safe-area-inset-bottom) + 2px);
+  position: absolute; left: 14px; right: 14px; top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 3px);
   max-width: none; gap: 0;
 }
 .app.narrow:not(.sheet-open) .seek span { display: none; }
-.app.narrow:not(.sheet-open) .seek input::-webkit-slider-runnable-track { border-radius: 0; }
-.app.narrow:not(.sheet-open) .seek input::-webkit-slider-thumb { opacity: 0; }
+/* Small, because it is a hint of where you are rather than a control asking
+   to be dragged — the full-size one belongs in the opened player. */
+.app.narrow:not(.sheet-open) .seek input::-webkit-slider-thumb { width: 9px; height: 9px; margin-top: -2.5px; }
+.app.narrow:not(.sheet-open) .seek input::-moz-range-thumb { width: 9px; height: 9px; }
 
 /* ── The bar, opened ──────────────────────────────────────────────────────
    The same element and the same controls, laid out down the screen instead of
@@ -701,8 +731,11 @@ input[type=range]::-moz-range-thumb {
    answer to the same question. */
 .app.narrow.sheet-open.has-stage .now .thumb { display: none; }
 .app.narrow.sheet-open .now .nowText { width: 100%; }
+/* Two lines of room here too: a one-line title otherwise pulled the artist and
+   everything under it up by a line, so the transport moved depending on which
+   track was playing. */
 .app.narrow.sheet-open .now .t {
-  font-size: 19px; line-height: 1.3; white-space: normal;
+  font-size: 19px; line-height: 1.3; min-height: calc(19px * 1.3 * 2); white-space: normal;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .app.narrow.sheet-open .now .b { font-size: 14px; margin-top: 6px; }

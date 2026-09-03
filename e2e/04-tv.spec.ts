@@ -105,7 +105,12 @@ test('left from the first card reaches the sidebar', async () => {
     await ui.locator('.nav', { hasText: '둘러보기' }).click()
     // Wait for the shelves to settle: focusing an element that a redraw is
     // about to replace loses the focus and the press with it.
-    await expect(ui.locator('.shelf').nth(3)).toBeVisible()
+    //
+    // The first shelf, not the fourth. How many YouTube sends back is its
+    // business and it varies — this failed twice in a row on a run that
+    // returned three, which says nothing about arrow keys.
+    await expect(ui.locator('.shelf').first()).toBeVisible()
+    await expect(ui.locator('.shelf .tile').first()).toBeVisible()
 
     await ui.locator('.shelf .tile').first().focus()
     await h.page.keyboard.press('ArrowLeft')

@@ -85,6 +85,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   // Delegating rather than spreading, because `playlists` is filled in after
   // mount: a spread would freeze today's empty array into the sidebar forever.
+  // Where you have been, so a swipe has somewhere to go. Capped, because this
+  // is a back gesture and not a session log.
+  const trail: View[] = []
+
   const ctx: Ctx = {
     engine: opts.ctx.engine,
     cfg: opts.ctx.cfg,
@@ -96,9 +100,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     overlay: shell.overlay,
     view: viewFromName(engine.state.view),
     go(view) {
+      if (nameOf(view) !== nameOf(ctx.view)) {
+        trail.push(ctx.view)
+        if (trail.length > 20) trail.shift()
+      }
       ctx.view = view
       engine.setView(nameOf(view))
       app.classList.remove('sheet-open')
+      drawTop()
       drawSide()
       void render(ctx, main)
       main.scrollTop = 0
@@ -165,17 +174,25 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           }
         },
       },
-      icon(on ? 'video' : 'note', 18),
+      icon(on ? 'video' : 'note', 16),
       h('span', { class: 'lbl' }, t('영상 모드')),
       h('span', { class: 'sw' }, h('span', { class: 'knob' })),
     )
   }
 
-  // The header carries the way into the drawer and the name of the thing you
-  // are in. Not the screen's own title, which the content already states, and
-  // not the mode switch, which belongs in the sidebar.
+  // The header carries the way into the drawer and the name of the screen.
+  //
+  // It said "Easy Mode" before, which the drawer says too — the same words
+  // twice on one screen — while the screen's own name was set in 22px type
+  // below it, taking a band of a phone's height to say one word. The header
+  // had the room and the content did not.
   function drawTop(): void {
-    replace(top, menuButton, h('div', { class: 'name' }, icon('note', 17), h('span', null, 'Easy Mode')))
+    replace(
+      top,
+      menuButton,
+      icon(iconOf(ctx.view), 18),
+      h('div', { class: 'name' }, titleOf(ctx.view)),
+    )
   }
 
   function drawSide(): void {
@@ -422,11 +439,91 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     if (app.classList.contains('sheet-open')) app.classList.remove('sheet-open')
     else if (app.classList.contains('drawer-open')) closeDrawer()
   }
+
   document.addEventListener('keydown', onEscape)
   // Adding a viewport meta reflows the page; on some engines that lands
   // without a resize event, so the first two frames are checked directly.
   requestAnimationFrame(onResize)
   setTimeout(onResize, 300)
+
+  // ── Swipe back ───────────────────────────────────────────────────────────
+  //
+  // A phone expects the edge swipe to go back, and here it could not: the app
+  // never changes the URL — that is the promise that leaving is a deletion —
+  // so the browser's own gesture has no history of ours to walk and would take
+  // the whole page off YouTube instead.
+  //
+  // **It only starts within 24px of the left edge.** A swipe that could start
+  // anywhere would fight the shelves, which are horizontal scrollers, and the
+  // seek bar. That is also where a phone teaches people to start it.
+  let swipeX = 0
+  let swipeY = 0
+  let swiping = false
+  const onTouchStart = (ev: TouchEvent) => {
+    const t = ev.touches[0]
+    if (!t || !app.classList.contains('narrow')) return
+    swiping = t.clientX <= 24
+    swipeX = t.clientX
+    swipeY = t.clientY
+  }
+  const onTouchMove = (ev: TouchEvent) => {
+    if (!swiping) return
+    const t = ev.touches[0]
+    if (!t) return
+    if (Math.abs(t.clientY - swipeY) > 44) {
+      swiping = false
+      return
+    }
+    if (t.clientX - swipeX < 70) return
+    swiping = false
+    goBack()
+  }
+  const onTouchEnd = () => {
+    swiping = false
+  }
+
+  /** Closes what is on top, else steps back through the screens. */
+  function goBack(): void {
+    if (app.classList.contains('sheet-open')) return setSheet(false)
+    if (app.classList.contains('drawer-open')) return closeDrawer()
+    const previous = trail.pop()
+    if (!previous) return
+    // Not ctx.go: that would push the screen we are leaving onto the trail and
+    // the gesture would walk between two screens forever.
+    ctx.view = previous
+    engine.setView(nameOf(previous))
+    drawTop()
+    drawSide()
+    void render(ctx, main)
+    main.scrollTop = 0
+  }
+
+  app.addEventListener('touchstart', onTouchStart, { passive: true })
+  app.addEventListener('touchmove', onTouchMove, { passive: true })
+  app.addEventListener('touchend', onTouchEnd, { passive: true })
+
+  // ── Typing ───────────────────────────────────────────────────────────────
+  //
+  // **YouTube eats letters out of our search box.** Its shortcuts live on the
+  // document — c for captions, k for play/pause, m for mute, f, j, l, i, t, o,
+  // and the digits for seeking — and it decides whether to swallow a key by
+  // looking at the event's target. Our input is in a shadow root, so by the
+  // time the event reaches the document it has been retargeted to the host
+  // element: not a text field as far as YouTube can tell, so it takes the key
+  // and calls preventDefault. Typing 'c' did nothing at all.
+  //
+  // Stopped here, at the app, on the way up — before the document ever sees
+  // it. shell.ts's panic key and the remote both listen in the capture phase,
+  // which runs first, so neither loses anything.
+  const onKeyInField = (ev: KeyboardEvent) => {
+    const el = ev.composedPath()[0] as HTMLElement | undefined
+    if (!el) return
+    const tag = el.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable) ev.stopPropagation()
+  }
+  for (const type of ['keydown', 'keypress', 'keyup'] as const) {
+    app.addEventListener(type, onKeyInField)
+  }
 
   const offRemote = installRemote(shell.root, shell.overlay)
 
@@ -458,6 +555,49 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       offChange()
       offTick()
     },
+  }
+}
+
+/** The glyph the sidebar gives this screen, so the header agrees with it. */
+function iconOf(view: View): Parameters<typeof icon>[0] {
+  switch (view.kind) {
+    case 'explore':
+      return 'radio'
+    case 'search':
+      return 'search'
+    case 'home':
+      return 'home'
+    case 'subs':
+      return 'subs'
+    case 'history':
+      return 'history'
+    case 'playlists':
+    case 'playlist':
+      return 'library'
+    case 'queue':
+      return 'queue'
+  }
+}
+
+/** What the header calls the screen. The same words the sidebar uses. */
+function titleOf(view: View): string {
+  switch (view.kind) {
+    case 'explore':
+      return t('둘러보기')
+    case 'search':
+      return t('검색')
+    case 'home':
+      return t('홈')
+    case 'subs':
+      return t('구독')
+    case 'history':
+      return t('시청 기록')
+    case 'playlists':
+      return t('내 재생목록')
+    case 'queue':
+      return t('대기열')
+    case 'playlist':
+      return view.title
   }
 }
 

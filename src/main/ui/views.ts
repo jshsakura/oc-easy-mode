@@ -37,6 +37,16 @@ function busy(text = t('가져오는 중…')): HTMLElement {
 }
 
 /**
+ * An empty screen, with a mark above the sentence.
+ *
+ * A line of grey text in the middle of a blank panel reads as something that
+ * failed to load. A glyph says the screen arrived and there is nothing in it.
+ */
+function nothing(text: string, glyph: Parameters<typeof icon>[0] = 'note'): HTMLElement {
+  return h('div', { class: 'empty' }, icon(glyph, 34), h('div', null, text))
+}
+
+/**
  * A list that can ask YouTube for more of itself.
  *
  * The whole list, not just the visible page, is what a row plays from — asking
@@ -187,7 +197,7 @@ async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
   try {
     const page = await api.explore(ctx.cfg)
     if (page.shelves.length === 0 && page.tracks.length === 0) {
-      return replace(main, h('h2', null, t('둘러보기')), h('div', { class: 'empty' }, t('보여줄 것이 없습니다.')))
+      return replace(main, h('h2', null, t('둘러보기')), nothing(t('보여줄 것이 없습니다.'), 'radio'))
     }
     replace(
       main,
@@ -215,11 +225,11 @@ async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void>
   replace(main, h('h2', null, t('검색')), box, results)
 
   const run = async (q: string) => {
-    if (!q.trim()) return replace(results, h('div', { class: 'empty' }, t('무엇을 들을까요?')))
+    if (!q.trim()) return replace(results, nothing(t('무엇을 들을까요?'), 'search'))
     replace(results, busy())
     try {
       const page = await api.search(ctx.cfg, q.trim())
-      if (page.tracks.length === 0) return replace(results, h('div', { class: 'empty' }, t('결과가 없습니다.')))
+      if (page.tracks.length === 0) return replace(results, nothing(t('결과가 없습니다.'), 'search'))
       replace(
         results,
         h(
@@ -258,7 +268,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
       return replace(
         main,
         h('h2', null, title),
-        h('div', { class: 'empty' }, t('보여줄 것이 없습니다.')),
+        nothing(t('보여줄 것이 없습니다.'), 'home'),
         h(
           'div',
           { class: 'toolbar', style: 'justify-content: center' },
@@ -310,7 +320,7 @@ async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
       h('h2', null, t('내 재생목록')),
       h('div', { class: 'toolbar' }, create),
       list.length === 0
-        ? h('div', { class: 'empty' }, t('재생목록이 없습니다.'))
+        ? nothing(t('재생목록이 없습니다.'), 'library')
         : h('div', { class: 'cards' }, list.map((p) => card(ctx, p))),
     )
   } catch (err) {
@@ -386,7 +396,7 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
         tracks[0] && h('button', { class: 'btn', 'data-nav': '', onclick: () => void startRadio(ctx, tracks[0]!) }, icon('radio', 16), t('라디오')),
         menuButton,
       ),
-      tracks.length === 0 ? h('div', { class: 'empty' }, t('비어 있는 재생목록입니다.')) : body,
+      tracks.length === 0 ? nothing(t('비어 있는 재생목록입니다.'), 'library') : body,
     )
     if (tracks.length > 0) {
       const draw = () =>
@@ -414,7 +424,7 @@ function queue(ctx: Ctx, main: HTMLElement): void {
       q.length > 0 && h('button', { class: 'btn ghost', 'data-nav': '', onclick: () => { ctx.engine.clear(); ctx.reload() } }, icon('trash', 16), t('비우기')),
     ),
     q.length === 0
-      ? h('div', { class: 'empty' }, t('대기열이 비어 있습니다.'))
+      ? nothing(t('대기열이 비어 있습니다.'), 'queue')
       : h(
           'div',
           { class: 'rows' },
