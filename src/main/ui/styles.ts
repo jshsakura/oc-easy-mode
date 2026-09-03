@@ -493,8 +493,12 @@ input { font: inherit; color: inherit; }
 }
 .center { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .ctl { display: flex; align-items: center; gap: 4px; }
+/* Round, every one of them: the transport's big button set the shape, and a
+   square hover or a square .on chip beside a circle is two shapes arguing.
+   The chip and hover are backgrounds on the button itself, so one radius
+   settles all three. */
 .ctl button, .right button, .drawerToggle {
-  width: 36px; height: 36px; border-radius: var(--radius-md);
+  width: 36px; height: 36px; border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--muted-foreground);
   transition: background var(--ease), color var(--ease);

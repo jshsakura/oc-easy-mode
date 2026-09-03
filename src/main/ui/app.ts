@@ -720,7 +720,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   drawBar()
   drawTick()
   setLayout(pictureNow())
-  void render(ctx, main)
+  // The splash comes down once the first view has painted — on failure too,
+  // because an error screen is still a screen — but never before, or the
+  // half-built app would show through the hole it leaves.
+  render(ctx, main).catch(() => {}).then(() => shell.hideSplash())
 
   // The sidebar's playlist list arrives late and is not worth blocking on.
   void ctx.refreshPlaylists().then(drawSide).catch(() => {})

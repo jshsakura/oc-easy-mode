@@ -32,6 +32,9 @@
 // again because the previous page wrote a flag. Uninstalling, disabling, or
 // simply not running is indistinguishable from plain YouTube.
 
+import { youtubeIsDark } from './store.ts'
+import { mark } from './ui/dom.ts'
+
 const STYLE_ID = 'oc-easy-mode'
 const VIEWPORT_ID = 'oc-easy-mode-viewport'
 const HOST_TAG = 'oc-easy-mode'
@@ -56,6 +59,13 @@ export interface Shell {
    * player already.
    */
   cover(on: boolean): void
+  /**
+   * Lifts the boot splash. The splash covers the page from mount() until the
+   * app's first view has painted — the player is visible and parked at the
+   * page's geometry during that window, which reads as a black rectangle
+   * unless something clean is over it.
+   */
+  hideSplash(): void
   /** Removes both nodes. Safe to call twice. */
   teardown(): void
 }
@@ -160,6 +170,48 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   const root = host.attachShadow({ mode: 'open' })
   const overlayHost = document.createElement(OVERLAY_TAG)
   const overlay = overlayHost.attachShadow({ mode: 'open' })
+
+  // ── The splash ────────────────────────────────────────────────────────────
+  //
+  // The player is visible from the instant the hide style lands — parked at
+  // whatever geometry the page left it — and stays that way through the ytcfg
+  // wait and the player wait, reading as a black rectangle in the middle of an
+  // otherwise blank page. The only node that outranks the picture is the
+  // overlay host, so the splash lives there: a solid field, the mark, a
+  // turning ring, and none of the half-built app underneath. app.ts lifts it
+  // once the first view has painted.
+  //
+  // The colours are written out rather than tokened because the app's own
+  // stylesheet has not been injected into this root yet — the splash has to
+  // stand alone, and does.
+  const dark = youtubeIsDark()
+  const splashStyle = document.createElement('style')
+  splashStyle.textContent = `
+    .splash { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 22px;
+      background: ${dark ? '#0e0e12' : '#f0f0f4'}; color: ${dark ? '#9c9ca9' : '#5e5e6e'};
+      transition: opacity .3s ease; }
+    .splash.gone { opacity: 0; pointer-events: none; }
+    .splash .ring { width: 28px; height: 28px; border-radius: 999px;
+      border: 2px solid ${dark ? '#1e1e28' : '#e6e6ec'};
+      border-top-color: ${dark ? '#9d6ee0' : '#7e4dc5'};
+      animation: splash-spin .8s linear infinite; }
+    @keyframes splash-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .splash .ring { animation-duration: 2.4s; } }
+  `
+  const splash = document.createElement('div')
+  splash.className = 'splash'
+  const ring = document.createElement('div')
+  ring.className = 'ring'
+  splash.append(mark(56), ring)
+  overlay.append(splashStyle, splash)
+
+  const hideSplash = (): void => {
+    splash.classList.add('gone')
+    // A timeout rather than transitionend: a background tab stops painting,
+    // the event would never arrive, and the splash would never leave.
+    setTimeout(() => splash.remove(), 350)
+  }
 
   // ── One more node, when the document declares no viewport ────────────────
   //
@@ -447,7 +499,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     viewport?.remove()
   }
 
-  return { root, overlay, place, cover, teardown }
+  return { root, overlay, place, cover, hideSplash, teardown }
 }
 
 /** True when a previous run left its nodes behind, which should not happen. */

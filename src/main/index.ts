@@ -11,6 +11,7 @@
 import { pickLang, setLang, t } from '../shared/i18n.ts'
 import * as api from './api.ts'
 import { Engine } from './engine.ts'
+import { bindMediaSession } from './session.ts'
 import { InnertubeError } from './innertube.ts'
 import type { Playlist, Track } from './parse.ts'
 import { videoIdInUrl, waitForPlayer } from './player.ts'
@@ -165,11 +166,16 @@ async function start(): Promise<void> {
       ctx: base,
     })
 
+    // The lock screen and the headphone buttons, pointed at our queue rather
+    // than at YouTube's autoplay.
+    const unbindSession = bindMediaSession(engine)
+
     running = {
       shell,
       engine,
       destroy() {
         app.destroy()
+        unbindSession()
         engine.detach()
       },
     }
