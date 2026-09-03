@@ -436,6 +436,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   /** Moves the highlight, and keeps it in the middle of the pane. */
   function followLyrics(seconds: number): void {
     if (!app.classList.contains('lyrics-open') || lyricLines.length === 0) return
+    // Words that arrived without timings. They are worth reading and there is
+    // nothing to follow, so the pane holds still rather than lighting a line
+    // at random.
+    if (lyricLines[0]!.at < 0) return
     let i = lyricLines.length - 1
     while (i > 0 && lyricLines[i]!.at > seconds) i--
     if (i === lyricAt) return
@@ -518,7 +522,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   function drawTick(): void {
     const p = engine.position
-    replace(playButton, icon(p.playing ? 'pause' : 'play', 20))
+    // Three states, strictly kept apart: pause only while the track really
+    // plays, play only when it is really stopped, and while it is loading —
+    // buffering, or the gap after "next" before the video exists — no glyph
+    // at all, just the turning ring on the button's edge. A pause glyph over
+    // a frozen picture reads as a stuck button, which was the report.
+    playButton.classList.toggle('buffering', p.buffering)
+    replace(playButton, p.buffering ? null : icon(p.playing ? 'pause' : 'play', 20))
     total.textContent = clock(p.duration)
     if (!scrubbing) {
       elapsed.textContent = clock(p.current)

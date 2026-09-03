@@ -105,9 +105,9 @@ export const STYLES = `
   --primary-foreground: #ffffff;
   --destructive: #d63b5e;
   --ring: #7e4dc5;
-  --glass: #ffffff;
-  --glass-strong: #ffffff;
-  --glass-line: #e2e2e8;
+  --glass: rgba(255, 255, 255, .66);
+  --glass-strong: rgba(255, 255, 255, .78);
+  --glass-line: rgba(0, 0, 0, .07);
   --hover: rgba(0, 0, 0, .05);
   --shadow: 0 16px 40px rgba(0, 0, 0, .16);
 }
@@ -279,7 +279,7 @@ input { font: inherit; color: inherit; }
   border-radius: 999px; animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+@media (prefers-reduced-motion: reduce) { .spinner, .ctl .big.buffering::after { animation-duration: 2.4s; } }
 .err { color: var(--destructive); font-size: 14px; padding: 16px 0 20px; }
 
 .searchbox {
@@ -511,6 +511,16 @@ input { font: inherit; color: inherit; }
    is left to the elapsed line and the one primary button a screen has. */
 .ctl .big { background: var(--foreground); color: var(--background); border-radius: 999px; }
 .ctl .big:hover { background: var(--foreground); color: var(--background); opacity: .88; }
+/* The transport's wait, drawn on the button's edge rather than in it: the
+   glyph is gone because neither play nor pause is true yet, and an accent
+   ring turning says the player is the one working, not the person stuck. */
+.ctl .big.buffering { position: relative; }
+.ctl .big.buffering::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  border-top-color: var(--primary);
+  animation: spin .8s linear infinite;
+}
 .seek {
   display: flex; align-items: center; gap: 12px; width: 100%; max-width: 620px;
   font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
@@ -559,10 +569,13 @@ input[type=range]::-moz-range-thumb {
 .lyricLine.on { color: var(--foreground); opacity: 1; transform: scale(1.04); }
 
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
+/* Glass, like every other thing that floats — a menu over blurred content
+   reads as a pane lifted off the page, not as a box drawn on it. */
 .menu {
   position: fixed; z-index: 2147483100; min-width: 208px; padding: 6px;
-  background: var(--popover); color: var(--popover-foreground);
-  border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow);
+  background: var(--glass-strong); color: var(--popover-foreground);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line); border-radius: var(--radius-md); box-shadow: var(--shadow);
 }
 .menu button {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;

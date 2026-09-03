@@ -4,7 +4,7 @@
 // endpoints are the ones youtube.com itself uses for the same screens, so the
 // request shapes are copied from the page rather than invented.
 
-import { call, hasSession, InnertubeError } from './innertube.ts'
+import { call, hasSession, InnertubeError, type Client } from './innertube.ts'
 import type { Json } from './parse.ts'
 import {
   continuationToken,
@@ -48,45 +48,182 @@ export async function mix(cfg: YtCfg, videoId: string): Promise<Page> {
 
 /** One line of the song, and when it is sung. */
 export interface Line {
-  /** Seconds from the start. */
+  /** Seconds from the start, or -1 when the words came without timings. */
   at: number
   text: string
 }
 
 /**
- * The words, from the video's own caption track.
+ * Strips what a music upload's title collects on its way to YouTube.
  *
- * **YouTube Music has lyrics; youtube.com does not** — what it has is
- * captions, and for a music video that is the same words with timings on
- * them. So this is the transcript, followed along as it plays, which is what
- * a player's lyrics pane does anyway.
+ * `[MV]`, `(Official Video)`, `[4K]`, `(ENG SUB)` and their friends are the
+ * uploader's furniture, not part of the song's name, and a lyrics database has
+ * never heard of any of them.
+ */
+function cleanTitle(raw: string): string {
+  return raw
+    .replace(/\[[^\]]*\]/g, ' ')
+    .replace(/【[^】]*】/g, ' ')
+    .replace(/\((?:official[^)]*|lyrics?[^)]*|audio|video|mv|m\/v|hd|hq|4k|8k|eng(?:lish)?[^)]*|자막[^)]*)\)/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * The ways one name might be written.
  *
- * Asked as the web client on purpose: the mobile one answers this without a
- * caption list. A video with no captions returns nothing, which is a normal
- * answer and not an error — plenty of music videos have none.
+ * Korean uploads routinely carry both scripts at once — `IU(아이유)`,
+ * `밤편지(Through the Night)` — and a database holds one of them. Both are
+ * offered, the part outside the brackets first, because that is the one that is
+ * usually the canonical title.
+ */
+function variants(part: string): string[] {
+  const outside = part.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()
+  const inside = [...part.matchAll(/\(([^)]*)\)/g)].map((m) => m[1]!.trim())
+  return [...new Set([outside, ...inside, part.trim()].filter(Boolean))]
+}
+
+/**
+ * Guesses the artist and the song out of a video's title and channel.
+ *
+ * `1theK` did not write 밤편지 — the channel that uploaded a music video is
+ * almost never the artist, so the title is split on the separator these uploads
+ * use (`아티스트 _ 곡명`, `Artist - Title`) and the channel is only the
+ * fallback for a title that has no separator in it at all.
+ */
+function namesOf(title: string, author: string): Array<{ artist: string; track: string }> {
+  const clean = cleanTitle(title)
+  const split = clean.match(/^(.+?)\s*[_\-–—|]\s*(.+)$/)
+  const artists = split ? variants(split[1]!) : variants(cleanTitle(author))
+  const tracks = variants(split ? split[2]! : clean)
+  const out: Array<{ artist: string; track: string }> = []
+  for (const track of tracks) for (const artist of artists) out.push({ artist, track })
+  // Four is enough to cover both scripts on both halves, and is the point at
+  // which asking again stops being worth another round trip.
+  return out.slice(0, 4)
+}
+
+interface LrcRecord {
+  syncedLyrics?: string | null
+  plainLyrics?: string | null
+}
+
+/**
+ * Parses an LRC body into lines.
+ *
+ * A line may carry several timestamps — that is how a repeated chorus is
+ * written — so each one becomes its own line, and the result is put back in
+ * order at the end.
+ */
+function fromLrc(body: string): Line[] {
+  const out: Line[] = []
+  for (const raw of body.split(/\r?\n/)) {
+    const stamps = [...raw.matchAll(/\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g)]
+    if (stamps.length === 0) continue
+    const text = raw.replace(/\[[^\]]*\]/g, '').trim()
+    if (!text) continue
+    for (const stamp of stamps) {
+      const fraction = stamp[3] ? Number(`0.${stamp[3]}`) : 0
+      out.push({ at: Number(stamp[1]) * 60 + Number(stamp[2]) + fraction, text })
+    }
+  }
+  return out.sort((a, b) => a.at - b.at)
+}
+
+/** Untimed words, one line each. Marked with -1 so nothing tries to follow them. */
+function fromPlain(body: string): Line[] {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((text) => ({ at: -1, text }))
+}
+
+/**
+ * LRCLIB, asked for one song.
+ *
+ * A public, key-less lyrics database that allows cross-origin reads, which is
+ * what makes it usable from inside the page at all — measured reachable from
+ * www.youtube.com on 2026-09-03, CSP and CORS both permitting. It answers 404
+ * for a song it does not have and 503 when it is busy, and neither is worth
+ * telling anyone about: a missing lyric is a normal outcome.
+ */
+async function lrclib(path: string): Promise<LrcRecord[]> {
+  try {
+    const res = await fetch(`https://lrclib.net/api/${path}`)
+    if (!res.ok) return []
+    const body = (await res.json()) as LrcRecord | LrcRecord[]
+    return Array.isArray(body) ? body : [body]
+  } catch {
+    return []
+  }
+}
+
+/** The video's own captions, which for a music video are usually its words. */
+function fromCaptions(res: Json): Promise<Line[]> {
+  const list = (res as {
+    captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: Array<{ baseUrl?: string; kind?: string }> } }
+  }).captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []
+  // A track someone wrote beats one a machine guessed.
+  const chosen = list.filter((track) => track.kind !== 'asr')[0] ?? list[0]
+  if (!chosen?.baseUrl) return Promise.resolve([])
+  return fetch(`${chosen.baseUrl}&fmt=json3`, { credentials: 'include' })
+    .then((r) => (r.ok ? r.json() : { events: [] }))
+    .then((body: { events?: Array<{ tStartMs?: number; segs?: Array<{ utf8?: string }> }> }) => {
+      const out: Line[] = []
+      for (const event of body.events ?? []) {
+        const text = (event.segs ?? []).map((seg) => seg.utf8 ?? '').join('').replace(/\n/g, ' ').trim()
+        if (text) out.push({ at: (event.tStartMs ?? 0) / 1000, text })
+      }
+      return out
+    })
+    .catch(() => [])
+}
+
+/**
+ * The words, in the best form anything will give them up.
+ *
+ * Three sources, in the order of how well they read on a screen that is
+ * following along:
+ *
+ * 1. **LRCLIB's synced lyrics** — real per-line timings, which is what a lyrics
+ *    pane is for.
+ * 2. **The video's own captions** — the same words with timings, when the
+ *    uploader wrote them. Roughly half of music videos have none, which is what
+ *    this whole pipeline exists to fix.
+ * 3. **LRCLIB's plain lyrics** — the words with no timings. Marked `at: -1`, so
+ *    the pane shows them and stops trying to scroll.
+ *
+ * Nothing found is a normal answer, not an error.
  */
 export async function lyrics(cfg: YtCfg, videoId: string): Promise<Line[]> {
-  const res = (await call(cfg, 'player', { videoId }, true)) as {
-    captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: Array<{ baseUrl?: string; kind?: string; languageCode?: string }> } }
+  // Asked as the web client on purpose: the mobile one answers this without a
+  // caption list. It is also where the real title and channel come from, which
+  // is what the lyrics database needs to be asked with.
+  const res = await call(cfg, 'player', { videoId }, 'web')
+  const details = (res.videoDetails ?? {}) as { title?: string; author?: string }
+
+  let plain: Line[] = []
+  for (const { artist, track } of namesOf(details.title ?? '', details.author ?? '')) {
+    const query = `get?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`
+    for (const record of await lrclib(query)) {
+      if (record.syncedLyrics) return fromLrc(record.syncedLyrics)
+      if (record.plainLyrics && plain.length === 0) plain = fromPlain(record.plainLyrics)
+    }
   }
-  const tracks = res.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? []
-  if (tracks.length === 0) return []
-  // A track someone wrote beats one a machine guessed, and the video's own
-  // language beats a translation of it.
-  const written = tracks.filter((t) => t.kind !== 'asr')
-  const chosen = written[0] ?? tracks[0]
-  if (!chosen?.baseUrl) return []
-  const url = `${chosen.baseUrl}&fmt=json3`
-  const body = (await (await fetch(url, { credentials: 'include' })).json()) as {
-    events?: Array<{ tStartMs?: number; segs?: Array<{ utf8?: string }> }>
+
+  const captions = await fromCaptions(res)
+  if (captions.length > 0) return captions
+  if (plain.length > 0) return plain
+
+  // Last resort: the database's own search, for a title the split above read
+  // wrongly. One request, and it is allowed to fail.
+  const clean = cleanTitle(details.title ?? '')
+  for (const record of await lrclib(`search?q=${encodeURIComponent(clean)}`)) {
+    if (record.syncedLyrics) return fromLrc(record.syncedLyrics)
+    if (record.plainLyrics) return fromPlain(record.plainLyrics)
   }
-  const out: Line[] = []
-  for (const event of body.events ?? []) {
-    const text = (event.segs ?? []).map((seg) => seg.utf8 ?? '').join('').replace(/\n/g, ' ').trim()
-    if (!text) continue
-    out.push({ at: (event.tStartMs ?? 0) / 1000, text })
-  }
-  return out
+  return []
 }
 
 /** The next page of any of the above. */
@@ -120,12 +257,12 @@ export async function myPlaylists(cfg: YtCfg): Promise<Playlist[]> {
  * used instead: fewer tracks beats an error.
  */
 export async function playlistTracks(cfg: YtCfg, playlistId: string, limit = 1000): Promise<Track[]> {
-  const asWeb = cfg.clientName !== '1'
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
   const browse = async (body: Record<string, unknown>) => {
     try {
-      return await call(cfg, 'browse', body, asWeb)
+      return await call(cfg, 'browse', body, as)
     } catch (err) {
-      if (!asWeb) throw err
+      if (as === 'page') throw err
       return call(cfg, 'browse', body)
     }
   }
@@ -180,12 +317,12 @@ export async function feed(cfg: YtCfg, browseId: FeedId): Promise<Page> {
   // to trust it with subscriptions or history either, and the desktop shapes
   // are the ones this parser knows best. Falls back if the borrowed client is
   // refused, because a worse answer beats an error.
-  const asWeb = cfg.clientName !== '1'
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
   let res: Json
   try {
-    res = await call(cfg, 'browse', { browseId }, asWeb)
+    res = await call(cfg, 'browse', { browseId }, as)
   } catch (err) {
-    if (!asWeb) throw err
+    if (as === 'page') throw err
     res = await call(cfg, 'browse', { browseId })
   }
   // Personal feeds come back empty rather than as an error when there is no
@@ -220,7 +357,49 @@ export async function feed(cfg: YtCfg, browseId: FeedId): Promise<Page> {
  */
 const MUSIC_CHANNEL = 'UC-9-kyTW8ZkZNDHQJ6FgpwQ'
 
+/**
+ * Whether YouTube Music has already refused this session.
+ *
+ * It refuses with a 200 and a "Premium only in your area" panel rather than an
+ * error, and it will keep refusing for as long as the page is open, so there is
+ * no sense paying a round trip for it every time 둘러보기 is opened. Reset by a
+ * page load, which is also the only thing that could change the answer.
+ */
+let musicRefused = false
+
+/**
+ * YouTube Music's own home, when this account is allowed to have it.
+ *
+ * **Measured 2026-09-03, from a Korean line, signed out: it is not.** The call
+ * is well-formed and answers 200, and the body is a single panel reading
+ * "현재 위치한 지역에서는 YouTube Music이 Premium 회원에게만 제공됩니다." Forcing
+ * `gl` to another country changes only the language of the refusal, because the
+ * region is decided by the address the request comes from. So this path is
+ * written to be *free when it fails*: one attempt per page load, and the moment
+ * it yields no shelves and no tracks the ordinary screen below is used instead.
+ *
+ * Which means the parsers this reaches for are unverified — there was no
+ * response here to verify them against. That is the reason for the emptiness
+ * check rather than a trusting one: an unrecognised shape and a refusal look
+ * the same from here, and both should end up on the screen that works.
+ */
+async function musicHome(cfg: YtCfg): Promise<Page | undefined> {
+  if (musicRefused) return undefined
+  try {
+    const res = await call(cfg, 'browse', { browseId: 'FEmusic_home' }, 'music')
+    const shelves = parseShelves(res)
+    const tracks = parseTracks(res)
+    if (shelves.length > 0 || tracks.length > 0) return { tracks, shelves, endpoint: 'browse' }
+  } catch {
+    /* falls through to the ordinary screen, same as an empty answer */
+  }
+  musicRefused = true
+  return undefined
+}
+
 export async function explore(cfg: YtCfg): Promise<Page> {
+  const music = await musicHome(cfg)
+  if (music) return music
   const res = await call(cfg, 'browse', { browseId: MUSIC_CHANNEL })
   return { tracks: parseTracks(res), shelves: parseShelves(res), endpoint: 'browse' }
 }

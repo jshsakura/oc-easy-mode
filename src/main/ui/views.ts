@@ -101,7 +101,16 @@ function layout(
     asGrid
       ? list.map((_, i) => trackTile(ctx, list, i))
       : list.map((track, i) =>
-          row(ctx, track, { index: i + 1, onPlay: () => ctx.engine.play(list, i), ...extraFor(track) }),
+          row(ctx, track, {
+            index: i + 1,
+            // Where the track *is* when pressed, not where it was when drawn:
+            // a list that has had a row taken out of it has moved on.
+            onPlay: () => {
+              const at = list.indexOf(track)
+              ctx.engine.play(list, at < 0 ? i : at)
+            },
+            ...extraFor(track),
+          }),
         ),
   )
 }
@@ -387,6 +396,10 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       ]),
     )
 
+    // Held, because taking a track out updates it in place rather than
+    // redrawing the header it sits in.
+    const count = h('div', { class: 'sub' }, tn('곡', tracks.length))
+
     replace(
       main,
       h(
@@ -398,7 +411,7 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
           { style: 'min-width:0' },
           h('div', { class: 'label' }, t('재생목록')),
           h('h2', null, title),
-          h('div', { class: 'sub' }, tn('곡', tracks.length)),
+          count,
         ),
       ),
       h(
@@ -411,9 +424,40 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       ),
       tracks.length === 0 ? nothing(t('비어 있는 재생목록입니다.'), 'library') : body,
     )
+    // The numbers down the left are positions, so they are wrong the moment a
+    // row above them leaves. Rewritten in place rather than by redrawing:
+    // the row that is playing shows bars instead of a number and must keep
+    // them.
+    const renumber = () => {
+      let n = 0
+      for (const el of Array.from(body.children)) {
+        if (!el.classList.contains('row')) continue
+        n += 1
+        const idx = el.querySelector('.idx')
+        if (idx && !idx.querySelector('.eq')) idx.textContent = String(n)
+      }
+    }
+
+    const draw = () => {
+      if (tracks.length === 0) {
+        body.className = ''
+        return replace(body, nothing(t('비어 있는 재생목록입니다.'), 'library'))
+      }
+      layout(ctx, body, tracks, (track) => ({
+        extra: (rowEl) => [
+          '-',
+          removeFromPlaylistItem(ctx, id, track, rowEl, () => {
+            const at = tracks.indexOf(track)
+            if (at >= 0) tracks.splice(at, 1)
+            count.textContent = tn('곡', tracks.length)
+            if (tracks.length === 0) draw()
+            else renumber()
+          }),
+        ],
+      }))
+    }
+
     if (tracks.length > 0) {
-      const draw = () =>
-        layout(ctx, body, tracks, (track) => ({ extra: ['-', removeFromPlaylistItem(ctx, id, track)] }))
       draw()
       relayoutOnModeChange(ctx, body, draw)
     }
@@ -450,7 +494,7 @@ function queue(ctx: Ctx, main: HTMLElement): void {
             row(ctx, track, {
               index: i + 1,
               onPlay: () => ctx.engine.jumpTo(i),
-              extra: [
+              extra: () => [
                 '-',
                 {
                   label: t('대기열에서 빼기'),

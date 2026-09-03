@@ -90,34 +90,48 @@ export function hasSession(): boolean {
   return ['SAPISID', '__Secure-1PAPISID', '__Secure-3PAPISID'].some((name) => cookie(name) !== undefined)
 }
 
-/** The page's own context, or it wearing the desktop client's name. */
-function contextFor(cfg: YtCfg, asWeb: boolean): Record<string, unknown> {
-  if (!asWeb) return cfg.context
+/**
+ * Which client this call claims to be.
+ *
+ * `page` is the honest answer and the default. The other two are the page's own
+ * cookies and origin wearing a different client's name, which is a thing
+ * InnerTube allows and youtube.com itself does — the desktop site asks the
+ * music backend the same way.
+ */
+export type Client = 'page' | 'web' | 'music'
+
+/** Name, version and header number for each. */
+const CLIENTS: Record<Exclude<Client, 'page'>, { name: string; version: string; number: string }> = {
+  // The version is pinned because there is nowhere to read a valid WEB version
+  // from on a mobile page. It ages: when YouTube stops accepting it the call
+  // fails, and the caller falls back to the page's own client, which is worse
+  // but never broken.
+  web: { name: 'WEB', version: '2.20250901.00.00', number: '1' },
+  // YouTube Music's client. Same origin, same cookies, different backend.
+  music: { name: 'WEB_REMIX', version: '1.20250901.01.00', number: '67' },
+}
+
+/** The page's own context, or it wearing another client's name. */
+function contextFor(cfg: YtCfg, as: Client): Record<string, unknown> {
+  if (as === 'page') return cfg.context
   const client = (cfg.context.client ?? {}) as Record<string, unknown>
   return {
     ...cfg.context,
-    client: { ...client, clientName: 'WEB', clientVersion: WEB_CLIENT_VERSION },
+    client: { ...client, clientName: CLIENTS[as].name, clientVersion: CLIENTS[as].version },
   }
 }
 
 export type Json = Record<string, unknown>
 
 /**
- * The desktop client, borrowed for the calls where the mobile one answers
- * badly.
+ * Why a call ever borrows another client's name.
  *
  * m.youtube.com's own client returns **twenty** tracks of a playlist and no
  * continuation token at all — there is no second page to ask for, so a 99-track
  * playlist arrives as 20 and nothing can be done about it from that client.
  * The same request with a WEB context, from the same origin and the same
  * cookies, returns 99 and a token. Measured 2026-09-03.
- *
- * The version is pinned because there is nowhere to read a valid WEB version
- * from on a mobile page. It ages: when YouTube stops accepting it the call
- * fails, and the caller falls back to the page's own client, which is worse
- * but never broken.
  */
-const WEB_CLIENT_VERSION = '2.20250901.00.00'
 
 /**
  * POSTs one InnerTube endpoint and returns the parsed body.
@@ -125,13 +139,13 @@ const WEB_CLIENT_VERSION = '2.20250901.00.00'
  * `body` is merged over the page's own context, so a caller only ever writes
  * the fields specific to its request.
  */
-export async function call(cfg: YtCfg, endpoint: string, body: Json, asWeb = false): Promise<Json> {
+export async function call(cfg: YtCfg, endpoint: string, body: Json, as: Client = 'page'): Promise<Json> {
   const url = new URL(endpoint, BASE)
   url.searchParams.set('prettyPrint', 'false')
   if (cfg.apiKey) url.searchParams.set('key', cfg.apiKey)
 
-  const clientName = asWeb ? '1' : cfg.clientName
-  const clientVersion = asWeb ? WEB_CLIENT_VERSION : cfg.clientVersion
+  const clientName = as === 'page' ? cfg.clientName : CLIENTS[as].number
+  const clientVersion = as === 'page' ? cfg.clientVersion : CLIENTS[as].version
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Origin': ORIGIN,
@@ -147,7 +161,7 @@ export async function call(cfg: YtCfg, endpoint: string, body: Json, asWeb = fal
     method: 'POST',
     credentials: 'include',
     headers,
-    body: JSON.stringify({ context: contextFor(cfg, asWeb), ...body }),
+    body: JSON.stringify({ context: contextFor(cfg, as), ...body }),
   })
 
   if (!res.ok) {

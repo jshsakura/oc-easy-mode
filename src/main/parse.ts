@@ -242,6 +242,54 @@ function tracksFromLockups(root: unknown): Track[] {
   return out
 }
 
+/**
+ * YouTube Music's rows, which share no renderer name with any of the above.
+ *
+ * Reached only when the music client answers at all — which, from a region
+ * where YouTube Music is Premium-only, it does not. See `musicHome` in api.ts:
+ * this is written from the renderer names, not from a captured response, and
+ * the caller checks that something came out rather than trusting that it did.
+ *
+ * A `musicTwoRowItemRenderer` is a card and can be either a track or a
+ * playlist; the ones without a video behind them are left to `playlists`.
+ */
+function tracksFromMusic(root: unknown): Track[] {
+  const out: Track[] = []
+  for (const item of collect(root, 'musicResponsiveListItemRenderer')) {
+    if (!isObject(item)) continue
+    const data = findFirst(item, 'playlistItemData')
+    const videoId =
+      (isObject(data) && typeof data.videoId === 'string' ? data.videoId : undefined) ?? watchVideoId(item)
+    if (!videoId || isShort(item)) continue
+    // The columns are the row as rendered: title first, then artist, album,
+    // and whatever else that particular list chose to show.
+    const columns = collect(item, 'musicResponsiveListItemFlexColumnRenderer')
+      .map((column) => (isObject(column) ? text(column.text) : ''))
+      .filter(Boolean)
+    out.push({
+      videoId,
+      title: columns[0] ?? '',
+      byline: columns.slice(1).join(' · '),
+      duration: '',
+      setVideoId: setVideoIdOf(item),
+      unavailable: false,
+    })
+  }
+  for (const item of collect(root, 'musicTwoRowItemRenderer')) {
+    if (!isObject(item)) continue
+    const videoId = watchVideoId(item)
+    if (!videoId || isShort(item)) continue
+    out.push({
+      videoId,
+      title: text(item.title),
+      byline: text(item.subtitle),
+      duration: '',
+      unavailable: false,
+    })
+  }
+  return out
+}
+
 /** Tracks from any response shape this player reads, in document order. */
 export function tracks(root: unknown): Track[] {
   return dedupe([
@@ -251,6 +299,7 @@ export function tracks(root: unknown): Track[] {
     ...tracksFromVideoRenderers(root, 'compactVideoRenderer'),
     ...tracksFromQueue(root),
     ...tracksFromLockups(root),
+    ...tracksFromMusic(root),
   ])
 }
 
@@ -307,6 +356,25 @@ export function playlists(root: unknown): Playlist[] {
       })
     }
   }
+  // YouTube Music's cards. The id arrives either as a playlist to start
+  // playing or as a browse target with the VL prefix `browse` wants and a
+  // caller here does not.
+  for (const item of collect(root, 'musicTwoRowItemRenderer')) {
+    if (!isObject(item)) continue
+    const watch = findFirst(item.navigationEndpoint, 'watchPlaylistEndpoint')
+    let id = isObject(watch) && typeof watch.playlistId === 'string' ? watch.playlistId : undefined
+    if (!id) {
+      const browseId = findFirst(item.navigationEndpoint, 'browseId')
+      if (typeof browseId === 'string' && browseId.startsWith('VL')) id = browseId.slice(2)
+    }
+    if (!id) continue
+    out.push({
+      id,
+      title: text(item.title),
+      subtitle: text(item.subtitle),
+      cover: pickThumb(item.thumbnailRenderer),
+    })
+  }
   const seen = new Set<string>()
   return out.filter((p) => !seen.has(p.id) && seen.add(p.id))
 }
@@ -319,6 +387,16 @@ export function playlists(root: unknown): Playlist[] {
  */
 export function shelves(root: unknown): Shelf[] {
   const out: Shelf[] = []
+  // YouTube Music's shelf. Its title hangs off a header rather than sitting on
+  // the shelf itself, which is the only thing that stops it joining the loop
+  // below.
+  for (const shelf of collect(root, 'musicCarouselShelfRenderer')) {
+    if (!isObject(shelf)) continue
+    const inside = tracks(shelf.contents)
+    const lists = playlists(shelf.contents)
+    if (inside.length === 0 && lists.length === 0) continue
+    out.push({ title: text(findFirst(shelf.header, 'title')), tracks: inside, playlists: lists })
+  }
   for (const key of ['richShelfRenderer', 'shelfRenderer']) {
     for (const shelf of collect(root, key)) {
       if (!isObject(shelf)) continue

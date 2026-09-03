@@ -13,8 +13,14 @@ export interface RowOptions {
   index?: number
   /** Plays this row: usually "play the whole list from here". */
   onPlay(): void
-  /** Extra items at the end of the menu, e.g. "remove from this playlist". */
-  extra?: Array<MenuItem | '-'>
+  /**
+   * Extra items at the end of the menu, e.g. "remove from this playlist".
+   *
+   * A function, and given the row, because the actions that go here are the
+   * ones that act on the row itself: taking a track out of a playlist should
+   * take that row off the screen, not re-fetch the screen.
+   */
+  extra?: (row: HTMLElement) => Array<MenuItem | '-'>
 }
 
 export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
@@ -22,7 +28,7 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
   const classes = ['row', playing ? 'now' : '', track.unavailable ? 'dead' : ''].filter(Boolean).join(' ')
 
   const menuButton = h('button', { class: 'more', title: t('더보기'), 'aria-label': t('더보기'), 'data-nav': '' }, icon('more', 18))
-  menuButton.addEventListener('click', (ev) => {
+  const openMenu = (ev: Event, el: HTMLElement) => {
     ev.stopPropagation()
     showMenu(ctx.overlay, menuButton, [
       { label: t('지금 재생'), icon: 'play', onSelect: () => ctx.engine.playNow([track]) },
@@ -33,9 +39,9 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
       { label: t('재생목록에 추가'), icon: 'library', onSelect: () => void ctx.addToPlaylist([track]) },
       '-',
       { label: t('유튜브에서 열기'), icon: 'external', onSelect: () => window.open(`https://www.youtube.com/watch?v=${track.videoId}`, '_blank') },
-      ...(opts.extra ?? []),
+      ...(opts.extra?.(el) ?? []),
     ])
-  })
+  }
 
   const open = () => {
     if (track.unavailable) return ctx.say(t('재생할 수 없는 항목입니다.'), true)
@@ -44,9 +50,11 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
 
   // One handler on the row rather than one per part: the whole row is the
   // target, which is also what makes it work under a remote control.
-  return h(
+  // data-id names the track the element is, so a view can take this one row
+  // out of the screen again without redrawing anything to find it.
+  const el = h(
     'div',
-    { class: classes, 'data-nav': '', tabindex: '0', role: 'button', onclick: open },
+    { class: classes, 'data-nav': '', 'data-id': track.videoId, tabindex: '0', role: 'button', onclick: open },
     h(
       'div',
       { class: 'idx' },
@@ -69,6 +77,8 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
     h('div', { class: 'dur' }, track.duration),
     menuButton,
   )
+  menuButton.addEventListener('click', (ev) => openMenu(ev, el))
+  return el
 }
 
 /** Replaces the queue with a mix built around one track. */
@@ -85,8 +95,61 @@ export async function startRadio(ctx: Ctx, track: Track): Promise<void> {
   }
 }
 
-/** The menu item a playlist view adds to each of its rows. */
-export function removeFromPlaylistItem(ctx: Ctx, playlistId: string, track: Track): MenuItem {
+/**
+ * Takes a row off the screen without redrawing the screen.
+ *
+ * The row is pinned to the height it currently has, then collapsed to nothing,
+ * so the rows below it slide up instead of jumping. Written as inline style
+ * rather than a class because the animation belongs to this one action and to
+ * nothing else on the page.
+ *
+ * Removal happens on the transition's end rather than on a timer, so the two
+ * can never disagree — with a fallback timer for the browsers and settings
+ * where a transition never runs and therefore never ends. Hence the guard: the
+ * row must not be removed twice.
+ */
+function collapse(row: HTMLElement, done: () => void): void {
+  let finished = false
+  const finish = () => {
+    if (finished) return
+    finished = true
+    row.remove()
+    done()
+  }
+  row.addEventListener('transitionend', finish, { once: true })
+
+  const height = row.getBoundingClientRect().height
+  row.style.height = `${height}px`
+  row.style.overflow = 'hidden'
+  row.style.transition = 'height .18s ease, opacity .18s ease, padding .18s ease'
+  // Read once so the browser has a height to animate away from; setting both
+  // in the same frame would be one style change and no transition at all.
+  void row.offsetHeight
+  row.style.height = '0'
+  row.style.opacity = '0'
+  row.style.paddingTop = '0'
+  row.style.paddingBottom = '0'
+  setTimeout(finish, 400)
+}
+
+/**
+ * The menu item a playlist view adds to each of its rows.
+ *
+ * `onRemoved` is called once YouTube has agreed and the row has gone, and is
+ * where the view puts its own house in order: the count in the header, the
+ * array the play buttons hold, the numbers down the left. Redrawing the view
+ * would do all of that for free and was what this used to do — but it also
+ * threw the screen away and put "가져오는 중…" in its place for as long as the
+ * playlist took to fetch again, which is a strange thing to show someone who
+ * just deleted one row of it.
+ */
+export function removeFromPlaylistItem(
+  ctx: Ctx,
+  playlistId: string,
+  track: Track,
+  row: HTMLElement,
+  onRemoved: () => void,
+): MenuItem {
   return {
     label: t('이 재생목록에서 제거'),
     icon: 'trash',
@@ -96,7 +159,7 @@ export function removeFromPlaylistItem(ctx: Ctx, playlistId: string, track: Trac
       try {
         await api.removeFromPlaylist(ctx.cfg, playlistId, track)
         ctx.say(t('재생목록에서 뺐습니다.'))
-        ctx.reload()
+        collapse(row, onRemoved)
       } catch (err) {
         ctx.say(explain(err), true)
       }

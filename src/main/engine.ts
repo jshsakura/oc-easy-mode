@@ -24,7 +24,9 @@ export class Engine {
   private tickListeners = new Set<Listener>()
   private tickTimer: number | undefined
   position: Position = { current: 0, duration: 0, playing: false, buffering: false }
-  /** The last track we asked the player for. Guards against a stale ENDED. */
+  /** The load that has not landed yet: set when we ask, cleared in tick() once
+   *  the player is underway on that very id. Guards against a stale ENDED,
+   *  and doubles as "show a wait" for the transport in the meantime. */
   private loading: string | undefined
 
   /** Subscribe to queue and settings changes. Returns the unsubscribe. */
@@ -115,11 +117,24 @@ export class Engine {
     const p = this.player
     if (!p) return
     const s = p.getPlayerState()
+    // A load is pending until the player is actually underway on the track we
+    // asked for; `loading` is dropped the moment it is, so it means "this load
+    // has not landed yet" and never "some load once happened". Until then the
+    // state reads Unstarted or Cued and the transport would flash a play glyph
+    // into the gap between pressing next and the video existing.
+    if (
+      this.loading !== undefined &&
+      (s === State.Playing || s === State.Buffering) &&
+      p.getVideoData()?.video_id === this.loading
+    ) {
+      this.loading = undefined
+    }
+    const pending = this.loading !== undefined && s !== State.Playing && s !== State.Paused
     this.position = {
       current: p.getCurrentTime() || 0,
       duration: p.getDuration() || 0,
       playing: s === State.Playing || s === State.Buffering,
-      buffering: s === State.Buffering,
+      buffering: s === State.Buffering || pending,
     }
     for (const fn of this.tickListeners) fn()
   }
