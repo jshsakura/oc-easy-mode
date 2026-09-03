@@ -8,6 +8,7 @@
 //   3. From here on, every failure exits rather than reports. A stuck loading
 //      screen over a hidden page is worse than no extension at all.
 
+import { pickLang, setLang, t } from '../shared/i18n.ts'
 import * as api from './api.ts'
 import { Engine } from './engine.ts'
 import { InnertubeError } from './innertube.ts'
@@ -113,6 +114,10 @@ async function start(): Promise<void> {
     if (!cfg) throw new InnertubeError('ytcfg never appeared', 'shape')
 
     const engine = new Engine()
+    // YouTube's own interface language decides ours unless the reader has
+    // said otherwise. Reading one language on the page and another over it is
+    // worse than either.
+    setLang(pickLang(engine.state.lang, cfg.hl))
     const player = await waitForPlayer()
     if (player) engine.attach(player)
 
@@ -132,9 +137,9 @@ async function start(): Promise<void> {
       async addToPlaylist(tracks: Track[]) {
         const chosen = await pick(
           shell!.overlay,
-          tracks.length > 0 ? `${tracks.length}개를 어디에 넣을까요?` : '새 재생목록 만들기',
+          tracks.length > 0 ? `${tracks.length}개를 어디에 넣을까요?` : t('새 재생목록 만들기'),
           playlists.map((p) => ({ id: p.id, label: p.title, sub: p.subtitle })),
-          '새 재생목록 이름',
+          t('새 재생목록 이름'),
         )
         if (chosen === null) return
         try {
@@ -170,7 +175,7 @@ async function start(): Promise<void> {
     }
 
     if (!player) {
-      toast(shell.overlay, '유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.')
+      toast(shell.overlay, t('유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.'))
     }
   } catch (err) {
     console.warn('[Easy Mode] 시작하지 못했습니다:', err)

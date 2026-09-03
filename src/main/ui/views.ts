@@ -1,6 +1,7 @@
 // The screens. Each one renders into a container it is given and owns its own
 // loading, so a slow request never blocks the player bar or the sidebar.
 
+import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
 import { h, icon, replace } from './dom.ts'
@@ -17,11 +18,11 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
     case 'search':
       return search(ctx, main, view.query)
     case 'home':
-      return listFeed(ctx, main, '홈', 'FEwhat_to_watch')
+      return listFeed(ctx, main, t('홈'), 'FEwhat_to_watch')
     case 'subs':
-      return listFeed(ctx, main, '구독', 'FEsubscriptions')
+      return listFeed(ctx, main, t('구독'), 'FEsubscriptions')
     case 'history':
-      return listFeed(ctx, main, '시청 기록', 'FEhistory')
+      return listFeed(ctx, main, t('시청 기록'), 'FEhistory')
     case 'playlists':
       return playlists(ctx, main)
     case 'playlist':
@@ -31,7 +32,7 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
   }
 }
 
-function busy(text = '가져오는 중…'): HTMLElement {
+function busy(text = t('가져오는 중…')): HTMLElement {
   return h('div', { class: 'empty' }, text)
 }
 
@@ -47,9 +48,9 @@ function listOf(ctx: Ctx, first: api.Page): HTMLElement {
   let page = first
   let all = first.tracks
 
-  const more = h('button', { class: 'btn ghost', 'data-nav': '', style: 'margin: 16px auto 0; display: flex' }, '더 보기')
+  const more = h('button', { class: 'btn ghost', 'data-nav': '', style: 'margin: 16px auto 0; display: flex' }, t('더 보기'))
   more.addEventListener('click', async () => {
-    more.textContent = '가져오는 중…'
+    more.textContent = t('가져오는 중…')
     more.disabled = true
     try {
       const next = await api.more(ctx.cfg, page)
@@ -58,7 +59,7 @@ function listOf(ctx: Ctx, first: api.Page): HTMLElement {
       draw()
     } catch (err) {
       ctx.say(explain(err), true)
-      more.textContent = '더 보기'
+      more.textContent = t('더 보기')
       more.disabled = false
     }
   })
@@ -89,8 +90,8 @@ function layout(
     into,
     asGrid
       ? list.map((_, i) => trackTile(ctx, list, i))
-      : list.map((t, i) =>
-          row(ctx, t, { index: i + 1, onPlay: () => ctx.engine.play(list, i), ...extraFor(t) }),
+      : list.map((track, i) =>
+          row(ctx, track, { index: i + 1, onPlay: () => ctx.engine.play(list, i), ...extraFor(track) }),
         ),
   )
 }
@@ -144,12 +145,12 @@ function tile(opts: {
 }
 
 function trackTile(ctx: Ctx, list: Track[], i: number): HTMLElement {
-  const t = list[i]!
+  const track = list[i]!
   return tile({
-    cover: thumbnail(t.videoId),
-    title: t.title,
-    sub: t.byline,
-    badge: t.duration,
+    cover: thumbnail(track.videoId),
+    title: track.title,
+    sub: track.byline,
+    badge: track.duration,
     onOpen: () => ctx.engine.play(list, i),
   })
 }
@@ -182,20 +183,20 @@ function shelfRow(ctx: Ctx, shelf: Shelf): HTMLElement {
 // ── Explore ────────────────────────────────────────────────────────────────
 
 async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
-  replace(main, h('h2', null, '둘러보기'), busy())
+  replace(main, h('h2', null, t('둘러보기')), busy())
   try {
     const page = await api.explore(ctx.cfg)
     if (page.shelves.length === 0 && page.tracks.length === 0) {
-      return replace(main, h('h2', null, '둘러보기'), h('div', { class: 'empty' }, '보여줄 것이 없습니다.'))
+      return replace(main, h('h2', null, t('둘러보기')), h('div', { class: 'empty' }, t('보여줄 것이 없습니다.')))
     }
     replace(
       main,
-      h('h2', null, '둘러보기'),
+      h('h2', null, t('둘러보기')),
       page.shelves.map((shelf) => shelfRow(ctx, shelf)),
       page.shelves.length === 0 && h('div', { class: 'grid' }, page.tracks.map((_, i) => trackTile(ctx, page.tracks, i))),
     )
   } catch (err) {
-    replace(main, h('h2', null, '둘러보기'), h('div', { class: 'err' }, explain(err)))
+    replace(main, h('h2', null, t('둘러보기')), h('div', { class: 'err' }, explain(err)))
   }
 }
 
@@ -204,29 +205,29 @@ async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
 async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void> {
   const input = h('input', {
     type: 'search',
-    placeholder: '노래, 영상, 채널 검색',
+    placeholder: t('노래, 영상, 채널 검색'),
     value: query,
     autocomplete: 'off',
     'data-nav': '',
   })
   const results = h('div')
   const box = h('div', { class: 'searchbox' }, icon('search', 20), input)
-  replace(main, h('h2', null, '검색'), box, results)
+  replace(main, h('h2', null, t('검색')), box, results)
 
   const run = async (q: string) => {
-    if (!q.trim()) return replace(results, h('div', { class: 'empty' }, '무엇을 들을까요?'))
+    if (!q.trim()) return replace(results, h('div', { class: 'empty' }, t('무엇을 들을까요?')))
     replace(results, busy())
     try {
       const page = await api.search(ctx.cfg, q.trim())
-      if (page.tracks.length === 0) return replace(results, h('div', { class: 'empty' }, '결과가 없습니다.'))
+      if (page.tracks.length === 0) return replace(results, h('div', { class: 'empty' }, t('결과가 없습니다.')))
       replace(
         results,
         h(
           'div',
           { class: 'toolbar' },
-          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(page.tracks, 0) }, icon('play', 16), '전체 재생'),
-          h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(page.tracks); ctx.say(`${page.tracks.length}곡을 대기열에 넣었습니다.`) } }, icon('plus', 16), '대기열에 추가'),
-          h('button', { class: 'btn', 'data-nav': '', onclick: () => void ctx.addToPlaylist(page.tracks) }, icon('library', 16), '재생목록에 추가'),
+          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(page.tracks, 0) }, icon('play', 16), t('전체 재생')),
+          h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(page.tracks); ctx.say(`${tn('곡', page.tracks.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
+          h('button', { class: 'btn', 'data-nav': '', onclick: () => void ctx.addToPlaylist(page.tracks) }, icon('library', 16), t('재생목록에 추가')),
         ),
         listOf(ctx, page),
       )
@@ -251,7 +252,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
   try {
     const page = await api.feed(ctx.cfg, id)
     if (page.tracks.length === 0) {
-      return replace(main, h('h2', null, title), h('div', { class: 'empty' }, '보여줄 것이 없습니다.'))
+      return replace(main, h('h2', null, title), h('div', { class: 'empty' }, t('보여줄 것이 없습니다.')))
     }
     // A feed that came with its own titled rows keeps them. YouTube's home is
     // shaped that way when there is a history behind it, and flattening it
@@ -262,8 +263,8 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
       h(
         'div',
         { class: 'toolbar' },
-        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(page.tracks, 0) }, icon('play', 16), '전체 재생'),
-        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(page.tracks); ctx.say(`${page.tracks.length}개를 대기열에 넣었습니다.`) } }, icon('plus', 16), '대기열에 추가'),
+        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(page.tracks, 0) }, icon('play', 16), t('전체 재생')),
+        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(page.tracks); ctx.say(`${tn('개', page.tracks.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
       ),
       page.shelves.length > 0 ? page.shelves.map((shelf) => shelfRow(ctx, shelf)) : listOf(ctx, page),
     )
@@ -275,7 +276,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
 // ── Playlists ──────────────────────────────────────────────────────────────
 
 async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
-  replace(main, h('h2', null, '내 재생목록'), busy())
+  replace(main, h('h2', null, t('내 재생목록')), busy())
   try {
     await ctx.refreshPlaylists()
     const list = ctx.playlists
@@ -289,18 +290,18 @@ async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
         },
       },
       icon('plus', 16),
-      '새 재생목록',
+      t('새 재생목록'),
     )
     replace(
       main,
-      h('h2', null, '내 재생목록'),
+      h('h2', null, t('내 재생목록')),
       h('div', { class: 'toolbar' }, create),
       list.length === 0
-        ? h('div', { class: 'empty' }, '재생목록이 없습니다.')
+        ? h('div', { class: 'empty' }, t('재생목록이 없습니다.'))
         : h('div', { class: 'cards' }, list.map((p) => card(ctx, p))),
     )
   } catch (err) {
-    replace(main, h('h2', null, '내 재생목록'), h('div', { class: 'err' }, explain(err)))
+    replace(main, h('h2', null, t('내 재생목록')), h('div', { class: 'err' }, explain(err)))
   }
 }
 
@@ -328,18 +329,18 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
     const menuButton = h('button', { class: 'btn ghost', 'data-nav': '' }, icon('more', 18))
     menuButton.addEventListener('click', () =>
       showMenu(ctx.overlay, menuButton, [
-        { label: '대기열에 추가', icon: 'plus', onSelect: () => { ctx.engine.enqueue(tracks); ctx.say(`${tracks.length}곡을 대기열에 넣었습니다.`) } },
-        { label: '유튜브에서 열기', icon: 'external', onSelect: () => window.open(`https://www.youtube.com/playlist?list=${id}`, '_blank') },
+        { label: t('대기열에 추가'), icon: 'plus', onSelect: () => { ctx.engine.enqueue(tracks); ctx.say(`${tn('곡', tracks.length)} · ${t('대기열에 넣었습니다.')}`) } },
+        { label: t('유튜브에서 열기'), icon: 'external', onSelect: () => window.open(`https://www.youtube.com/playlist?list=${id}`, '_blank') },
         '-',
         {
-          label: '재생목록 삭제',
+          label: t('재생목록 삭제'),
           icon: 'trash',
           danger: true,
           onSelect: async () => {
             if (!(await confirm(ctx.overlay, `재생목록 '${title}'을(를) 삭제할까요?`))) return
             try {
               await api.deletePlaylist(ctx.cfg, id)
-              ctx.say('삭제했습니다.')
+              ctx.say(t('삭제했습니다.'))
               await ctx.refreshPlaylists()
               ctx.go({ kind: 'playlists' })
             } catch (err) {
@@ -359,23 +360,24 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
         h(
           'div',
           { style: 'min-width:0' },
-          h('div', { class: 'label' }, '재생목록'),
+          h('div', { class: 'label' }, t('재생목록')),
           h('h2', null, title),
-          h('div', { class: 'sub' }, `${tracks.length}곡`),
+          h('div', { class: 'sub' }, tn('곡', tracks.length)),
         ),
       ),
       h(
         'div',
         { class: 'toolbar' },
-        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(tracks, 0) }, icon('play', 16), '재생'),
-        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.setShuffle(true); ctx.engine.play(tracks, 0) } }, icon('shuffle', 16), '셔플 재생'),
-        tracks[0] && h('button', { class: 'btn', 'data-nav': '', onclick: () => void startRadio(ctx, tracks[0]!) }, icon('radio', 16), '라디오'),
+        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(tracks, 0) }, icon('play', 16), t('재생')),
+        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.setShuffle(true); ctx.engine.play(tracks, 0) } }, icon('shuffle', 16), t('셔플 재생')),
+        tracks[0] && h('button', { class: 'btn', 'data-nav': '', onclick: () => void startRadio(ctx, tracks[0]!) }, icon('radio', 16), t('라디오')),
         menuButton,
       ),
-      tracks.length === 0 ? h('div', { class: 'empty' }, '비어 있는 재생목록입니다.') : body,
+      tracks.length === 0 ? h('div', { class: 'empty' }, t('비어 있는 재생목록입니다.')) : body,
     )
     if (tracks.length > 0) {
-      const draw = () => layout(ctx, body, tracks, (t) => ({ extra: ['-', removeFromPlaylistItem(ctx, id, t)] }))
+      const draw = () =>
+        layout(ctx, body, tracks, (track) => ({ extra: ['-', removeFromPlaylistItem(ctx, id, track)] }))
       draw()
       relayoutOnModeChange(ctx, body, draw)
     }
@@ -390,27 +392,27 @@ function queue(ctx: Ctx, main: HTMLElement): void {
   const q = ctx.engine.state.queue
   replace(
     main,
-    h('h2', null, '대기열'),
+    h('h2', null, t('대기열')),
     h(
       'div',
       { class: 'toolbar' },
-      h('span', { class: 'sub' }, `${q.length}개`),
-      q.length > 0 && h('button', { class: 'btn', 'data-nav': '', onclick: () => void ctx.addToPlaylist(q) }, icon('library', 16), '재생목록으로 저장'),
-      q.length > 0 && h('button', { class: 'btn ghost', 'data-nav': '', onclick: () => { ctx.engine.clear(); ctx.reload() } }, icon('trash', 16), '비우기'),
+      h('span', { class: 'sub' }, tn('개', q.length)),
+      q.length > 0 && h('button', { class: 'btn', 'data-nav': '', onclick: () => void ctx.addToPlaylist(q) }, icon('library', 16), t('재생목록으로 저장')),
+      q.length > 0 && h('button', { class: 'btn ghost', 'data-nav': '', onclick: () => { ctx.engine.clear(); ctx.reload() } }, icon('trash', 16), t('비우기')),
     ),
     q.length === 0
-      ? h('div', { class: 'empty' }, '대기열이 비어 있습니다.')
+      ? h('div', { class: 'empty' }, t('대기열이 비어 있습니다.'))
       : h(
           'div',
           { class: 'rows' },
-          q.map((t, i) =>
-            row(ctx, t, {
+          q.map((track, i) =>
+            row(ctx, track, {
               index: i + 1,
               onPlay: () => ctx.engine.jumpTo(i),
               extra: [
                 '-',
                 {
-                  label: '대기열에서 빼기',
+                  label: t('대기열에서 빼기'),
                   icon: 'close',
                   onSelect: () => {
                     ctx.engine.removeAt(i)

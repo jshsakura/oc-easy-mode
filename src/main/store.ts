@@ -8,6 +8,8 @@ import type { Track } from './parse.ts'
 import { narrowNow } from './ui/device.ts'
 
 export type Repeat = 'off' | 'all' | 'one'
+/** `auto` follows YouTube's own light/dark setting. */
+export type Theme = 'auto' | 'light' | 'dark'
 /** Where YouTube's own player sits on screen. */
 export type VideoLayout = 'hidden' | 'corner' | 'stage'
 /**
@@ -20,6 +22,9 @@ export type Mode = 'music' | 'video'
 
 export interface Persisted {
   mode: Mode
+  theme: Theme
+  /** null follows YouTube's interface language. */
+  lang: 'ko' | 'en' | null
   queue: Track[]
   index: number
   repeat: Repeat
@@ -31,11 +36,23 @@ export interface Persisted {
 }
 
 const KEY = 'oc-easy-mode:state'
+/**
+ * Whether YouTube itself is in dark mode.
+ *
+ * It says so on the root element, and has for years. Following it means the
+ * page and the thing standing in front of it are never a different colour.
+ */
+export function youtubeIsDark(): boolean {
+  return document.documentElement.hasAttribute('dark')
+}
+
 /** A synchronous "is the mode on" flag, so the hide style can go in at document_start. */
 const KEY_ON = 'oc-easy-mode:on'
 
 export const DEFAULTS: Persisted = {
   mode: 'music',
+  theme: 'auto',
+  lang: null,
   queue: [],
   index: -1,
   repeat: 'off',

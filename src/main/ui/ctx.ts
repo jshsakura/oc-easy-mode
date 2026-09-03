@@ -1,6 +1,7 @@
 // What every view is handed. Kept in its own file so views and the app shell
 // can both import it without importing each other.
 
+import { t } from '../../shared/i18n.ts'
 import type { Engine } from '../engine.ts'
 import type { Playlist, Track } from '../parse.ts'
 import type { YtCfg } from '../ytcfg.ts'
@@ -46,7 +47,7 @@ export function clock(seconds: number): string {
 /** Turns whatever InnerTube threw into something worth showing a person. */
 export function explain(err: unknown): string {
   const kind = (err as { kind?: string } | null)?.kind
-  if (kind === 'auth') return '유튜브에 로그인해야 볼 수 있는 내용입니다.'
-  if (kind === 'shape') return '유튜브 응답이 예상과 달랐습니다. 잠시 후 다시 시도해 주세요.'
-  return '유튜브에서 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+  if (kind === 'auth') return t('유튜브에 로그인해야 볼 수 있는 내용입니다.')
+  if (kind === 'shape') return t('유튜브 응답이 예상과 달랐습니다. 잠시 후 다시 시도해 주세요.')
+  return t('유튜브에서 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.')
 }

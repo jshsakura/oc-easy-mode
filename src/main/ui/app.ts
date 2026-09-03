@@ -6,11 +6,12 @@
 // and a slot that came and went would make the video jump every time a list
 // redrew.
 
+import { getLang, setLang, t, tn, type Lang } from '../../shared/i18n.ts'
 import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { layoutFor } from '../store.ts'
+import { layoutFor, youtubeIsDark, type Theme } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
@@ -39,6 +40,12 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // when there is not. Decided by the viewport, which is the only thing that
   // knows — see device.ts.
   const app = h('div', { class: narrowNow() ? 'app narrow' : 'app' }, side, main, slot, bar)
+
+  // Light or dark: what the reader chose, else whatever YouTube is set to.
+  function applyTheme(): void {
+    const dark = engine.state.theme === 'auto' ? youtubeIsDark() : engine.state.theme === 'dark'
+    app.classList.toggle('light', !dark)
+  }
 
   const closeDrawer = () => app.classList.remove('drawer-open')
   const scrim = h('div', { class: 'drawerScrim', onclick: closeDrawer })
@@ -84,13 +91,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // ── Sidebar ──────────────────────────────────────────────────────────────
 
   const NAV: Array<{ view: View; label: string; icon: Parameters<typeof icon>[0] }> = [
-    { view: { kind: 'explore' }, label: '둘러보기', icon: 'radio' },
-    { view: { kind: 'search', query: '' }, label: '검색', icon: 'search' },
-    { view: { kind: 'home' }, label: '홈', icon: 'home' },
-    { view: { kind: 'subs' }, label: '구독', icon: 'subs' },
-    { view: { kind: 'history' }, label: '시청 기록', icon: 'history' },
-    { view: { kind: 'playlists' }, label: '내 재생목록', icon: 'library' },
-    { view: { kind: 'queue' }, label: '대기열', icon: 'queue' },
+    { view: { kind: 'explore' }, label: t('둘러보기'), icon: 'radio' },
+    { view: { kind: 'search', query: '' }, label: t('검색'), icon: 'search' },
+    { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
+    { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
+    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history' },
+    { view: { kind: 'playlists' }, label: t('내 재생목록'), icon: 'library' },
+    { view: { kind: 'queue' }, label: t('대기열'), icon: 'queue' },
   ]
 
   function drawSide(): void {
@@ -114,7 +121,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
                 drawBar()
               },
             },
-            m === 'music' ? '음악' : '영상',
+            m === 'music' ? t('음악') : t('영상'),
           ),
         ),
       ),
@@ -133,7 +140,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           h('span', null, item.label),
         ),
       ),
-      ctx.playlists.length > 0 && h('h4', null, '재생목록'),
+      ctx.playlists.length > 0 && h('h4', null, t('재생목록')),
       ctx.playlists.slice(0, 30).map((p) =>
         h(
           'button',
@@ -152,9 +159,43 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       h('div', { class: 'spacer' }),
       h(
         'button',
-        { class: 'exit', 'data-nav': '', title: '원래 유튜브 화면으로 (Esc 두 번)', onclick: opts.exit },
+        {
+          class: 'nav',
+          'data-nav': '',
+          title: t('테마'),
+          onclick: () => {
+            const order: Theme[] = ['auto', 'light', 'dark']
+            engine.setTheme(order[(order.indexOf(engine.state.theme) + 1) % order.length]!)
+            applyTheme()
+            drawSide()
+          },
+        },
+        icon(engine.state.theme === 'light' ? 'sun' : engine.state.theme === 'dark' ? 'moon' : 'auto', 18),
+        h('span', null, `${t('테마')} · ${THEME_LABEL[engine.state.theme]}`),
+      ),
+      h(
+        'button',
+        {
+          class: 'nav',
+          'data-nav': '',
+          title: 'ko / en',
+          onclick: () => {
+            const next: Lang = getLang() === 'ko' ? 'en' : 'ko'
+            setLang(next)
+            engine.setLang(next)
+            drawSide()
+            drawBar()
+            ctx.reload()
+          },
+        },
+        icon('globe', 18),
+        h('span', null, getLang() === 'ko' ? '한국어' : 'English'),
+      ),
+      h(
+        'button',
+        { class: 'exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
         icon('back', 18),
-        h('span', null, '유튜브로 돌아가기'),
+        h('span', null, t('이지 모드 종료')),
       ),
     )
   }
@@ -192,27 +233,27 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const menuButton = h('button', {
     class: 'drawerToggle',
     'data-nav': '',
-    title: '메뉴',
-    'aria-label': '메뉴',
+    title: t('메뉴'),
+    'aria-label': t('메뉴'),
     onclick: () => app.classList.toggle('drawer-open'),
   }, icon('queue', 20))
 
   const nowThumb = h('div', { class: 'thumb' })
-  const nowTitle = h('div', { class: 't' }, '재생 중인 항목 없음')
+  const nowTitle = h('div', { class: 't' }, t('재생 중인 항목 없음'))
   const nowBy = h('div', { class: 'b' })
-  const playButton = h('button', { class: 'big', 'data-nav': '', title: '재생 / 일시정지' }, icon('play', 20))
+  const playButton = h('button', { class: 'big', 'data-nav': '', title: t('재생 / 일시정지') }, icon('play', 20))
   playButton.addEventListener('click', () => engine.toggle())
 
-  const prevButton = h('button', { 'data-nav': '', title: '이전' }, icon('prev', 20))
+  const prevButton = h('button', { 'data-nav': '', title: t('이전') }, icon('prev', 20))
   prevButton.addEventListener('click', () => engine.prev())
-  const nextButton = h('button', { 'data-nav': '', title: '다음' }, icon('next', 20))
+  const nextButton = h('button', { 'data-nav': '', title: t('다음') }, icon('next', 20))
   nextButton.addEventListener('click', () => engine.next())
-  const shuffleButton = h('button', { 'data-nav': '', title: '셔플' }, icon('shuffle', 18))
+  const shuffleButton = h('button', { 'data-nav': '', title: t('셔플') }, icon('shuffle', 18))
   shuffleButton.addEventListener('click', () => {
     engine.setShuffle(!engine.state.shuffle)
     drawBar()
   })
-  const repeatButton = h('button', { 'data-nav': '', title: '반복' }, icon('repeat', 18))
+  const repeatButton = h('button', { 'data-nav': '', title: t('반복') }, icon('repeat', 18))
   repeatButton.addEventListener('click', () => {
     engine.cycleRepeat()
     drawBar()
@@ -220,7 +261,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   const volume = h('input', { type: 'range', class: 'vol', min: '0', max: '100', value: String(engine.state.volume) })
   volume.addEventListener('input', () => engine.setVolume(Number(volume.value)))
-  const muteButton = h('button', { 'data-nav': '', title: '음소거' }, icon('volume', 18))
+  const muteButton = h('button', { 'data-nav': '', title: t('음소거') }, icon('volume', 18))
   muteButton.addEventListener('click', () => {
     const on = engine.state.volume === 0
     engine.setVolume(on ? 70 : 0)
@@ -228,16 +269,16 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     drawBar()
   })
 
-  const videoButton = h('button', { 'data-nav': '', title: '화면 위치' }, icon('video', 18))
+  const videoButton = h('button', { 'data-nav': '', title: t('화면 위치') }, icon('video', 18))
   videoButton.addEventListener('click', () =>
     showMenu(shell.overlay, videoButton, [
-      { label: '크게 보기', icon: 'expand', onSelect: () => setLayout('stage') },
-      { label: '구석에 두기', icon: 'video', onSelect: () => setLayout('corner') },
-      { label: '소리만 듣기', icon: 'videoOff', onSelect: () => setLayout('hidden') },
+      { label: t('크게 보기'), icon: 'expand', onSelect: () => setLayout('stage') },
+      { label: t('구석에 두기'), icon: 'video', onSelect: () => setLayout('corner') },
+      { label: t('소리만 듣기'), icon: 'videoOff', onSelect: () => setLayout('hidden') },
     ]),
   )
 
-  const queueButton = h('button', { 'data-nav': '', title: '대기열' }, icon('queue', 18))
+  const queueButton = h('button', { 'data-nav': '', title: t('대기열') }, icon('queue', 18))
   queueButton.addEventListener('click', () => ctx.go({ kind: 'queue' }))
 
   bar.append(
@@ -252,14 +293,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   )
 
   function drawBar(): void {
-    const t = engine.current
-    nowTitle.textContent = t ? t.title : '재생 중인 항목 없음'
-    nowBy.textContent = t ? t.byline : ''
-    nowThumb.style.backgroundImage = t ? `url(${thumbnail(t.videoId)})` : ''
+    const track = engine.current
+    nowTitle.textContent = track ? track.title : t('재생 중인 항목 없음')
+    nowBy.textContent = track ? track.byline : ''
+    nowThumb.style.backgroundImage = track ? `url(${thumbnail(track.videoId)})` : ''
     shuffleButton.classList.toggle('on', engine.state.shuffle)
     repeatButton.classList.toggle('on', engine.state.repeat !== 'off')
     replace(repeatButton, icon(engine.state.repeat === 'one' ? 'repeatOne' : 'repeat', 18))
-    repeatButton.title = { off: '반복 안 함', all: '전체 반복', one: '한 곡 반복' }[engine.state.repeat]
+    repeatButton.title = { off: t('반복 안 함'), all: t('전체 반복'), one: t('한 곡 반복') }[engine.state.repeat]
     replace(muteButton, icon(engine.state.volume === 0 ? 'mute' : 'volume', 18))
     replace(videoButton, icon(engine.state.video === 'hidden' ? 'videoOff' : 'video', 18))
     videoButton.classList.toggle('on', engine.state.video === 'stage')
@@ -300,6 +341,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   })
   const offTick = engine.onTick(drawTick)
 
+  applyTheme()
   drawSide()
   drawBar()
   drawTick()
@@ -319,6 +361,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     },
   }
 }
+
+const THEME_LABEL: Record<Theme, string> = { auto: '자동', light: '밝게', dark: '어둡게' }
 
 /** The view name that survives a reload, and its way back. */
 function nameOf(view: View): string {

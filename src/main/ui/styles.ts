@@ -33,15 +33,19 @@ export const STYLES = `
   /* Taken from the sibling extension (oc-ad-bye-pass, src/ui/styles.css) so
      the two read as one author's work rather than two products that happen to
      be installed together. Same greys, same purple, same weights. */
-  --ground: #101216;
-  --panel: #16181c;
-  --background: #16181c;
+  /* Three values far enough apart to be three surfaces. The first attempt put
+     #0c0e11, #121419 and #16181c next to each other, which is one colour as
+     far as an eye is concerned. */
+  --ground: #06070a;
+  --side-panel: #101318;
+  --panel: #1a1e25;
+  --background: #1a1e25;
   --foreground: #eceef2;
   --muted-foreground: #9aa0aa;
-  --secondary: #1f2228;
-  --secondary-hover: #262a31;
-  --border: #2c3038;
-  --popover: #1f2228;
+  --secondary: #262b33;
+  --secondary-hover: #2f353f;
+  --border: #333945;
+  --popover: #232830;
   --popover-foreground: #eceef2;
   --primary: #9d6ee0;
   --primary-hover: #ac82e6;
@@ -52,7 +56,7 @@ export const STYLES = `
   /* One surface. The sidebar, the bar and the page are the same colour and are
      told apart by a single hairline, not by three shades of grey. Only things
      that float — a menu, a dialog, the corner window — sit on --popover. */
-  --hover: rgba(255, 255, 255, .06);
+  --hover: rgba(255, 255, 255, .07);
   --shadow: 0 16px 40px rgba(0, 0, 0, .45);
   --ease: .15s ease;
 
@@ -72,6 +76,10 @@ export const STYLES = `
      bottom. This is what separates an application from a web page: the chrome
      is a frame the content sits inside, not a strip of the document. */
   position: fixed; inset: 0; z-index: 2147482000;
+  /* The layout answers to the app's own width, not the window's. One
+     breakpoint at 900px meant everything between 900 and 1300 was the desktop
+     layout squeezed rather than a layout for that width. */
+  container-type: inline-size; container-name: app;
   display: grid;
   grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
   gap: var(--gap); padding: var(--gap);
@@ -112,7 +120,10 @@ input { font: inherit; color: inherit; }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .side {
-  background: var(--panel); border-radius: var(--radius-lg);
+  /* Darker than the content and edged, so the two are plainly two things.
+     Equal fills separated by nothing read as one wide column. */
+  background: var(--side-panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
 }
 .brand {
@@ -153,7 +164,8 @@ input { font: inherit; color: inherit; }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
 .main {
-  background: var(--panel); border-radius: var(--radius-lg);
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   overflow-y: auto; padding: 28px 28px 48px; min-width: 0;
 }
 .main h2 { margin: 0 0 20px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
@@ -277,18 +289,21 @@ input { font: inherit; color: inherit; }
 .head .sub { font-size: 14px; }
 
 /* ── The slot YouTube's player is positioned over ────────────────────────── */
-.slot { position: fixed; pointer-events: none; border-radius: var(--radius-lg); background: oklch(0.145 0 0); }
+.slot { position: fixed; pointer-events: none; border-radius: var(--radius-lg); background: #000; }
 .slot.hidden { display: none; }
 .slot.corner {
   right: var(--gap); bottom: calc(var(--bar) + var(--gap)); width: 280px;
   aspect-ratio: 16/9; box-shadow: var(--shadow);
 }
+/* The stage was 46vh with the list pushed down by the same amount, so on a
+   900px window more than half the content panel was video and the list got a
+   sliver. A player that shows one and a half rows is not showing a list. */
 .slot.stage {
   left: calc(var(--side) + var(--gap) * 2); top: var(--gap);
-  right: var(--gap); width: auto; height: min(46vh, 520px);
+  right: var(--gap); width: auto; height: min(34vh, 340px);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
-.app.has-stage .main { padding-top: calc(min(46vh, 520px) + 24px); }
+.app.has-stage .main { padding-top: calc(min(34vh, 340px) + 20px); }
 .app.has-corner .main { padding-bottom: 220px; }
 
 /* ── Player bar ──────────────────────────────────────────────────────────── */
@@ -388,84 +403,126 @@ input[type=range]::-webkit-slider-thumb {
 }
 .toast.bad { color: var(--destructive); }
 
-/* ── Phone ───────────────────────────────────────────────────────────────
-   A phone is not a narrow desktop. The sidebar becomes a drawer rather than a
-   64px rail of unlabelled icons stuck to the edge, the bar gives the seek its
-   own row, and the lists lose the columns there is no width for. Which layout
-   applies is decided in device.ts, from the viewport — the only thing that
-   knows. Orion on iPhone reports a desktop user agent, is served the desktop
-   site, and may report desktop screen metrics with it, so every other signal
-   calls the phone a PC. A desktop window dragged this narrow gets the drawer
-   too, which is what it should have had anyway. */
+/* ── Responsive ──────────────────────────────────────────────────────────
+   Three steps, measured against the app rather than the window. Between them
+   nothing is squeezed: each step gives something up instead of making
+   everything narrower. */
 .drawerScrim, .drawerToggle { display: none; }
 
-.app.narrow {
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr auto;
-  --bar: auto;
+/* The volume slider is the first thing that can go; the button stays. */
+@container app (max-width: 1240px) {
+  .right .vol { display: none; }
 }
-.narrow .side {
-  position: fixed; left: 0; top: 0; bottom: 0; width: 284px; z-index: 20;
-  background: var(--background); border-right: 1px solid var(--border);
-  transform: translateX(-100%); transition: transform .22s ease;
-  padding: calc(16px + env(safe-area-inset-top)) 10px calc(16px + env(safe-area-inset-bottom));
+
+/* Then the sidebar gives up width, and the shelf cards get smaller so three
+   still fit rather than two and a sliver. */
+@container app (max-width: 1080px) {
+  .app { --side: 208px; }
+  .main { padding: 24px 22px 44px; }
+  .tile { width: 158px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 22px 14px; }
+  .head .cover { width: 168px; }
+  .row { grid-template-columns: 24px 52px 1fr auto 32px; gap: 12px; }
 }
-.app.narrow.drawer-open .side { transform: none; }
-.narrow .drawerScrim {
-  display: block; position: fixed; inset: 0; z-index: 15;
-  background: oklch(0 0 0 / 60%); opacity: 0; pointer-events: none;
-  transition: opacity .22s ease;
+
+/* Below this the sidebar cannot be a column at all, and becomes a drawer. */
+@container app (max-width: 860px) {
+  /* ── The phone is not a narrow desktop ──────────────────────────────────
+     A drawer is a desktop idea. A phone music app puts its destinations on a
+     bottom tab bar under the thumb, gives the list the whole width, and keeps
+     the playing track directly above the tabs. That is the shape here. */
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto;
+    gap: 0; padding: 0;
+    --bar: auto;
+  }
+
+  .main {
+    grid-column: 1; grid-row: 1;
+    border: 0; border-radius: 0; background: var(--panel);
+    padding: calc(16px + env(safe-area-inset-top)) 16px 20px;
+  }
+  .main h2 { font-size: 22px; margin-bottom: 16px; }
+
+  /* Row two: the playing track, full width, right above the tabs. */
+  .bar {
+    grid-column: 1; grid-row: 2;
+    grid-template-columns: 1fr auto; grid-template-rows: auto auto;
+    background: var(--side-panel); border-top: 1px solid var(--border);
+    padding: 8px 14px 10px; gap: 6px 12px; align-items: center;
+  }
+  .seek { grid-row: 1; grid-column: 1 / -1; max-width: none; }
+  .now { grid-row: 2; grid-column: 1; gap: 12px; }
+  .now .thumb { width: 46px; height: 46px; }
+  .now .t { font-size: 15px; }
+  .center { grid-row: 2; grid-column: 2; gap: 0; }
+  .ctl { gap: 2px; }
+  .ctl button { width: 40px; height: 40px; }
+  .ctl .big { width: 44px; height: 44px; }
+  .ctl > button:first-child, .ctl > button:last-child { display: none; }
+  .right { display: none; }
+
+  /* Row three: the tab bar. The sidebar becomes it — same buttons, laid on
+     their side, labels under the icons. */
+  .side {
+    grid-column: 1; grid-row: 3;
+    flex-direction: row; align-items: stretch;
+    background: var(--side-panel); border: 0; border-top: 1px solid var(--border);
+    border-radius: 0; overflow: visible;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    gap: 0;
+  }
+  .side .brand, .side h4, .side .pl, .side .spacer { display: none; }
+  .nav {
+    flex: 1 1 0; min-width: 0;
+    flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 6px 2px; border-radius: var(--radius-md);
+    font-size: 10.5px; font-weight: 500; text-align: center;
+  }
+  .nav svg { width: 21px; height: 21px; }
+  .nav span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .nav.on { background: transparent; color: var(--primary); }
+  .nav:hover { background: transparent; }
+
+  /* The two that are not destinations sit apart: the mode switch floats over
+     the top-right of the list, and leaving is the last tab. */
+  .modes {
+    position: fixed; top: calc(14px + env(safe-area-inset-top)); right: 14px;
+    z-index: 5; margin: 0; width: 116px;
+    background: var(--side-panel); border-color: var(--border);
+  }
+  .mode { font-size: 12px; padding: 5px 0; }
+  .exit {
+    flex: 1 1 0; min-width: 0;
+    flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    padding: 6px 2px; font-size: 10.5px;
+  }
+  .exit svg { width: 21px; height: 21px; }
+
+  /* Lists lose the columns there is no width for. */
+  .row { grid-template-columns: 52px 1fr 32px; gap: 12px; padding: 8px 4px; }
+  .row .idx, .row .dur { display: none; }
+  .row .thumb { width: 52px; height: 30px; }
+  .shelf { margin-bottom: 26px; }
+  .shelf h3 { font-size: 15px; margin-bottom: 10px; }
+  .shelfRow { gap: 12px; }
+  .tile { width: 40vw; max-width: 176px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 20px 12px; }
+  .cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px 12px; }
+  .head { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .head .cover { width: 160px; }
+  .searchbox { margin-bottom: 16px; }
+
+  /* The picture has nowhere to float on 390 pixels, so in music mode there
+     is none; in video mode it caps the list rather than covering it. */
+  .slot.corner { display: none; }
+  .app.has-corner .main { padding-bottom: 20px; }
+  .slot.stage { left: 0; right: 0; top: 0; height: min(28vh, 230px); border-radius: 0; }
+  .app.has-stage .main { padding-top: calc(min(28vh, 230px) + 14px); }
+
+  .menu { min-width: 200px; }
+  .modal { width: calc(100vw - 28px); }
+  .toasts { bottom: 150px; }
 }
-.narrow.drawer-open .drawerScrim { opacity: 1; pointer-events: auto; }
-.narrow .drawerToggle { display: inline-flex; flex: none; }
-
-.narrow .main {
-  grid-column: 1;
-  padding: calc(16px + env(safe-area-inset-top)) 16px 28px;
-}
-.narrow .main h2 { font-size: 21px; margin-bottom: 14px; }
-.narrow .shelf { margin-bottom: 24px; }
-.narrow .shelf h3 { font-size: 15px; }
-/* Two cards and a slice of a third. A row that ends flush with the screen
-   looks like the end of the row, and nobody swipes it. */
-.narrow .tile { width: 40vw; max-width: 184px; }
-.narrow .shelfRow { gap: 12px; }
-.narrow .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
-.narrow .cards { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
-.narrow .searchbox { margin-bottom: 16px; }
-
-/* No room for an index or a duration; the title and who made it are the row. */
-.narrow .row { grid-template-columns: 56px 1fr 32px; gap: 10px; min-height: 60px; }
-.narrow .row .idx, .narrow .row .dur { display: none; }
-.narrow .row .thumb { width: 56px; height: 32px; }
-.narrow .row { padding: 8px 4px; }
-.narrow .row .more { opacity: 1; }
-
-.narrow .bar {
-  grid-template-columns: 1fr auto; grid-template-rows: auto auto;
-  padding: 6px 14px calc(12px + env(safe-area-inset-bottom)); gap: 4px 12px;
-  align-items: center;
-}
-/* Seek across the top, then the track and its controls along the bottom —
-   the track is the last thing on the screen, which is where a thumb is. */
-.narrow .seek { grid-row: 1; grid-column: 1 / -1; max-width: none; }
-.narrow .now { grid-row: 2; grid-column: 1; gap: 12px; }
-.narrow .now .thumb { width: 48px; height: 48px; border-radius: var(--radius-md); }
-.narrow .now .t { font-size: 15px; }
-.narrow .center { grid-row: 2; grid-column: 2; gap: 0; }
-.narrow .ctl { gap: 2px; }
-.narrow .ctl button { width: 42px; height: 42px; }
-.narrow .ctl .big { width: 46px; height: 46px; }
-.narrow .right { display: none; }
-/* Shuffle and repeat live in the drawer's reach, not in forty pixels of bar. */
-.narrow .ctl > button:first-child, .narrow .ctl > button:last-child { display: none; }
-
-.narrow .slot.corner { right: 12px; bottom: 132px; width: 152px; }
-.app.narrow.has-corner .main { padding-bottom: 148px; }
-.narrow .slot.stage { left: 0; height: 34vh; }
-.app.narrow.has-stage .main { padding-top: calc(34vh + 16px); }
-
-.narrow .menu { min-width: 200px; }
-.narrow .modal { width: calc(100vw - 32px); }
-
 `

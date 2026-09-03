@@ -1,5 +1,6 @@
 // Menus, modals and toasts: the things that float over a view.
 
+import { t } from '../../shared/i18n.ts'
 import { h, icon, type IconName } from './dom.ts'
 
 export interface MenuItem {
@@ -116,7 +117,7 @@ export function pick(
         h(
           'div',
           { class: 'list' },
-          choices.length === 0 && h('div', { class: 'empty', style: 'padding: 16px' }, '재생목록이 없습니다.'),
+          choices.length === 0 && h('div', { class: 'empty', style: 'padding: 16px' }, t('재생목록이 없습니다.')),
           choices.map((c) =>
             h(
               'button',
@@ -126,7 +127,7 @@ export function pick(
             ),
           ),
         ),
-        h('div', { class: 'new' }, input, h('button', { class: 'btn primary', onclick: create }, icon('plus', 16), '만들기')),
+        h('div', { class: 'new' }, input, h('button', { class: 'btn primary', onclick: create }, icon('plus', 16), t('만들기'))),
       ),
     )
     root.appendChild(scrim)
@@ -135,7 +136,7 @@ export function pick(
 }
 
 /** Yes/no. Resolves true on confirm. */
-export function confirm(root: ShadowRoot, message: string, yes = '삭제'): Promise<boolean> {
+export function confirm(root: ShadowRoot, message: string, yes = t('삭제')): Promise<boolean> {
   return new Promise((resolve) => {
     const done = (v: boolean) => {
       scrim.remove()
@@ -151,7 +152,7 @@ export function confirm(root: ShadowRoot, message: string, yes = '삭제'): Prom
         h(
           'div',
           { class: 'new', style: 'justify-content:flex-end; border:0' },
-          h('button', { class: 'btn ghost', onclick: () => done(false) }, '취소'),
+          h('button', { class: 'btn ghost', onclick: () => done(false) }, t('취소')),
           h('button', { class: 'btn danger', onclick: () => done(true) }, yes),
         ),
       ),
