@@ -116,3 +116,62 @@ test('the shortcuts drive the player, and stay out of the search box', async () 
     await h.close()
   }
 })
+
+test('speed reaches the player, and the sleep timer arms and disarms', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    const over = h.page.locator('oc-easy-mode-overlay')
+    await expect(ui.locator('.app')).toBeVisible()
+
+    // Something has to be playing for a rate to mean anything.
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    await ui.locator('.searchbox input').fill('아이유 밤편지')
+    await ui.locator('.searchbox input').press('Enter')
+    const first = ui.locator('.row').first()
+    await expect(first).toBeVisible()
+    await first.locator('.meta').click()
+    await expect
+      .poll(
+        () =>
+          h.page.evaluate(() => {
+            const p = document.getElementById('movie_player') as { getPlayerState?: () => number } | null
+            return p?.getPlayerState?.() ?? -1
+          }),
+        { timeout: 30_000 },
+      )
+      .toBe(1)
+
+    await ui.locator('.bar .right .mr').click()
+    await over.locator('.menu button', { hasText: '재생 속도' }).click()
+    await over.locator('.menu button', { hasText: '1.5x' }).click()
+
+    // The player itself, not just our own record of it.
+    await expect
+      .poll(() =>
+        h.page.evaluate(() => {
+          const p = document.getElementById('movie_player') as { getPlaybackRate?: () => number } | null
+          return p?.getPlaybackRate?.() ?? 0
+        }),
+      )
+      .toBe(1.5)
+    expect(await h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').rate)).toBe(1.5)
+
+    // The timer arms, says so on the button, and can be taken back off.
+    await ui.locator('.bar .right .mr').click()
+    await over.locator('.menu button', { hasText: '수면 예약' }).click()
+    await over.locator('.menu button', { hasText: '30분 뒤 정지' }).click()
+    await expect(ui.locator('.bar .right .mr')).toHaveClass(/on/)
+
+    await ui.locator('.bar .right .mr').click()
+    await over.locator('.menu button', { hasText: '수면 예약' }).first().click()
+    await over.locator('.menu button', { hasText: '수면 예약 끄기' }).click()
+    // Speed is still 1.5x, so the button stays lit for that reason alone.
+    await ui.locator('.bar .right .mr').click()
+    await over.locator('.menu button', { hasText: '재생 속도' }).click()
+    await over.locator('.menu button', { hasText: '보통' }).click()
+    await expect(ui.locator('.bar .right .mr')).not.toHaveClass(/on/)
+  } finally {
+    await h.close()
+  }
+})

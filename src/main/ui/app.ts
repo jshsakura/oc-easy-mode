@@ -17,7 +17,7 @@ import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
 import { clock, type Ctx, type View } from './ctx.ts'
-import { showMenu, toast } from './overlay.ts'
+import { showMenu, toast, type MenuItem } from './overlay.ts'
 import { installRemote } from './remote.ts'
 import { installKeys } from './keys.ts'
 import { render } from './views.ts'
@@ -350,10 +350,86 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   })
   const muteButton = h('button', { 'data-nav': '', title: t('음소거') }, icon('volume', 18))
   muteButton.addEventListener('click', () => {
-    const on = engine.state.volume === 0
-    engine.setVolume(on ? 70 : 0)
+    // The engine's own mute, so it comes back to the level it was at rather
+    // than to a number picked here — and so the m key and this button are the
+    // same action rather than two that disagree.
+    engine.toggleMute()
     volume.value = String(engine.state.volume)
+    fill(volume, engine.state.volume / 100)
     drawBar()
+  })
+
+  /**
+   * Speed and the sleep timer, behind one button.
+   *
+   * Two more controls in the bar is two more things in a row that is already
+   * tight on a phone, and neither is reached often enough to earn a permanent
+   * place. Two shallow menus rather than one long one: a bottom sheet with
+   * eleven items in it is a list to scroll, which is the opposite of the point.
+   */
+  const RATES = [0.75, 1, 1.25, 1.5, 2]
+  const rateLabel = (rate: number) => (rate === 1 ? t('보통') : `${rate}x`)
+
+  const moreButton = h('button', { class: 'mr', 'data-nav': '', title: t('더보기') }, icon('more', 18))
+
+  const showSpeedMenu = () =>
+    showMenu(
+      shell.overlay,
+      moreButton,
+      RATES.map((rate) => ({
+        label: rateLabel(rate),
+        icon: engine.state.rate === rate ? ('check' as const) : undefined,
+        onSelect: () => {
+          engine.setRate(rate)
+          drawBar()
+        },
+      })),
+    )
+
+  const showSleepMenu = () => {
+    const items: Array<MenuItem | '-'> = [15, 30, 60].map((minutes) => ({
+      label: `${minutes}분 뒤 정지`,
+      icon: 'moon' as const,
+      onSelect: () => {
+        engine.sleepIn(minutes)
+        toast(shell.overlay, `${minutes}분 뒤에 멈춥니다.`)
+        drawBar()
+      },
+    }))
+    items.push({
+      label: t('이 곡 끝나고 정지'),
+      icon: 'moon',
+      onSelect: () => {
+        engine.sleepAfterTrack()
+        toast(shell.overlay, t('이 곡이 끝나면 멈춥니다.'))
+        drawBar()
+      },
+    })
+    if (engine.sleep) {
+      items.push('-', {
+        label: t('수면 예약 끄기'),
+        icon: 'close',
+        onSelect: () => {
+          engine.cancelSleep()
+          toast(shell.overlay, t('수면 예약을 껐습니다.'))
+          drawBar()
+        },
+      })
+    }
+    showMenu(shell.overlay, moreButton, items)
+  }
+
+  moreButton.addEventListener('click', () => {
+    const left = engine.sleepLeft()
+    const sleepSub = engine.sleep
+      ? left !== undefined
+        ? ` (${left}분 남음)`
+        : ` (${t('이 곡까지')})`
+      : ''
+    showMenu(shell.overlay, moreButton, [
+      { label: `${t('재생 속도')} · ${rateLabel(engine.state.rate)}`, icon: 'next', onSelect: showSpeedMenu },
+      { label: `${t('수면 예약')}${sleepSub}`, icon: 'moon', onSelect: showSleepMenu },
+    ])
   })
 
   /**
@@ -487,7 +563,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       h('div', { class: 'seek' }, elapsed, seek, total),
     ),
     lyricsPane,
-    h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, muteButton, volume),
+    h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, moreButton, muteButton, volume),
   )
 
   function setSheet(open: boolean): void {
@@ -520,6 +596,15 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     videoButton.title = where === 'hidden' ? t('화면 보기') : where === 'stage' ? t('크게 보기') : t('구석에 두기')
     prevButton.disabled = engine.state.queue.length === 0
     nextButton.disabled = engine.state.queue.length === 0
+    // Lit while either of the things behind it is doing something, because a
+    // player running at 1.5x with a timer armed should say so somewhere.
+    const armed = engine.state.rate !== 1 || engine.sleep !== undefined
+    moreButton.classList.toggle('on', armed)
+    moreButton.title = armed
+      ? [engine.state.rate !== 1 ? `${engine.state.rate}x` : '', engine.sleep ? t('수면 예약') : '']
+          .filter(Boolean)
+          .join(' · ')
+      : t('더보기')
   }
 
   function drawTick(): void {

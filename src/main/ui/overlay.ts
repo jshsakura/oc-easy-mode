@@ -10,8 +10,12 @@ export interface MenuItem {
 }
 
 let openMenu: HTMLElement | null = null
+/** Takes the open menu's dismissal listeners back off the document. */
+let releaseMenu: (() => void) | null = null
 
 export function closeMenu(): void {
+  releaseMenu?.()
+  releaseMenu = null
   openMenu?.remove()
   openMenu = null
 }
@@ -74,20 +78,34 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
   // one. An event that starts in one shadow tree never reaches a listener
   // bound to another, so the root-bound version simply never fired and the
   // menu stayed open until something else re-rendered.
+  //
+  // The listeners are given to closeMenu to remove rather than removing only
+  // themselves when they fire. A menu that opens another menu — 재생 속도 does —
+  // closes the first during the click, and a listener that outlived its own
+  // menu would read the *next* press as an outside click and shut the second
+  // menu before anything could be chosen from it. Measured: the submenu never
+  // took a selection, and the press appeared to do nothing at all.
+  let live = true
+  const off = (ev: Event) => {
+    if (ev.composedPath().includes(menu)) return
+    closeMenu()
+  }
+  // Escape closes it too, and must not reach the shell's twice-to-exit.
+  const onKey = (ev: KeyboardEvent) => {
+    if (ev.key !== 'Escape') return
+    ev.stopPropagation()
+    closeMenu()
+  }
+  releaseMenu = () => {
+    live = false
+    document.removeEventListener('pointerdown', off, true)
+    document.removeEventListener('keydown', onKey, true)
+  }
+  // A tick late, so the press that opened the menu is not also the press that
+  // dismisses it.
   setTimeout(() => {
-    const off = (ev: Event) => {
-      if (ev.composedPath().includes(menu)) return
-      closeMenu()
-      document.removeEventListener('pointerdown', off, true)
-    }
+    if (!live) return
     document.addEventListener('pointerdown', off, true)
-    // Escape closes it too, and must not reach the shell's twice-to-exit.
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key !== 'Escape') return
-      ev.stopPropagation()
-      closeMenu()
-      document.removeEventListener('keydown', onKey, true)
-    }
     document.addEventListener('keydown', onKey, true)
   })
 }
