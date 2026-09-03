@@ -1,7 +1,7 @@
 {
   "name": "이지모드",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "description": "Flips youtube.com into a UI of your own for both music and video: search, feeds, queue and playlist management over YouTube's own player. One switch back.",
   "license": "GPL-3.0-or-later",

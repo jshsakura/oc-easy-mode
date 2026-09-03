@@ -45,6 +45,17 @@ export interface Shell {
   overlay: ShadowRoot
   /** Puts YouTube's player over this element, or nowhere if null. */
   place(target: HTMLElement | null): void
+  /**
+   * Keeps the picture underneath the app while something of ours has to be on
+   * top of it — the drawer, which slides out over the whole left edge.
+   *
+   * The player is drawn above the app on purpose (see the lift below), so
+   * anything of ours that overlaps it is unreachable: with the drawer open in
+   * 영상 mode, the video covered its first two rows. Menus and dialogs do not
+   * need this, because they are drawn in the overlay host, which is above the
+   * player already.
+   */
+  cover(on: boolean): void
   /** Removes both nodes. Safe to call twice. */
   teardown(): void
 }
@@ -229,6 +240,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   // no class and no inline style written onto it, and the rule lives in our
   // stylesheet, so it leaves when the sheet does.
   const LIFT = 2147482050
+  const PLAYER_Z = '2147482100'
   let liftText = ''
   let liftIndex = -1
 
@@ -280,7 +292,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   const apply = () => {
     raf = 0
     if (!target) return
-    lift()
+    if (!covered) lift()
     const want = target.getBoundingClientRect()
     if (want.width < 2 || want.height < 2) return
     vars.setProperty('--oc-x', `${Math.round(want.left)}px`)
@@ -323,9 +335,27 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
       vars.setProperty('--oc-h', '180px')
       return
     }
-    vars.setProperty('--oc-z', '2147482100')
+    if (!covered) vars.setProperty('--oc-z', PLAYER_Z)
     observer.observe(next)
     schedule()
+  }
+
+  // While this is true the chain stays down and the app is the top of the page.
+  let covered = false
+  const cover = (on: boolean): void => {
+    if (covered === on) return
+    covered = on
+    if (on) {
+      // Both, and on purpose. Taking the chain down is what lets the app be on
+      // top; dropping --oc-z as well is a direct style write that does not
+      // depend on the rule bookkeeping having stayed in step, and the drawer
+      // has to be reachable even if it has not.
+      unlift()
+      vars.setProperty('--oc-z', '1')
+    } else {
+      vars.setProperty('--oc-z', PLAYER_Z)
+      schedule()
+    }
   }
 
   let gone = false
@@ -346,7 +376,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     viewport?.remove()
   }
 
-  return { root, overlay, place, teardown }
+  return { root, overlay, place, cover, teardown }
 }
 
 /** True when a previous run left its nodes behind, which should not happen. */

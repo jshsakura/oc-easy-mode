@@ -61,7 +61,15 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const themeWatch = new MutationObserver(applyTheme)
   themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['dark'] })
 
-  const closeDrawer = () => app.classList.remove('drawer-open')
+  // The drawer has to be above the picture while it is out, and the picture is
+  // drawn above the app — so the shell puts it back down for as long as the
+  // drawer is open. Without this the video covered the top of the drawer in
+  // 영상 mode and the first two rows could not be pressed.
+  const setDrawer = (open: boolean) => {
+    app.classList.toggle('drawer-open', open)
+    shell.cover(open)
+  }
+  const closeDrawer = () => setDrawer(false)
   const scrim = h('div', { class: 'drawerScrim', onclick: closeDrawer })
   app.appendChild(scrim)
 
@@ -255,7 +263,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     'data-nav': '',
     title: t('메뉴'),
     'aria-label': t('메뉴'),
-    onclick: () => app.classList.toggle('drawer-open'),
+    onclick: () => setDrawer(!app.classList.contains('drawer-open')),
   }, icon('menu', 20))
 
   const nowThumb = h('div', { class: 'thumb' })
@@ -385,7 +393,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     if (narrow) now.setAttribute('data-nav', '')
     else now.removeAttribute('data-nav')
     if (!narrow) {
-      app.classList.remove('drawer-open')
+      setDrawer(false)
       app.classList.remove('sheet-open')
     }
   }

@@ -375,7 +375,7 @@ input { font: inherit; color: inherit; }
 .slot { position: fixed; pointer-events: none; border-radius: var(--radius-lg); background: #000; }
 .slot.hidden { display: none; }
 .slot.corner {
-  right: var(--gap); bottom: calc(var(--bar) + var(--gap)); width: 280px;
+  left: calc(100dvw - 280px - var(--gap)); bottom: calc(var(--bar) + var(--gap)); width: 280px;
   aspect-ratio: 16/9; box-shadow: var(--shadow);
 }
 /* The stage was 46vh with the list pushed down by the same amount, so on a
@@ -383,7 +383,7 @@ input { font: inherit; color: inherit; }
    sliver. A player that shows one and a half rows is not showing a list. */
 .slot.stage {
   left: calc(var(--side) + var(--gap) * 2); top: var(--gap);
-  right: var(--gap); width: auto; height: var(--stage-h);
+  width: calc(100dvw - var(--side) - var(--gap) * 3); height: var(--stage-h);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .app.has-stage .main { padding-top: calc(var(--stage-h) + 20px); }
@@ -475,7 +475,7 @@ input[type=range]::-moz-range-thumb {
 .menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px -4px; }
 
 .scrim {
-  position: fixed; inset: 0; z-index: 2147483090;
+  position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 2147483090;
   background: oklch(0 0 0 / 70%); display: flex; align-items: center; justify-content: center;
 }
 .modal {
@@ -500,7 +500,7 @@ input[type=range]::-moz-range-thumb {
 .modal .new input:focus { border-color: var(--ring); }
 
 .toasts {
-  position: fixed; left: 50%; bottom: calc(var(--bar) + var(--gap) + 12px); transform: translateX(-50%);
+  position: fixed; left: 50dvw; bottom: calc(var(--bar) + var(--gap) + 12px); transform: translateX(-50%);
   z-index: 2147483120; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
 .toast {
@@ -596,7 +596,7 @@ input[type=range]::-moz-range-thumb {
    the whole class of problem. (No backticks in this file: it is one template
    literal.) */
 .app.narrow .side {
-  position: fixed; left: -302px; top: 0; bottom: 0; width: 302px; z-index: 20;
+  position: fixed; left: -302px; top: 0; height: 100dvh; width: 302px; z-index: 20;
   border: 0; border-right: 1px solid var(--border); border-radius: 0;
   transition: left .22s ease;
   padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
@@ -607,8 +607,12 @@ input[type=range]::-moz-range-thumb {
 .app.narrow .nav, .app.narrow .exit { padding: 11px 12px; font-size: 15px; }
 .app.narrow .side .pl { padding: 9px 12px; font-size: 14px; }
 .app.narrow .exit { margin-top: 8px; border-top: 1px solid var(--border); border-radius: 0; padding-top: 16px; }
+/* Sized like the app, and for the same reason: inset: 0 measures a box that
+   can be wider than the screen, and a scrim wider than the screen makes the
+   page overflow. On a phone that is not a cosmetic problem — the browser zooms
+   out to fit, so tapping the menu button shrank the whole UI. */
 .app.narrow .drawerScrim {
-  display: block; position: fixed; inset: 0; z-index: 15;
+  display: block; position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 15;
   background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
   transition: opacity .22s ease;
 }
@@ -617,7 +621,7 @@ input[type=range]::-moz-range-thumb {
 /* ── The picture ────────────────────────────────────────────────────────── */
 .app.narrow .slot.corner { display: none; }
 .app.narrow.has-corner .main { padding-bottom: 24px; }
-.app.narrow .slot.stage { left: 0; right: 0; top: var(--top-all); height: var(--stage-h); border-radius: 0; }
+.app.narrow .slot.stage { left: 0; width: 100dvw; top: var(--top-all); height: var(--stage-h); border-radius: 0; }
 .app.narrow.has-stage .main { padding-top: calc(var(--stage-h) + 16px); }
 
 /* ── The bar, closed ──────────────────────────────────────────────────────
@@ -668,7 +672,7 @@ input[type=range]::-moz-range-thumb {
    drawn above the app and cannot be covered, and a sheet that hid the video
    would be a sheet about a video you cannot see. */
 .app.narrow.sheet-open .bar {
-  position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 30;
+  position: fixed; left: 0; top: 0; width: 100dvw; bottom: 0; z-index: 30;
   flex-direction: column; align-items: stretch; gap: 0;
   padding: calc(6px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
   border-top: 0;

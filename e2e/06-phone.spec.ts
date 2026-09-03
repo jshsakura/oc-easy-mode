@@ -30,7 +30,14 @@ async function phone(): Promise<{ context: BrowserContext; page: import('@playwr
   })
   const page = context.pages()[0] ?? (await context.newPage())
   await page.addInitScript(() => {
-    try { localStorage.setItem('oc-easy-mode:on', '1') } catch {}
+    try {
+      localStorage.setItem('oc-easy-mode:on', '1')
+      // Pin the language, the way fixture.ts does. The UI follows YouTube's own
+      // hl, and a run where YouTube answers in English left this file waiting
+      // for a 검색 that said Search — a three-minute timeout with nothing wrong
+      // with the product.
+      localStorage.setItem('oc-easy-mode:state', JSON.stringify({ lang: 'ko' }))
+    } catch {}
   })
   return { context, page }
 }
@@ -126,9 +133,12 @@ test('the picture never covers the header', async () => {
     // hide it. So anything of ours up there has to start below the stage, or
     // it is unreachable: this is how the drawer button and the mode switch
     // were both buried, leaving no way out of 영상 mode but Escape.
+    // Closed with its own button, not the scrim: the scrim covers the whole
+    // screen, so its centre — the point a click aims at — is inside the open
+    // drawer, and the click can never land.
     await ui.locator('.drawerToggle').click()
     await ui.locator('.modeToggle').click()
-    await ui.locator('.drawerScrim').click()
+    await ui.locator('.drawerClose').click()
     await expect(ui.locator('.slot')).toHaveClass(/stage/)
 
     const top = (await ui.locator('.top').boundingBox())!
