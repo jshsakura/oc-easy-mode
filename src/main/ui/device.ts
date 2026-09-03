@@ -1,28 +1,47 @@
-// Phone or desktop.
+// How wide the UI actually is, and what kind of screen it is on.
 //
-// **YouTube already decided, and says so in the hostname.** `m.youtube.com` is
-// the mobile site; it is served to phones and to nothing else that matters. So
-// the first question is free.
+// **Two different questions, and mixing them was the bug.**
 //
-// The screen answers the rest — a desktop browser pointed at the mobile site,
-// or a phone that was served the desktop one. **Not the user agent:** Orion on
-// iPhone reports a desktop Mac Chrome UA, measured on the device by the sibling
-// extension, so the one case UA sniffing must get right is the one it gets
-// wrong. **Not the viewport:** a window dragged narrow is not a phone, and a
-// phone held sideways is 844 wide while still being a phone. The screen's short
-// side is the same in either orientation.
+// The in-page UI needs to know whether the sidebar *fits*, and only the
+// viewport can answer that. `innerWidth` is the real width of the page, and it
+// is right whatever the browser claims to be. That matters here more than
+// anywhere: Orion on iPhone reports a desktop Mac Chrome UA, is served the
+// desktop site, and can report desktop screen metrics with it — so a check
+// built on the user agent, the hostname, or `screen` calls a phone a PC and
+// leaves the sidebar as a 64px rail welded to the edge, which is exactly what
+// it did.
+//
+// The popup cannot use the viewport, for the opposite reason: it has no window
+// to fill. A desktop popup is sized *from* its document, so asking its width
+// what width to be is circular, and on a phone the sheet is sized by the
+// system. There the screen is the only honest signal, and its short side is
+// the same in either orientation.
 
-export type ScreenKind = 'phone' | 'desktop'
+/** Below this, the sidebar does not fit beside the content. */
+export const NARROW_MAX = 900
 
 /** Above every phone (an iPhone Pro Max is 440) and below every tablet (744). */
 export const PHONE_SHORT_SIDE = 500
 
-/** Pure, so a test can name real devices instead of driving a browser. */
-export function screenKind(host: string, width: number, height: number): ScreenKind {
-  if (host === 'm.youtube.com') return 'phone'
+export type ScreenKind = 'phone' | 'desktop'
+
+/** For the in-page UI: is there room for a sidebar? */
+export function isNarrow(width: number): boolean {
+  return width < NARROW_MAX
+}
+
+export function narrowNow(): boolean {
+  return isNarrow(window.innerWidth)
+}
+
+/** For the popup, which has no viewport worth asking. Pure, so tests can name devices. */
+export function screenKind(width: number, height: number): ScreenKind {
   return Math.min(width, height) <= PHONE_SHORT_SIDE ? 'phone' : 'desktop'
 }
 
-export function thisScreen(): ScreenKind {
-  return screenKind(location.hostname, window.screen.width, window.screen.height)
+/** Stamps the answer on <html> so a stylesheet can branch on it. */
+export function applyScreenKind(): ScreenKind {
+  const kind = screenKind(window.screen.width, window.screen.height)
+  document.documentElement.classList.add(`on-${kind}`)
+  return kind
 }

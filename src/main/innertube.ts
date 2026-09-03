@@ -90,7 +90,34 @@ export function hasSession(): boolean {
   return ['SAPISID', '__Secure-1PAPISID', '__Secure-3PAPISID'].some((name) => cookie(name) !== undefined)
 }
 
+/** The page's own context, or it wearing the desktop client's name. */
+function contextFor(cfg: YtCfg, asWeb: boolean): Record<string, unknown> {
+  if (!asWeb) return cfg.context
+  const client = (cfg.context.client ?? {}) as Record<string, unknown>
+  return {
+    ...cfg.context,
+    client: { ...client, clientName: 'WEB', clientVersion: WEB_CLIENT_VERSION },
+  }
+}
+
 export type Json = Record<string, unknown>
+
+/**
+ * The desktop client, borrowed for the calls where the mobile one answers
+ * badly.
+ *
+ * m.youtube.com's own client returns **twenty** tracks of a playlist and no
+ * continuation token at all — there is no second page to ask for, so a 99-track
+ * playlist arrives as 20 and nothing can be done about it from that client.
+ * The same request with a WEB context, from the same origin and the same
+ * cookies, returns 99 and a token. Measured 2026-09-03.
+ *
+ * The version is pinned because there is nowhere to read a valid WEB version
+ * from on a mobile page. It ages: when YouTube stops accepting it the call
+ * fails, and the caller falls back to the page's own client, which is worse
+ * but never broken.
+ */
+const WEB_CLIENT_VERSION = '2.20250901.00.00'
 
 /**
  * POSTs one InnerTube endpoint and returns the parsed body.
@@ -98,17 +125,19 @@ export type Json = Record<string, unknown>
  * `body` is merged over the page's own context, so a caller only ever writes
  * the fields specific to its request.
  */
-export async function call(cfg: YtCfg, endpoint: string, body: Json): Promise<Json> {
+export async function call(cfg: YtCfg, endpoint: string, body: Json, asWeb = false): Promise<Json> {
   const url = new URL(endpoint, BASE)
   url.searchParams.set('prettyPrint', 'false')
   if (cfg.apiKey) url.searchParams.set('key', cfg.apiKey)
 
+  const clientName = asWeb ? '1' : cfg.clientName
+  const clientVersion = asWeb ? WEB_CLIENT_VERSION : cfg.clientVersion
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Origin': ORIGIN,
     'X-Goog-AuthUser': String(cfg.sessionIndex),
-    'X-YouTube-Client-Name': cfg.clientName,
-    'X-YouTube-Client-Version': cfg.clientVersion,
+    'X-YouTube-Client-Name': clientName,
+    'X-YouTube-Client-Version': clientVersion,
   }
   if (cfg.visitorData) headers['X-Goog-Visitor-Id'] = cfg.visitorData
   const auth = await authorization()
@@ -118,7 +147,7 @@ export async function call(cfg: YtCfg, endpoint: string, body: Json): Promise<Js
     method: 'POST',
     credentials: 'include',
     headers,
-    body: JSON.stringify({ context: cfg.context, ...body }),
+    body: JSON.stringify({ context: contextFor(cfg, asWeb), ...body }),
   })
 
   if (!res.ok) {

@@ -218,6 +218,7 @@ input { font: inherit; color: inherit; }
 /* ── Cards, shelves, grid ────────────────────────────────────────────────── */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px 16px; }
 .card { text-align: left; }
+.cards .card .cover { aspect-ratio: 1; }
 .card .cover {
   aspect-ratio: 16/9; border-radius: var(--radius-lg);
   background: var(--card) center/cover; border: 1px solid var(--border);
@@ -232,6 +233,7 @@ input { font: inherit; color: inherit; }
 .shelf h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
 .shelfRow { display: flex; gap: 16px; overflow-x: auto; padding: 2px 2px 12px; scroll-snap-type: x proximity; }
 .tile { width: 208px; flex: none; text-align: left; scroll-snap-align: start; }
+.tile.square .cover { aspect-ratio: 1; }
 .tile .cover {
   aspect-ratio: 16/9; border-radius: var(--radius-lg);
   background: var(--card) center/cover; border: 1px solid var(--border);
@@ -250,7 +252,7 @@ input { font: inherit; color: inherit; }
 
 .head { display: flex; gap: 20px; align-items: flex-end; margin-bottom: 18px; }
 .head .cover {
-  width: 220px; aspect-ratio: 16/9; flex: none;
+  width: 200px; aspect-ratio: 1; flex: none;
   border-radius: var(--radius-xl); background: var(--card) center/cover;
   border: 1px solid var(--border);
 }
@@ -375,79 +377,79 @@ input[type=range]:hover::-webkit-slider-thumb { border-color: var(--foreground);
    A phone is not a narrow desktop. The sidebar becomes a drawer rather than a
    64px rail of unlabelled icons stuck to the edge, the bar gives the seek its
    own row, and the lists lose the columns there is no width for. Which layout
-   applies is decided in device.ts, from the hostname and the screen — never
-   from a media query alone, because a desktop window dragged narrow is still a
-   desktop and Orion on iPhone claims to be one. */
+   applies is decided in device.ts, from the viewport — the only thing that
+   knows. Orion on iPhone reports a desktop user agent, is served the desktop
+   site, and may report desktop screen metrics with it, so every other signal
+   calls the phone a PC. A desktop window dragged this narrow gets the drawer
+   too, which is what it should have had anyway. */
 .drawerScrim, .drawerToggle { display: none; }
 
-.app.on-phone {
+.app.narrow {
   grid-template-columns: 1fr;
   grid-template-rows: 1fr auto;
   --bar: auto;
 }
-.on-phone .side {
+.narrow .side {
   position: fixed; left: 0; top: 0; bottom: 0; width: 284px; z-index: 20;
   transform: translateX(-100%); transition: transform .22s ease;
   padding: 16px 10px;
 }
-.app.on-phone.drawer-open .side { transform: none; }
-.on-phone .drawerScrim {
+.app.narrow.drawer-open .side { transform: none; }
+.narrow .drawerScrim {
   display: block; position: fixed; inset: 0; z-index: 15;
   background: oklch(0 0 0 / 60%); opacity: 0; pointer-events: none;
   transition: opacity .22s ease;
 }
-.on-phone.drawer-open .drawerScrim { opacity: 1; pointer-events: auto; }
-.on-phone .drawerToggle {
+.narrow.drawer-open .drawerScrim { opacity: 1; pointer-events: auto; }
+.narrow .drawerToggle {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
   width: 38px; height: 38px; border-radius: var(--radius-md);
   color: var(--muted-foreground);
 }
-.on-phone .drawerToggle:hover { background: var(--accent); color: var(--foreground); }
+.narrow .drawerToggle:hover { background: var(--accent); color: var(--foreground); }
 
-.on-phone .main { grid-column: 1; padding: 20px 16px 28px; }
-.on-phone .main h2 { font-size: 21px; margin-bottom: 14px; }
-.on-phone .shelf { margin-bottom: 24px; }
-.on-phone .shelf h3 { font-size: 15px; }
-.on-phone .tile { width: 168px; }
-.on-phone .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
-.on-phone .cards { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
-.on-phone .searchbox { margin-bottom: 16px; }
+.narrow .main { grid-column: 1; padding: 20px 16px 28px; }
+.narrow .main h2 { font-size: 21px; margin-bottom: 14px; }
+.narrow .shelf { margin-bottom: 24px; }
+.narrow .shelf h3 { font-size: 15px; }
+/* Two cards and a slice of a third. A row that ends flush with the screen
+   looks like the end of the row, and nobody swipes it. */
+.narrow .tile { width: 40vw; max-width: 184px; }
+.narrow .shelfRow { gap: 12px; }
+.narrow .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
+.narrow .cards { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
+.narrow .searchbox { margin-bottom: 16px; }
 
 /* No room for an index or a duration; the title and who made it are the row. */
-.on-phone .row { grid-template-columns: 56px 1fr 32px; gap: 10px; min-height: 60px; }
-.on-phone .row .idx, .on-phone .row .dur { display: none; }
-.on-phone .row .thumb { width: 56px; height: 32px; }
-.on-phone .row .more { opacity: 1; }
+.narrow .row { grid-template-columns: 56px 1fr 32px; gap: 10px; min-height: 60px; }
+.narrow .row .idx, .narrow .row .dur { display: none; }
+.narrow .row .thumb { width: 56px; height: 32px; }
+.narrow .row .more { opacity: 1; }
 
-.on-phone .bar {
+.narrow .bar {
   grid-template-columns: 1fr auto; grid-template-rows: auto auto;
-  padding: 8px 12px 6px; gap: 2px 12px;
+  padding: 6px 14px 12px; gap: 4px 12px; align-items: center;
 }
-.on-phone .now { grid-row: 1; grid-column: 1; gap: 8px; }
-.on-phone .now .thumb { width: 42px; height: 42px; }
-.on-phone .center { grid-row: 1; grid-column: 2; }
-.on-phone .seek { grid-row: 2; grid-column: 1 / -1; max-width: none; }
-.on-phone .right { display: none; }
+/* Seek across the top, then the track and its controls along the bottom —
+   the track is the last thing on the screen, which is where a thumb is. */
+.narrow .seek { grid-row: 1; grid-column: 1 / -1; max-width: none; }
+.narrow .now { grid-row: 2; grid-column: 1; gap: 12px; }
+.narrow .now .thumb { width: 48px; height: 48px; border-radius: var(--radius-md); }
+.narrow .now .t { font-size: 15px; }
+.narrow .center { grid-row: 2; grid-column: 2; gap: 0; }
+.narrow .ctl { gap: 2px; }
+.narrow .ctl button { width: 42px; height: 42px; }
+.narrow .ctl .big { width: 46px; height: 46px; }
+.narrow .right { display: none; }
 /* Shuffle and repeat live in the drawer's reach, not in forty pixels of bar. */
-.on-phone .ctl > button:first-child, .on-phone .ctl > button:last-child { display: none; }
+.narrow .ctl > button:first-child, .narrow .ctl > button:last-child { display: none; }
 
-.on-phone .slot.corner { right: 12px; bottom: 116px; width: 156px; }
-.app.on-phone.has-corner .main { padding-bottom: 128px; }
-.on-phone .slot.stage { left: 0; height: 34vh; }
-.app.on-phone.has-stage .main { padding-top: calc(34vh + 16px); }
+.narrow .slot.corner { right: 12px; bottom: 116px; width: 156px; }
+.app.narrow.has-corner .main { padding-bottom: 128px; }
+.narrow .slot.stage { left: 0; height: 34vh; }
+.app.narrow.has-stage .main { padding-top: calc(34vh + 16px); }
 
-.on-phone .menu { min-width: 176px; }
-.on-phone .modal { width: calc(100vw - 32px); }
+.narrow .menu { min-width: 176px; }
+.narrow .modal { width: calc(100vw - 32px); }
 
-/* A desktop window dragged narrow — not a phone, so the rail is fine here. */
-@media (max-width: 900px) {
-  .app.on-desktop { --side: 64px; }
-  .on-desktop .side { padding: 12px 8px; }
-  .on-desktop .side .brand span, .on-desktop .side .nav span,
-  .on-desktop .side h4, .on-desktop .side .pl, .on-desktop .exit span { display: none; }
-  .on-desktop .nav, .on-desktop .exit { justify-content: center; }
-  .on-desktop .modes { flex-direction: column; }
-  .on-desktop .bar { grid-template-columns: 1fr 2fr auto; }
-  .on-desktop .right .vol { display: none; }
-}
 `

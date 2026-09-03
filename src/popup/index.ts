@@ -3,6 +3,12 @@
 // front, turning the switch on opens one, since the mode has nowhere else to be.
 
 import { DEFAULT_CONFIG, type Config } from '../shared/messages.ts'
+import { applyScreenKind } from '../main/ui/device.ts'
+
+// Before the first render: the popup is empty until this script fills it, and
+// the browser sizes a desktop popup from whatever lands, so the class has to be
+// in place before there is anything to size.
+applyScreenKind()
 
 const app = document.getElementById('app')!
 

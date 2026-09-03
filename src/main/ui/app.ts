@@ -11,7 +11,7 @@ import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
 import { layoutFor } from '../store.ts'
-import { thisScreen } from './device.ts'
+import { narrowNow } from './device.ts'
 import { h, icon, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
 import { clock, type Ctx, type View } from './ctx.ts'
@@ -35,9 +35,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const slot = h('div', { class: 'slot' })
   const side = h('div', { class: 'side' })
   const bar = h('div', { class: 'bar' })
-  // The sidebar is a column on a desktop and a drawer on a phone. Which one is
-  // decided by the screen, not the window — see device.ts.
-  const app = h('div', { class: `app on-${thisScreen()}` }, side, main, slot, bar)
+  // The sidebar is a column when there is room beside the content and a drawer
+  // when there is not. Decided by the viewport, which is the only thing that
+  // knows — see device.ts.
+  const app = h('div', { class: narrowNow() ? 'app narrow' : 'app' }, side, main, slot, bar)
 
   const closeDrawer = () => app.classList.remove('drawer-open')
   const scrim = h('div', { class: 'drawerScrim', onclick: closeDrawer })
@@ -278,6 +279,15 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   // ── Wiring ───────────────────────────────────────────────────────────────
 
+  // Rotating a phone, or dragging a window, changes the answer.
+  const onResize = () => {
+    const narrow = narrowNow()
+    if (narrow === app.classList.contains('narrow')) return
+    app.classList.toggle('narrow', narrow)
+    if (!narrow) app.classList.remove('drawer-open')
+  }
+  window.addEventListener('resize', onResize)
+
   const offRemote = installRemote(shell.root, shell.overlay)
 
   const offChange = engine.subscribe(() => {
@@ -298,6 +308,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   return {
     ctx,
     destroy() {
+      window.removeEventListener('resize', onResize)
       offRemote()
       offChange()
       offTick()

@@ -241,7 +241,8 @@ DIST_DIR=/tmp/live npx playwright test e2e/00-safety.spec.ts e2e/04-tv.spec.ts
 ## 남은 작업
 
 - **아이폰 백그라운드 재생은 이 확장으로 안 된다.** 구글이 2026-02-03 에 서버에서
-  막았고 클라이언트에서 이길 수 있는 싸움이 아니다. 근거와 대안은
+  막았고 클라이언트에서 이길 수 있는 싸움이 아니다. **브라우저 자체의 백그라운드
+  재생 기능을 쓴다** — 오리온과 파이어폭스가 제공한다. 근거는
   [`../oc-tunes/docs/research.md`](../oc-tunes/docs/research.md).
 - 재생목록 **순서 바꾸기**. `browse/edit_playlist` 에 이동 액션이 있으니 될 것이나
   아직 안 붙였다.

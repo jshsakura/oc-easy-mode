@@ -114,11 +114,15 @@ function relayoutOnModeChange(ctx: Ctx, el: HTMLElement, draw: () => void): void
   })
 }
 
-/** One card. The same component for a video and for a playlist. */
-function tile(opts: { cover?: string; title: string; sub: string; onOpen(): void }): HTMLElement {
+/**
+ * One card. The same component for a video and for a playlist, except for the
+ * shape of the artwork: a playlist or an album is square, the way every music
+ * app draws a cover, and a video keeps the 16:9 of its thumbnail.
+ */
+function tile(opts: { cover?: string; title: string; sub: string; square?: boolean; onOpen(): void }): HTMLElement {
   return h(
     'button',
-    { class: 'tile', 'data-nav': '', onclick: opts.onOpen },
+    { class: opts.square ? 'tile square' : 'tile', 'data-nav': '', onclick: opts.onOpen },
     h(
       'div',
       { class: 'cover', style: opts.cover ? `background-image: url(${opts.cover})` : '' },
@@ -144,6 +148,7 @@ function playlistTile(ctx: Ctx, p: Playlist): HTMLElement {
     cover: p.cover,
     title: p.title,
     sub: p.subtitle,
+    square: true,
     onOpen: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }),
   })
 }

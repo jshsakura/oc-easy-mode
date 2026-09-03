@@ -54,9 +54,9 @@ export async function more(cfg: YtCfg, page: Page): Promise<Page> {
 
 /** The signed-in user's playlists. Throws an `auth` error when signed out. */
 export async function myPlaylists(cfg: YtCfg): Promise<Playlist[]> {
-  if (!hasSession()) throw new InnertubeError('signed out', 'auth', 401)
   const res = await call(cfg, 'browse', { browseId: 'FEplaylist_aggregation' })
   let list = parsePlaylists(res)
+  if (list.length === 0 && !hasSession()) throw new InnertubeError('signed out', 'auth', 401)
   let token = continuationToken(res)
   for (let i = 0; token && i < 10; i++) {
     const next = await call(cfg, 'browse', { continuation: token })
@@ -66,16 +66,36 @@ export async function myPlaylists(cfg: YtCfg): Promise<Playlist[]> {
   return list
 }
 
-/** Every track of one playlist, following continuations. */
+/**
+ * Every track of one playlist, following continuations.
+ *
+ * Asked as the desktop client wherever the page is not one. The mobile client
+ * answers this particular question with twenty tracks and no way to ask for
+ * more, so a 99-track playlist would silently become a 20-track queue — which
+ * is exactly what it did. If the borrowed client is refused, the page's own is
+ * used instead: fewer tracks beats an error.
+ */
 export async function playlistTracks(cfg: YtCfg, playlistId: string, limit = 1000): Promise<Track[]> {
-  const res = await call(cfg, 'browse', { browseId: `VL${playlistId}` })
+  const asWeb = cfg.clientName !== '1'
+  const browse = async (body: Record<string, unknown>) => {
+    try {
+      return await call(cfg, 'browse', body, asWeb)
+    } catch (err) {
+      if (!asWeb) throw err
+      return call(cfg, 'browse', body)
+    }
+  }
+
+  const res = await browse({ browseId: `VL${playlistId}` })
   let list = parseTracks(res)
   let token = continuationToken(res)
   while (token && list.length < limit) {
-    const next = await call(cfg, 'browse', { continuation: token })
-    const got = parseTracks(next)
-    if (got.length === 0) break
-    list = dedupe(list.concat(got))
+    const next = await browse({ continuation: token })
+    const before = list.length
+    list = dedupe(list.concat(parseTracks(next)))
+    // A page that adds nothing new ends the walk, whether it was empty or a
+    // repeat of what we already have.
+    if (list.length === before) break
     token = continuationToken(next)
   }
   return list
@@ -111,12 +131,16 @@ export async function removeFromPlaylist(cfg: YtCfg, playlistId: string, track: 
 export type FeedId = 'FEwhat_to_watch' | 'FEsubscriptions' | 'FEhistory'
 
 export async function feed(cfg: YtCfg, browseId: FeedId): Promise<Page> {
-  // Subscriptions and history are personal; signed out they come back as an
-  // empty page rather than an error, which would read as "you watch nothing".
-  if (browseId !== 'FEwhat_to_watch' && !hasSession()) {
+  const res = await call(cfg, 'browse', { browseId })
+  // Personal feeds come back empty rather than as an error when there is no
+  // session, and "you watch nothing" is the wrong thing to tell someone. But
+  // the cookie is only asked about **after** the call comes back empty: a
+  // browser that will not hand `document.cookie` to script — and some do —
+  // still has a perfectly good session, and refusing to even try would tell a
+  // signed-in person they are signed out.
+  if (browseId !== 'FEwhat_to_watch' && parseTracks(res).length === 0 && !hasSession()) {
     throw new InnertubeError('signed out', 'auth', 401)
   }
-  const res = await call(cfg, 'browse', { browseId })
   return {
     tracks: parseTracks(res),
     shelves: parseShelves(res),

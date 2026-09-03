@@ -15,6 +15,9 @@
 }
 body {
   margin: 0;
+  /* A desktop popup has no window to fill, so it is sized from the document
+     and needs a width given to it. A phone's sheet is sized by the system, and
+     a fixed width leaves the panel shrunken in a corner of it. */
   width: 300px;
   background: var(--background);
   color: var(--foreground);
@@ -44,3 +47,13 @@ p { margin: 0; color: var(--muted-foreground); font-size: 13px; }
 .switch[aria-checked='true'] { background: var(--primary); }
 .switch[aria-checked='true']::after { transform: translateX(16px); background: var(--primary-foreground); }
 .hint { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+html.on-phone body { width: 100%; min-width: 320px; }
+html.on-phone main { padding: 24px 20px 32px; }
+html.on-phone h1 { font-size: 19px; }
+html.on-phone p { font-size: 15px; }
+html.on-phone .row { margin-top: 24px; font-size: 17px; }
+/* Thumb-sized, because a finger is not a mouse pointer. */
+html.on-phone .switch { width: 52px; height: 30px; }
+html.on-phone .switch::after { width: 24px; height: 24px; }
+html.on-phone .switch[aria-checked='true']::after { transform: translateX(22px); }

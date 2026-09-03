@@ -51,13 +51,28 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
   if (y + hgt > window.innerHeight - 8) y = r.top - hgt - 4
   menu.style.left = `${x}px`
   menu.style.top = `${y}px`
+  // Dismissal listens on the document, not on this shadow root.
+  //
+  // The menu lives in the overlay root; everything a person would click to
+  // dismiss it — a row, the sidebar, the player bar — lives in the *other*
+  // one. An event that starts in one shadow tree never reaches a listener
+  // bound to another, so the root-bound version simply never fired and the
+  // menu stayed open until something else re-rendered.
   setTimeout(() => {
     const off = (ev: Event) => {
-      if (menu.contains(ev.target as Node)) return
+      if (ev.composedPath().includes(menu)) return
       closeMenu()
-      root.removeEventListener('pointerdown', off, true)
+      document.removeEventListener('pointerdown', off, true)
     }
-    root.addEventListener('pointerdown', off, true)
+    document.addEventListener('pointerdown', off, true)
+    // Escape closes it too, and must not reach the shell's twice-to-exit.
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return
+      ev.stopPropagation()
+      closeMenu()
+      document.removeEventListener('keydown', onKey, true)
+    }
+    document.addEventListener('keydown', onKey, true)
   })
 }
 
