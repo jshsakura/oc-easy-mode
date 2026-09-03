@@ -14,7 +14,7 @@ test('search returns tracks, and choosing one drives the page\'s player', async 
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('아이유 밤편지')
     await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row').first()
+    const first = ui.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
 
     const title = (await first.locator('.title').textContent())?.trim() ?? ''
@@ -49,7 +49,7 @@ test('the player is placed over the slot, and the slot moves with the layout', a
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('lofi')
     await ui.locator('.searchbox input').press('Enter')
-    await ui.locator('.row').first().click()
+    await ui.locator('.row:not([aria-hidden])').first().click()
 
     const rects = async () =>
       h.page.evaluate(() => {
@@ -90,7 +90,7 @@ test('the queue advances and the mode survives it', async () => {
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('lofi')
     await ui.locator('.searchbox input').press('Enter')
-    await expect(ui.locator('.row').first()).toBeVisible()
+    await expect(ui.locator('.row:not([aria-hidden])').first()).toBeVisible()
 
     await ui.locator('.toolbar button', { hasText: '전체 재생' }).click()
     const firstTitle = await ui.locator('.bar .now .t').textContent()

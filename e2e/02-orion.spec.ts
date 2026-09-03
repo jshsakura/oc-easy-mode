@@ -33,7 +33,7 @@ test('and the product works from there: search, play, leave', async () => {
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('아이유 밤편지')
     await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row').first()
+    const first = ui.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
 
     const title = (await first.locator('.title').textContent())?.trim() ?? ''

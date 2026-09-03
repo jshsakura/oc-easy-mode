@@ -136,7 +136,7 @@ test('the picture never covers the header', async () => {
     // panels would hide it. So anything of ours up there has to start below
     // the stage, or it is unreachable: this is how the drawer button was
     // buried, leaving no way out but Escape.
-    const first = ui.locator('.tile, .row').first()
+    const first = ui.locator('.tile:not([aria-hidden]), .row:not([aria-hidden])').first()
     await first.waitFor({ timeout: 60_000 })
     await first.click()
     // The picture is the bar's own button now: two states on a phone, off
@@ -205,7 +205,7 @@ test('the picture does not come back after the drawer closes', async () => {
     // so a 320x180 window appeared in the top-left corner and stayed there,
     // with the slot still saying hidden. Geometry could not catch it; this
     // asks the page who is on top.
-    const first = ui.locator('.tile, .row').first()
+    const first = ui.locator('.tile:not([aria-hidden]), .row:not([aria-hidden])').first()
     await first.waitFor({ timeout: 60_000 })
     await first.click()
 

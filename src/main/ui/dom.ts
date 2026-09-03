@@ -89,11 +89,9 @@ export function mark(size = 20): SVGSVGElement {
 type IconItem = string | { d: string; fill?: boolean; noStroke?: boolean }
 
 /**
- * Inline SVG icons: Material Symbols, outlined at weight 400 (Apache-2.0,
- * fonts.google.com/materialsymbols). The design language YouTube itself is
- * built on, so our chrome reads as native to the platform it stands on.
- * Google draws on a 960 grid — hence the viewBox — and each glyph arrives as
- * filled paths whose counters carry the line weight.
+ * Inline SVG icons: Phosphor, regular weight (MIT, phosphoricons.com) — a
+ * clean geometric line set, simple at transport sizes. Drawn on a 256 grid;
+ * each glyph arrives as filled paths whose counters carry the line weight.
  */
 export function icon(name: keyof typeof PATHS, size = 20): SVGSVGElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')

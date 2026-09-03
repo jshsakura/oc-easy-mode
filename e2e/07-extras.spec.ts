@@ -15,15 +15,21 @@ test('what was played comes back under 최근 감상, signed out', async () => {
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('아이유 밤편지')
     await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row').first()
+    const first = ui.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
     const title = (await first.locator('.title').textContent())?.trim() ?? ''
     await first.locator('.meta').click()
     await expect(ui.locator('.bar .now .t')).toHaveText(title)
+    // The queue really changed. Without this the test passed while the click
+    // did nothing at all: the first result for this query *is* the video the
+    // page was already showing, so the bar read correctly either way.
+    await expect
+      .poll(() => h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').queue?.length ?? 0))
+      .toBeGreaterThan(1)
 
     await ui.locator('.nav', { hasText: '최근 감상' }).click()
     // The row it was played from, now on a screen YouTube would leave empty.
-    await expect(ui.locator('.rows .row .title').first()).toHaveText(title)
+    await expect(ui.locator('.rows .row:not([aria-hidden]) .title').first()).toHaveText(title)
 
     // Written down where a reload will find it. Asserted at the storage rather
     // than by reloading, because the harness fakes "switched on" in
@@ -83,7 +89,7 @@ test('the shortcuts drive the player, and stay out of the search box', async () 
     // Now with the focus off the box, the same letters are controls.
     await box.fill('아이유 밤편지')
     await box.press('Enter')
-    const first = ui.locator('.row').first()
+    const first = ui.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
     await first.locator('.meta').click()
 
@@ -142,7 +148,7 @@ test('speed reaches the player, and the sleep timer arms and disarms', async () 
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('아이유 밤편지')
     await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row').first()
+    const first = ui.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
     const title = (await first.locator('.title').textContent())?.trim() ?? ''
     await first.locator('.meta').click()
@@ -195,7 +201,7 @@ test('nothing reaches the player through a menu or a dialog', async () => {
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('아이유 밤편지')
     await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row').first()
+    const first = ui.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
     await first.locator('.meta').click()
 
@@ -228,7 +234,7 @@ test('nothing reaches the player through a menu or a dialog', async () => {
     await h.page.keyboard.press('Escape')
     await expect(over.locator('.modal')).toHaveCount(0)
     // Dismissed, not confirmed: the history is still there.
-    await expect(ui.locator('.rows .row').first()).toBeVisible()
+    await expect(ui.locator('.rows .row:not([aria-hidden])').first()).toBeVisible()
     await expect(ui.locator('.app')).toBeVisible()
   } finally {
     await h.close()

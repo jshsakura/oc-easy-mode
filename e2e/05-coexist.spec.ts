@@ -41,7 +41,7 @@ test('the ad blocker and this extension share a page', async () => {
     const ui = page.locator('oc-easy-mode')
     await expect(ui.locator('.app')).toBeVisible()
     // Ours works: the shelves came back and the player is ours to drive.
-    await expect(ui.locator('.shelf .tile').first()).toBeVisible()
+    await expect(ui.locator('.shelf .tile:not([aria-hidden])').first()).toBeVisible()
 
     const state = await page.evaluate(() => ({
       // The sibling's own marker, set in the page's world when it installs.

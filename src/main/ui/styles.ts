@@ -7,11 +7,11 @@
 // entire product. What actually carries the look is the token set and the
 // component recipes, and both are portable.
 //
-// So the tokens below are shadcn's default dark theme, copied value for value
-// from its theming reference — background, card, popover, primary, secondary,
-// muted, accent, destructive, border, input, ring, and the sidebar group. The
-// rules underneath are its component recipes written out longhand: button and
-// its variants, input, card, dropdown-menu, dialog, slider, separator.
+// The recipe layer below still follows shadcn's component shapes — button and
+// its variants, input, card, dropdown-menu, dialog, slider, separator — but
+// the token values left shadcn's default dark theme long ago: the palette is
+// the paper one (--ground #141210 and family), the accent is a dusty violet,
+// and the radii are zero. shadcn taught the structure; the surface is ours.
 //
 // Two deliberate departures:
 //
@@ -60,6 +60,30 @@ export const STYLES = `
   --destructive: #f38ba8;
   --ring: #8578a6;
 
+  /* ── shadcn's token contract, adopted by name ────────────────────────────
+     Not the framework: shadcn is React and Tailwind, and this is one CSS
+     string injected into a shadow root. What carries over is the naming
+     discipline, which is the part that was actually missing.
+
+     Every surface token has a -foreground guaranteed legible on it, and the
+     surface itself drops the "background" suffix. A rule then names a pair
+     rather than two colours chosen separately — which is precisely the
+     failure this product has already had twice, a menu drawn black on a white
+     page because its text colour and its surface came from different places. */
+  /* The card surface is the raised one, not the panel — cards were already
+     drawn on --secondary and naming them --card must not move them onto the
+     background, or a card stops being visible at all. */
+  --card: #26221d;
+  --card-foreground: #ece7df;
+  --secondary-foreground: #ece7df;
+  --muted: #26221d;
+  --accent: #26221d;
+  --accent-foreground: #ece7df;
+  --destructive-foreground: #1b1815;
+  /* The border of something you type into, which shadcn keeps apart from the
+     border of something you only look at. */
+  --input: #322c25;
+
   /* One surface. The sidebar, the bar and the page are the same colour and are
      told apart by a single hairline, not by three shades of grey. Only things
      that float — a menu, a dialog, the corner window — sit on --popover. */
@@ -71,7 +95,6 @@ export const STYLES = `
   --glass: #1b1815;
   --glass-strong: #1b1815;
   --glass-line: #322c25;
-  --blur: none;
 
   --hover: rgba(236, 231, 223, .06);
   --shadow: 0 2px 6px rgba(20, 12, 4, .28);
@@ -86,12 +109,17 @@ export const STYLES = `
      rack, for times, counts and durations. */
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
-  /* --radius: 0.625rem, in px for the reason at the top of this file */
-  /* No radii. 직각 — right angles all the way down, the look of a program
-     rather than a page: boxes meet at corners, and the corners are square.
-     Kept as tokens so a value could come back in one place if ever wanted. */
-  --radius-md: 0px;
-  --radius-lg: 0px;
+  /* One number decides every corner in the product, and the scale is derived
+     from it the way shadcn derives theirs. The value is 0 on purpose — 직각,
+     right angles all the way down, the look of a program rather than a page —
+     but it is now *one* place to change rather than two, and the scale means a
+     future radius keeps its proportions across sizes instead of being typed
+     out again per component. */
+  --radius: 0px;
+  --radius-sm: calc(var(--radius) * .6);
+  --radius-md: calc(var(--radius) * .8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
 }
 * { box-sizing: border-box; }
 
@@ -121,6 +149,15 @@ export const STYLES = `
   --primary-foreground: #ffffff;
   --destructive: #d63b5e;
   --ring: #776aa6;
+  /* The same pairs, so a rule written once reads correctly on either side. */
+  --card: #efece4;
+  --card-foreground: #232019;
+  --secondary-foreground: #232019;
+  --muted: #efece4;
+  --accent: #efece4;
+  --accent-foreground: #232019;
+  --destructive-foreground: #ffffff;
+  --input: #ddd8cd;
   --glass: #fbfaf6;
   --glass-strong: #fbfaf6;
   --glass-line: #ddd8cd;
@@ -213,7 +250,7 @@ input { font: inherit; color: inherit; }
 .side {
   /* One flat surface, edged with a hairline — a pane told from a box by the
      line, not by translucency. */
-  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  background: var(--glass);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
   padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
@@ -278,7 +315,7 @@ input { font: inherit; color: inherit; }
 /* The page has margins the way a book does — text starts away from the edge,
    and the edge is where the paper is. */
 .main {
-  background: var(--glass-strong); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  background: var(--glass-strong);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
   overflow-y: auto; padding: 32px 44px 56px; min-width: 0;
@@ -293,7 +330,7 @@ input { font: inherit; color: inherit; }
 /* Skeletons: the shape of what is coming, in the palette's quiet grey,
    breathing until it is replaced. A pulse, not a shimmer — nothing travels
    across the page; a block only dims and returns. */
-.sk { background: var(--secondary); border-radius: var(--radius-md); animation: sk 1.2s ease-in-out infinite; }
+.sk { background: var(--muted); border-radius: var(--radius-md); animation: sk 1.2s ease-in-out infinite; }
 @keyframes sk { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: .6; } }
 .err { color: var(--destructive); font-size: 14px; padding: 16px 0 20px; }
@@ -301,7 +338,7 @@ input { font: inherit; color: inherit; }
 .searchbox {
   display: flex; gap: 10px; align-items: center;
   height: 40px; padding: 0 12px; margin-bottom: 24px;
-  border: 1px solid var(--border); border-radius: var(--radius-md);
+  border: 1px solid var(--input); border-radius: var(--radius-md);
   transition: border-color var(--ease);
 }
 .searchbox:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent); }
@@ -349,11 +386,6 @@ input { font: inherit; color: inherit; }
   border-radius: var(--radius-md); cursor: pointer;
   transition: background var(--ease);
 }
-/* The playing row.
- *
- * A flat tint was easy to miss in a list of forty; this is tinted, edged on
- * the left in the accent, and carries three bars that move. Motion is the
- * thing the eye finds without looking for it. */
 /* A quiet fill, like any list's chosen row. The bars say which row it is;
    the fill says it is the one you are on. Nothing lifts, nothing glows. */
 .row.now { background: var(--secondary); }
@@ -409,7 +441,7 @@ input { font: inherit; color: inherit; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 20px 14px; }
 .card, .tile {
   text-align: left; border-radius: var(--radius-md); overflow: hidden;
-  background: var(--secondary); transition: background var(--ease);
+  background: var(--card); color: var(--card-foreground); transition: background var(--ease);
 }
 .card:active, .tile:active, .card:focus-visible, .tile:focus-visible { background: var(--secondary-hover); }
 .card .cover, .tile .cover {
@@ -605,13 +637,11 @@ input[type=range]::-moz-range-thumb {
 .lyricLine.on { color: var(--foreground); opacity: 1; }
 
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
-/* Glass, like every other thing that floats — a menu over blurred content
-   reads as a pane lifted off the page, not as a box drawn on it. */
 /* Compact like the bar beneath it: a menu is a tool palette, dense is right. */
 .menu {
   position: fixed; z-index: 2147483100; min-width: 168px; padding: 4px;
   background: var(--glass-strong); color: var(--popover-foreground);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+ 
   border: 1px solid var(--glass-line); border-radius: var(--radius-md); box-shadow: var(--shadow);
 }
 .menu button {
@@ -646,7 +676,7 @@ input[type=range]::-moz-range-thumb {
 .modal {
   width: 420px; max-height: 72vh; display: flex; flex-direction: column;
   background: var(--glass-strong); color: var(--popover-foreground);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+ 
   border: 1px solid var(--glass-line); border-radius: var(--radius-lg); box-shadow: var(--shadow);
 }
 .modal h3 { margin: 0; padding: 22px 22px 12px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
@@ -672,7 +702,7 @@ input[type=range]::-moz-range-thumb {
 .toast {
   padding: 12px 18px; border-radius: var(--radius-md); font-size: 14px;
   background: var(--glass-strong); color: var(--popover-foreground);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+ 
   border: 1px solid var(--glass-line); box-shadow: var(--shadow);
 }
 .toast.bad { color: var(--destructive); }
@@ -743,7 +773,7 @@ input[type=range]::-moz-range-thumb {
   grid-row: 1; grid-column: 1;
   display: flex; align-items: center; gap: 9px;
   height: var(--top-all); padding: env(safe-area-inset-top) 10px 0;
-  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  background: var(--glass);
   border-bottom: 1px solid var(--glass-line);
 }
 .app.narrow .drawerToggle { display: inline-flex; width: 38px; height: 38px; margin-right: -3px; }
@@ -807,7 +837,7 @@ input[type=range]::-moz-range-thumb {
 .app.narrow .bar {
   grid-row: 3; grid-column: 1; position: relative;
   display: flex; align-items: center; gap: 10px;
-  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  background: var(--glass);
   border-top: 1px solid var(--glass-line);
   padding: 7px 8px calc(16px + env(safe-area-inset-bottom));
 }

@@ -8,6 +8,15 @@ import { State, disableAutonav, videoIdInUrl, type YtPlayer } from './player.ts'
 import type { Track } from './parse.ts'
 import { load, remember, save, setQuickOn, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
 
+/**
+ * How long after an advert the end-of-track check stays quiet.
+ *
+ * Long enough to cover the gap between YouTube dropping the advert and having
+ * the real video underway; short enough that a track which genuinely ends
+ * straight after a mid-roll still advances within a tick or two.
+ */
+const AD_SETTLE_MS = 1500
+
 export type Listener = () => void
 
 /** How long one continuous wait may last before the transport calls it a stall. */
@@ -91,6 +100,9 @@ export class Engine {
   adoptPlaying(): void {
     const p = this.player
     if (!p) return
+    // Never while an advert is on. The page would be naming the advert, and
+    // adopting it puts an advert in the queue as though someone had chosen it.
+    if (this.adShowing()) return
     const playing = videoIdInUrl() ?? p.getVideoData()?.video_id
     if (!playing) return
     if (this.current?.videoId === playing) return
@@ -134,8 +146,19 @@ export class Engine {
    * The element cannot be wrong about this, so it is the answer, and the
    * player's own state is only the fallback for when there is no element yet.
    */
+  /**
+   * The page's video element, remembered between ticks.
+   *
+   * Looked up again only when the one we hold has left the document, which is
+   * what happens when YouTube rebuilds its player. A tag lookup twice a second
+   * is not expensive, but it is also not free, and this runs for as long as the
+   * mode is on.
+   */
+  private cachedVideo: HTMLVideoElement | null = null
   private videoEl(): HTMLVideoElement | null {
-    return document.querySelector('video')
+    if (this.cachedVideo?.isConnected) return this.cachedVideo
+    this.cachedVideo = document.querySelector('video')
+    return this.cachedVideo
   }
 
   /**
@@ -144,11 +167,20 @@ export class Engine {
    * It matters twice, and both times because an advert shares the one video
    * element with the track it interrupts — same element, source swapped, so
    * from the outside an advert simply looks like the wrong video playing.
+   *
+   * **`.video-ads` on its own is not the question to ask.** That container is
+   * in the page whether or not an advert is running — measured, present with
+   * no advert anywhere — so testing for it would answer "advert" forever, and
+   * the queue would never advance again. Its *children* are the tell. The
+   * mobile site has no `ad-showing` class to offer, and answers with a renderer
+   * element that exists only while an advert does.
    */
   private adShowing(): boolean {
     const p = this.player
-    if (!p) return false
-    return p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting')
+    if (p && (p.classList.contains('ad-showing') || p.classList.contains('ad-interrupting'))) return true
+    if (document.querySelector('ytm-video-ad-renderer, .ytp-ad-player-overlay') !== null) return true
+    const slot = document.querySelector('.video-ads')
+    return slot !== null && slot.childElementCount > 0
   }
 
   private sounding(): boolean {
@@ -221,9 +253,32 @@ export class Engine {
     // is enough, which is what endedFor remembers.
     const el = this.videoEl()
     const playingId = this.current?.videoId
-    // Not while an advert is playing: the advert ends on this same element, and
-    // taking that for the end of the song would skip the song.
-    if (!ad && el?.ended === true && this.loading === undefined && playingId !== undefined && this.endedFor !== playingId) {
+    // Not while an advert is playing, and not in the moment after one.
+    //
+    // The advert ends on this same element, so `ended` goes true for it too.
+    // Worse than that, the two facts change at different times: YouTube drops
+    // the advert class first and swaps the source a beat later, and in that gap
+    // "no advert" and "ended" are both true at once — which would read as the
+    // song finishing before the song had begun, and skip it. So an advert is
+    // not merely a veto while it runs; it silences this check for a moment
+    // afterwards as well.
+    //
+    // And the player must agree it is still our track. When it names a video
+    // at all, and that name is not the one we think is playing, the element's
+    // `ended` belongs to something else.
+    if (ad) this.adSeenAt = Date.now()
+    const settled = Date.now() - this.adSeenAt > AD_SETTLE_MS
+    const named = p.getVideoData()?.video_id
+    const ours = !named || named === playingId
+    if (
+      !ad &&
+      settled &&
+      ours &&
+      el?.ended === true &&
+      this.loading === undefined &&
+      playingId !== undefined &&
+      this.endedFor !== playingId
+    ) {
       this.endedFor = playingId
       this.ended()
     }
@@ -234,9 +289,15 @@ export class Engine {
     const buffering = s === State.Buffering || pending
     this.bufferingSince = buffering ? this.bufferingSince ?? Date.now() : undefined
     const stalled = this.bufferingSince !== undefined && Date.now() - this.bufferingSince > STALL_AFTER_MS
+    // An advert does not move the song's progress. Whatever the player reports
+    // while one is running belongs to the advert, so the elapsed time and the
+    // length are held where the track left them and the bar stops lying about
+    // a song it is not playing.
+    const current = ad ? this.position.current : p.getCurrentTime() || 0
+    const duration = ad ? this.position.duration : p.getDuration() || 0
     this.position = {
-      current: p.getCurrentTime() || 0,
-      duration: p.getDuration() || 0,
+      current,
+      duration,
       playing: this.sounding(),
       buffering,
       stalled,
@@ -385,6 +446,9 @@ export class Engine {
 
   /** The track we have already acted on the end of, so it only counts once. */
   private endedFor: string | undefined
+
+  /** When an advert was last seen, so the end of one cannot be read as the end of a track. */
+  private adSeenAt = 0
 
   seek(seconds: number): void {
     this.player?.seekTo(seconds, true)

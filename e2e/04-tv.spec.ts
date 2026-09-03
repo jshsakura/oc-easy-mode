@@ -12,12 +12,12 @@ test('둘러보기 comes back as titled shelves, signed out', async () => {
     await expect(ui.locator('.app')).toBeVisible()
     await ui.locator('.nav', { hasText: '둘러보기' }).click()
 
-    const shelves = ui.locator('.shelf')
+    const shelves = ui.locator('.shelf:not([aria-hidden])')
     await expect(shelves.first()).toBeVisible()
     expect(await shelves.count()).toBeGreaterThan(3)
     // Each shelf is a titled row of cards.
     expect((await shelves.first().locator('h3').textContent())?.trim().length).toBeGreaterThan(0)
-    expect(await shelves.first().locator('.tile').count()).toBeGreaterThan(2)
+    expect(await shelves.first().locator('.tile:not([aria-hidden])').count()).toBeGreaterThan(2)
   } finally {
     await h.close()
   }
@@ -29,13 +29,13 @@ test('opening a shelf card opens that playlist', async () => {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
     await ui.locator('.nav', { hasText: '둘러보기' }).click()
-    const card = ui.locator('.shelf .tile').first()
+    const card = ui.locator('.shelf .tile:not([aria-hidden])').first()
     await expect(card).toBeVisible()
     const name = (await card.locator('.t').textContent())?.trim() ?? ''
 
     await card.click()
     await expect(ui.locator('.head h2')).toHaveText(name)
-    await expect(ui.locator('.row').first()).toBeVisible()
+    await expect(ui.locator('.row:not([aria-hidden])').first()).toBeVisible()
   } finally {
     await h.close()
   }
@@ -49,7 +49,7 @@ test('a track list comes back as rows', async () => {
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('lofi')
     await ui.locator('.searchbox input').press('Enter')
-    await expect(ui.locator('.rows .row').first()).toBeVisible()
+    await expect(ui.locator('.rows .row:not([aria-hidden])').first()).toBeVisible()
 
     // The wall of thumbnails is not covered here, and cannot be: since the
     // mode switch was taken out, the shape follows the screen — YouTube's own
@@ -69,7 +69,7 @@ test('arrow keys move focus, and Enter opens what is focused', async () => {
     await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('아이유 밤편지')
     await ui.locator('.searchbox input').press('Enter')
-    await expect(ui.locator('.row').first()).toBeVisible()
+    await expect(ui.locator('.row:not([aria-hidden])').first()).toBeVisible()
 
     const focused = () =>
       h.page.evaluate(() => {
@@ -107,10 +107,10 @@ test('left from the first card reaches the sidebar', async () => {
     // The first shelf, not the fourth. How many YouTube sends back is its
     // business and it varies — this failed twice in a row on a run that
     // returned three, which says nothing about arrow keys.
-    await expect(ui.locator('.shelf').first()).toBeVisible()
-    await expect(ui.locator('.shelf .tile').first()).toBeVisible()
+    await expect(ui.locator('.shelf:not([aria-hidden])').first()).toBeVisible()
+    await expect(ui.locator('.shelf .tile:not([aria-hidden])').first()).toBeVisible()
 
-    await ui.locator('.shelf .tile').first().focus()
+    await ui.locator('.shelf .tile:not([aria-hidden])').first().focus()
     await h.page.keyboard.press('ArrowLeft')
 
     const inSidebar = await h.page.evaluate(() => {

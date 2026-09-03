@@ -1,17 +1,18 @@
-/* shadcn/ui default theme, dark — the same token set the in-page UI uses. */
+/* The paper palette, the same values the in-page UI carries — one product,
+   one face, popup included. */
 :root {
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --ring: oklch(0.556 0 0);
-  --radius-md: 8px;
+  --background: #1b1815;
+  --foreground: #ece7df;
+  --card: #26221d;
+  --primary: #8578a6;
+  --primary-foreground: #ffffff;
+  --secondary: #26221d;
+  --muted-foreground: #a39c91;
+  --accent: rgba(236, 231, 223, .06);
+  --border: #322c25;
+  --ring: #8578a6;
+  --radius-md: 0px;
 }
 body {
   margin: 0;
@@ -35,12 +36,12 @@ p { margin: 0; color: var(--muted-foreground); font-size: 13px; }
 /* Switch */
 .switch {
   position: relative; width: 36px; height: 20px; flex: none;
-  border: 0; border-radius: 999px; background: var(--secondary); cursor: pointer;
+  border: 0; border-radius: 0; background: var(--secondary); cursor: pointer;
   transition: background .15s;
 }
 .switch::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-  border-radius: 999px; background: var(--foreground);
+  border-radius: 0; background: var(--foreground);
   transition: transform .15s, background .15s;
 }
 .switch:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 5px var(--ring); }
