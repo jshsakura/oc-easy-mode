@@ -395,12 +395,18 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
       // the button of — and being drawn above everything, it would be the one
       // thing of the player still on screen.
       vars.setProperty('--oc-pip', 'none')
-    } else {
+    } else if (target) {
       vars.setProperty('--oc-z', PLAYER_Z)
       vars.setProperty('--oc-pe', 'auto')
       vars.setProperty('--oc-pip', 'grid')
       schedule()
     }
+    // ...and nothing at all when there is nowhere for the picture to be.
+    //
+    // Putting the player's z-index back because a drawer closed is how a
+    // parked player returned as a 320x180 window in the top-left corner of a
+    // phone and stayed there: the slot said hidden, the picture was on screen,
+    // and closing the drawer was the only thing that had happened. Measured.
   }
 
   let gone = false

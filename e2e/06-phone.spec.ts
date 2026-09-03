@@ -192,3 +192,48 @@ test('the player bar opens into a full player and closes again', async () => {
     await context.close()
   }
 })
+
+test('the picture does not come back after the drawer closes', async () => {
+  const { context, page } = await phone()
+  try {
+    await page.goto('https://m.youtube.com/watch?v=BzYnNdJhZQw', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    })
+    const ui = page.locator('oc-easy-mode')
+    await expect(ui.locator('.app.narrow')).toBeVisible()
+
+    // The picture is parked behind the app when there is nowhere for it to be,
+    // and that only works while the app is above it. Closing the drawer used
+    // to put the player's z-index back whether or not it had anywhere to be —
+    // so a 320x180 window appeared in the top-left corner and stayed there,
+    // with the slot still saying hidden. Geometry could not catch it; this
+    // asks the page who is on top.
+    const first = ui.locator('.tile, .row').first()
+    await first.waitFor({ timeout: 60_000 })
+    await first.click()
+
+    // One open, both presses, one close. The switch does not close the drawer,
+    // so toggling it again in between would shut the drawer and leave the next
+    // press aimed at a button parked off the side of the screen.
+    await ui.locator('.drawerToggle').click()
+    await ui.locator('.modeToggle').click()
+    await expect(ui.locator('.slot')).toHaveClass(/stage/)
+    await ui.locator('.modeToggle').click()
+    await expect(ui.locator('.slot')).toHaveClass(/hidden/)
+    await ui.locator('.drawerClose').click()
+
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const b = document.getElementById('movie_player')!.getBoundingClientRect()
+          const x = Math.min(Math.max(b.x + b.width / 2, 1), window.innerWidth - 2)
+          const y = Math.min(Math.max(b.y + b.height / 2, 1), window.innerHeight - 2)
+          return document.elementsFromPoint(x, y)[0]?.tagName ?? ''
+        }),
+      )
+      .toBe('OC-EASY-MODE')
+  } finally {
+    await context.close()
+  }
+})
