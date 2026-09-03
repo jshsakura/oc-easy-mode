@@ -126,7 +126,12 @@ svg {
 .wrap {
   max-width: 1040px;
   margin: 0 auto;
-  padding: 0 24px;
+  /* padding-inline, not the shorthand.
+     `padding: 0 24px` also sets top and bottom to zero, and every section
+     carries this class — so a class selector was quietly overriding
+     `section { padding: var(--band) 0 }` and the sections had no vertical
+     space at all. The cards sat against the next section's label. */
+  padding-inline: 24px;
 }
 
 /* 상단 탐색 표시줄 */
