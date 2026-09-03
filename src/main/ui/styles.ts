@@ -30,36 +30,30 @@ export const STYLES = `
    a popover that inherits no --popover is a transparent popover. */
 :host {
   all: initial;
-  /* shadcn/ui — default theme, dark */
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-hover: oklch(0.86 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-hover: oklch(0.32 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-hover: oklch(0.63 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Taken from the sibling extension (oc-ad-bye-pass, src/ui/styles.css) so
+     the two read as one author's work rather than two products that happen to
+     be installed together. Same greys, same purple, same weights. */
+  --ground: #101216;
+  --panel: #16181c;
+  --background: #16181c;
+  --foreground: #eceef2;
+  --muted-foreground: #9aa0aa;
+  --secondary: #1f2228;
+  --secondary-hover: #262a31;
+  --border: #2c3038;
+  --popover: #1f2228;
+  --popover-foreground: #eceef2;
+  --primary: #9d6ee0;
+  --primary-hover: #ac82e6;
+  --primary-foreground: #ffffff;
+  --destructive: #f38ba8;
+  --ring: #9d6ee0;
 
   /* One surface. The sidebar, the bar and the page are the same colour and are
      told apart by a single hairline, not by three shades of grey. Only things
      that float — a menu, a dialog, the corner window — sit on --popover. */
-  --ground: oklch(0.115 0 0);
-  --panel: oklch(0.165 0 0);
-  --hover: oklch(1 0 0 / 6%);
-  --shadow: 0 16px 40px oklch(0 0 0 / 45%);
+  --hover: rgba(255, 255, 255, .06);
+  --shadow: 0 16px 40px rgba(0, 0, 0, .45);
   --ease: .15s ease;
 
   /* --radius: 0.625rem, in px for the reason at the top of this file */
@@ -80,11 +74,17 @@ export const STYLES = `
   position: fixed; inset: 0; z-index: 2147482000;
   display: grid;
   grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
-  gap: var(--gap); padding: var(--gap) var(--gap) 0;
+  gap: var(--gap); padding: var(--gap);
   background: var(--ground); color: var(--foreground);
   font: 14px/1.4285714 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo',
         'Noto Sans KR', 'Malgun Gothic', sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Korean is written with spaces, but the engine treats it like Chinese and
+     breaks between any two characters — "브라우 / 저에", "업데이트 확 / 인".
+     keep-all moves the break to the spaces that are already there. Anything
+     holding a URL sets overflow-wrap: anywhere back on for itself.
+     (No backticks in this file: the whole stylesheet is a template literal.) */
+  word-break: keep-all;
 }
 
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
@@ -113,7 +113,7 @@ input { font: inherit; color: inherit; }
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .side {
   background: var(--panel); border-radius: var(--radius-lg);
-  padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+  padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
 }
 .brand {
   display: flex; align-items: center; gap: 8px;
@@ -154,7 +154,7 @@ input { font: inherit; color: inherit; }
 /* ── Main ────────────────────────────────────────────────────────────────── */
 .main {
   background: var(--panel); border-radius: var(--radius-lg);
-  overflow-y: auto; padding: 32px 32px 48px; min-width: 0;
+  overflow-y: auto; padding: 28px 28px 48px; min-width: 0;
 }
 .main h2 { margin: 0 0 20px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
 .main h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
@@ -170,7 +170,11 @@ input { font: inherit; color: inherit; }
   transition: border-color var(--ease);
 }
 .searchbox:focus-within { border-color: var(--ring); }
-.searchbox input { flex: 1; height: 100%; background: none; border: 0; outline: 0; font-size: 14px; }
+/* 16px, and not a pixel less.
+   WebKit on iPhone zooms the page in when an input smaller than 16px takes
+   focus, and it does not zoom back out. Tapping the search box swallowed the
+   whole screen. Nothing else in the UI has to be 16px; this does. */
+.searchbox input { flex: 1; height: 100%; background: none; border: 0; outline: 0; font-size: 16px; }
 .searchbox input::placeholder { color: var(--muted-foreground); }
 .searchbox svg { color: var(--muted-foreground); flex: none; }
 
@@ -275,7 +279,10 @@ input { font: inherit; color: inherit; }
 /* ── The slot YouTube's player is positioned over ────────────────────────── */
 .slot { position: fixed; pointer-events: none; border-radius: var(--radius-lg); background: oklch(0.145 0 0); }
 .slot.hidden { display: none; }
-.slot.corner { right: 24px; bottom: calc(var(--bar) + 16px); width: 280px; aspect-ratio: 16/9; box-shadow: var(--shadow); }
+.slot.corner {
+  right: var(--gap); bottom: calc(var(--bar) + var(--gap)); width: 280px;
+  aspect-ratio: 16/9; box-shadow: var(--shadow);
+}
 .slot.stage {
   left: calc(var(--side) + var(--gap) * 2); top: var(--gap);
   right: var(--gap); width: auto; height: min(46vh, 520px);
@@ -288,12 +295,21 @@ input { font: inherit; color: inherit; }
 .bar {
   grid-column: 1 / -1; background: transparent;
   display: grid; grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr) minmax(200px, 1fr);
-  align-items: center; padding: 0 16px; gap: 16px;
+  align-items: center; padding: 0; gap: 16px;
 }
 .now { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.now .thumb { width: 52px; height: 52px; flex: none; border-radius: var(--radius-md); background: var(--secondary) center/cover; }
-.now .t { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.now .b { color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.now .thumb {
+  width: 56px; height: 56px; flex: none; border-radius: var(--radius-md);
+  background: var(--secondary) center/cover;
+}
+.now .t {
+  font-size: 15px; font-weight: 500; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.now .b {
+  margin-top: 2px; color: var(--muted-foreground); font-size: 13px; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .center { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .ctl { display: flex; align-items: center; gap: 4px; }
 .ctl button, .right button, .drawerToggle {
@@ -355,13 +371,14 @@ input[type=range]::-webkit-slider-thumb {
 .modal .new { display: flex; gap: 8px; padding: 14px 22px 22px; }
 .modal .new input {
   flex: 1; height: 36px; padding: 0 12px; background: transparent;
-  border: 1px solid var(--border); border-radius: var(--radius-md); outline: 0; font-size: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-md); outline: 0;
+  font-size: 16px; /* see .searchbox input */
   transition: border-color var(--ease);
 }
 .modal .new input:focus { border-color: var(--ring); }
 
 .toasts {
-  position: fixed; left: 50%; bottom: calc(var(--bar) + 24px); transform: translateX(-50%);
+  position: fixed; left: 50%; bottom: calc(var(--bar) + var(--gap) + 12px); transform: translateX(-50%);
   z-index: 2147483120; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
 }
 .toast {

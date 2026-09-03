@@ -97,7 +97,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     const mode = engine.state.mode
     replace(
       side,
-      h('div', { class: 'brand' }, icon('note', 20), h('span', null, '이지 모드')),
+      h('div', { class: 'brand' }, icon('note', 20), h('span', null, 'Easy Mode')),
       h(
         'div',
         { class: 'modes' },
@@ -287,6 +287,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     if (!narrow) app.classList.remove('drawer-open')
   }
   window.addEventListener('resize', onResize)
+  // Adding a viewport meta reflows the page; on some engines that lands
+  // without a resize event, so the first two frames are checked directly.
+  requestAnimationFrame(onResize)
+  setTimeout(onResize, 300)
 
   const offRemote = installRemote(shell.root, shell.overlay)
 

@@ -111,7 +111,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   const overlayHost = document.createElement(OVERLAY_TAG)
   const overlay = overlayHost.attachShadow({ mode: 'open' })
 
-  // ── One more node, and only on a phone that was served the desktop site ──
+  // ── One more node, when the document declares no viewport ────────────────
   //
   // Orion on iPhone reports a desktop user agent, so YouTube hands it the
   // desktop page — which carries no viewport meta, because a desktop page has
@@ -120,18 +120,23 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   // that fictional 980, so it comes out shrunken however carefully it is
   // styled.
   //
-  // The only cure is to give the document the viewport it is missing. It is
-  // ours, it is tagged, and it goes out with everything else on exit — at
+  // **No device check guards this.** The first attempt only added the meta when
+  // `screen.width` looked like a phone's, and on the device that failed too:
+  // a browser claiming to be a desktop can report a desktop screen to match.
+  // The honest rule is simpler and needs to know nothing — a document with no
+  // viewport declaration gets one. A desktop browser ignores the tag entirely,
+  // so there is nothing to be wrong about.
+  //
+  // It is ours, it is tagged, and it goes out with everything else on exit, at
   // which point YouTube reflows back to what it had. A page that already
   // declares one is left alone; that page knows its own mind.
-  const viewport =
-    window.screen.width <= 500 && !document.querySelector('meta[name="viewport"]')
-      ? Object.assign(document.createElement('meta'), {
-          id: VIEWPORT_ID,
-          name: 'viewport',
-          content: 'width=device-width, initial-scale=1, viewport-fit=cover',
-        })
-      : null
+  const viewport = document.querySelector('meta[name="viewport"]')
+    ? null
+    : Object.assign(document.createElement('meta'), {
+        id: VIEWPORT_ID,
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
+      })
 
   const attach = () => {
     // `document_start` can beat `<body>` into existence by a frame or two.

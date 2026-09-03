@@ -20,7 +20,7 @@ async function read(): Promise<Config> {
 async function render(): Promise<void> {
   const cfg = await read()
   app.innerHTML = `
-    <h1>음악 모드</h1>
+    <h1>Easy Mode</h1>
     <p>유튜브 화면을 음악 플레이어로 바꿉니다. 재생은 그대로 유튜브가 합니다.</p>
     <div class="row">
       <span>음악 모드 켜기</span>

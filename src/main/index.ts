@@ -105,7 +105,7 @@ async function start(): Promise<void> {
       // The panic key and the watchdog both mean the same thing: get out now.
       leave(reason === 'panic')
       if (reason === 'watchdog') {
-        console.warn('[이지 모드] 화면을 띄우지 못해 원래 유튜브로 돌아갑니다.')
+        console.warn('[Easy Mode] 화면을 띄우지 못해 원래 유튜브로 돌아갑니다.')
       }
     })
 
@@ -173,7 +173,7 @@ async function start(): Promise<void> {
       toast(shell.overlay, '유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.')
     }
   } catch (err) {
-    console.warn('[이지 모드] 시작하지 못했습니다:', err)
+    console.warn('[Easy Mode] 시작하지 못했습니다:', err)
     shell?.teardown()
     running = null
     leave(false)

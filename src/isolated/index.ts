@@ -33,7 +33,7 @@ function injectMainWorld(): void {
   const done = () => script.remove()
   script.addEventListener('load', done)
   script.addEventListener('error', () => {
-    console.warn('[이지 모드] 페이지 세계에 스크립트를 넣지 못했습니다.')
+    console.warn('[Easy Mode] 페이지 세계에 스크립트를 넣지 못했습니다.')
     done()
   })
   const parent = document.head ?? document.documentElement

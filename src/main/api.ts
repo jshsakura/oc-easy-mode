@@ -5,6 +5,7 @@
 // request shapes are copied from the page rather than invented.
 
 import { call, hasSession, InnertubeError } from './innertube.ts'
+import type { Json } from './parse.ts'
 import {
   continuationToken,
   playlists as parsePlaylists,
@@ -131,7 +132,19 @@ export async function removeFromPlaylist(cfg: YtCfg, playlistId: string, track: 
 export type FeedId = 'FEwhat_to_watch' | 'FEsubscriptions' | 'FEhistory'
 
 export async function feed(cfg: YtCfg, browseId: FeedId): Promise<Page> {
-  const res = await call(cfg, 'browse', { browseId })
+  // As the desktop client where the page is not one. The mobile client answers
+  // a playlist browse with twenty items and no continuation; there is no reason
+  // to trust it with subscriptions or history either, and the desktop shapes
+  // are the ones this parser knows best. Falls back if the borrowed client is
+  // refused, because a worse answer beats an error.
+  const asWeb = cfg.clientName !== '1'
+  let res: Json
+  try {
+    res = await call(cfg, 'browse', { browseId }, asWeb)
+  } catch (err) {
+    if (!asWeb) throw err
+    res = await call(cfg, 'browse', { browseId })
+  }
   // Personal feeds come back empty rather than as an error when there is no
   // session, and "you watch nothing" is the wrong thing to tell someone. But
   // the cookie is only asked about **after** the call comes back empty: a

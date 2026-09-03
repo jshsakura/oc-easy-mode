@@ -64,7 +64,7 @@ def og() -> None:
     x = 76
     plate.paste(mark, (x, 150), mark)
 
-    draw.text((x, 268), "이지 모드", font=font(78, "Bold"), fill=FOREGROUND)
+    draw.text((x, 268), "Easy Mode", font=font(80, "Bold"), fill=FOREGROUND)
     body = font(27, "Regular")
     draw.text((x, 372), "유튜브를 음악과 영상", font=body, fill=MUTED)
     draw.text((x, 410), "플레이어로 사용하는 확장", font=body, fill=MUTED)

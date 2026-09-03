@@ -29,12 +29,13 @@ test('mounts exactly two nodes and touches nothing else', async () => {
       // Nothing of YouTube's carries a mark of ours. (This said `oc-tube` for
       // a while after the rename, which matched nothing and checked nothing.)
       marked: document.querySelectorAll('[class*="oc-easy"], [data-oc-easy]').length,
-      // Added only on a phone handed the desktop page, which has no viewport
-      // meta of its own. Never here.
+      // Added wherever the document declares no viewport of its own, which
+      // includes desktop YouTube. What matters is that it is ours and that it
+      // leaves with us — the Escape test checks the second half.
       viewport: document.querySelectorAll('#oc-easy-mode-viewport').length,
       ytdApp: document.querySelectorAll('ytd-app').length,
     }))
-    expect(counts).toEqual({ style: 1, host: 1, overlay: 1, marked: 0, viewport: 0, ytdApp: 1 })
+    expect(counts).toEqual({ style: 1, host: 1, overlay: 1, marked: 0, viewport: 1, ytdApp: 1 })
     // The player's position lives in our sheet, not on the page's root element.
     expect(await h.page.evaluate(() => document.documentElement.getAttribute('style') ?? '')).not.toContain('--oc-')
   } finally {
@@ -50,6 +51,7 @@ test('Escape twice puts YouTube back', async () => {
     await h.page.keyboard.press('Escape')
     await expect(h.page.locator('oc-easy-mode')).toHaveCount(0)
     await expect(h.page.locator('#oc-easy-mode')).toHaveCount(0)
+    await expect(h.page.locator('#oc-easy-mode-viewport')).toHaveCount(0)
     await expect(h.page.locator('ytd-app')).toBeVisible()
     expect(await h.page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden')
   } finally {
