@@ -19,6 +19,7 @@ import { STYLES } from './styles.ts'
 import { clock, type Ctx, type View } from './ctx.ts'
 import { showMenu, toast } from './overlay.ts'
 import { installRemote } from './remote.ts'
+import { installKeys } from './keys.ts'
 import { render } from './views.ts'
 
 export interface AppOptions {
@@ -675,6 +676,9 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   }
 
   const offRemote = installRemote(shell.root, shell.overlay)
+  // The keyboard, so the whole thing can be driven from a sofa. `v` reuses the
+  // bar's own button rather than repeating what it decides.
+  const offKeys = installKeys(engine, { toggleVideo: () => videoButton.click() })
 
   // The picture is up while something is playing and gone when nothing is —
   // asked for in those words ("재생할때는 위쪽에 플레이어 보여주고"), and it
@@ -736,6 +740,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       window.removeEventListener('resize', onResize)
       document.removeEventListener('keydown', onEscape)
       offRemote()
+      offKeys()
       offChange()
       offTick()
     },

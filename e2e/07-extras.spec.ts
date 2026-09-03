@@ -61,3 +61,58 @@ test('the media session describes our track, and keeps describing it', async () 
     await h.close()
   }
 })
+
+test('the shortcuts drive the player, and stay out of the search box', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+
+    // Typing first, because every one of these letters is also a shortcut and
+    // the box has to win. This is the bug that ate "c" once already.
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    const box = ui.locator('.searchbox input')
+    await box.fill('')
+    await box.pressSequentially('smkjlv 아이유', { delay: 30 })
+    await expect(box).toHaveValue('smkjlv 아이유')
+
+    // Now with the focus off the box, the same letters are controls.
+    await box.fill('아이유 밤편지')
+    await box.press('Enter')
+    const first = ui.locator('.row').first()
+    await expect(first).toBeVisible()
+    await first.locator('.meta').click()
+
+    const playing = () =>
+      h.page.evaluate(() => {
+        const p = document.getElementById('movie_player') as { getPlayerState?: () => number } | null
+        return p?.getPlayerState?.() ?? -1
+      })
+    await expect.poll(playing, { timeout: 30_000 }).toBe(1)
+
+    // Off the box, which is the whole difference between a letter and a
+    // control. Blurred rather than clicked somewhere else: a click has to land
+    // on something, and everything on this page does something when clicked.
+    await box.evaluate((el: HTMLElement) => el.blur())
+    await h.page.keyboard.press('k')
+    await expect.poll(playing, { timeout: 10_000 }).toBe(2)
+    await h.page.keyboard.press('k')
+    await expect.poll(playing, { timeout: 10_000 }).toBe(1)
+
+    // m silences without losing the level it was at.
+    const volume = () => h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').volume)
+    const before = await volume()
+    await h.page.keyboard.press('m')
+    await expect.poll(volume).toBe(0)
+    await h.page.keyboard.press('m')
+    await expect.poll(volume).toBe(before)
+
+    // s and r are toggles the queue remembers.
+    await h.page.keyboard.press('s')
+    await expect.poll(() => h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').shuffle)).toBe(true)
+    await h.page.keyboard.press('r')
+    await expect.poll(() => h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').repeat)).toBe('all')
+  } finally {
+    await h.close()
+  }
+})

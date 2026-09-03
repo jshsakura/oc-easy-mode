@@ -283,6 +283,23 @@ export class Engine {
     this.changed()
   }
 
+  /**
+   * Silences without forgetting the level.
+   *
+   * Volume zero is how this player mutes — there is one slider and it is the
+   * truth — so unmuting has to remember what it was before, or every mute is
+   * followed by hunting for the level again.
+   */
+  private beforeMute = 0
+  toggleMute(): void {
+    if (this.state.volume > 0) {
+      this.beforeMute = this.state.volume
+      this.setVolume(0)
+    } else {
+      this.setVolume(this.beforeMute || 100)
+    }
+  }
+
   private ended(): void {
     if (this.sleep && 'atTrackEnd' in this.sleep) {
       this.sleep = undefined
