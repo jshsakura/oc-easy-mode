@@ -41,23 +41,21 @@ test('opening a shelf card opens that playlist', async () => {
   }
 })
 
-test('video mode lays a list out as a grid of big cards, music mode as rows', async () => {
+test('a track list comes back as rows', async () => {
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
     await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('아이유')
+    await ui.locator('.searchbox input').fill('lofi')
     await ui.locator('.searchbox input').press('Enter')
-    await expect(ui.locator('.row').first()).toBeVisible()
+    await expect(ui.locator('.rows .row').first()).toBeVisible()
+
+    // The wall of thumbnails is not covered here, and cannot be: since the
+    // mode switch was taken out, the shape follows the screen — YouTube's own
+    // feeds (홈, 구독, 시청 기록) are the video-shaped ones, and every one of
+    // them is empty without an account. This suite is signed out.
     await expect(ui.locator('.grid')).toHaveCount(0)
-
-    await ui.locator('.modeToggle').click()
-    await expect(ui.locator('.grid .tile').first()).toBeVisible()
-    await expect(ui.locator('.row')).toHaveCount(0)
-
-    await ui.locator('.modeToggle').click()
-    await expect(ui.locator('.row').first()).toBeVisible()
   } finally {
     await h.close()
   }

@@ -36,17 +36,21 @@ export const STYLES = `
   /* Three values far enough apart to be three surfaces. The first attempt put
      #0c0e11, #121419 and #16181c next to each other, which is one colour as
      far as an eye is concerned. */
-  --ground: #06070a;
-  --side-panel: #101318;
-  --panel: #1a1e25;
-  --background: #1a1e25;
-  --foreground: #eceef2;
-  --muted-foreground: #9aa0aa;
-  --secondary: #262b33;
-  --secondary-hover: #2f353f;
-  --border: #333945;
-  --popover: #232830;
-  --popover-foreground: #eceef2;
+  /* **The landing page's palette, value for value** (site/index.html's :root).
+     The user's instruction — "깃헙 페이지처럼 깔끔하게 가자고 디자인 이미 예시가
+     다있구만" — and they are right that the example was already written. The
+     page and the product were two greys apart for no reason anyone could see. */
+  --ground: #0e0e12;
+  --side-panel: #17171e;
+  --panel: #17171e;
+  --background: #17171e;
+  --foreground: #f4f4f7;
+  --muted-foreground: #9c9ca9;
+  --secondary: #1e1e28;
+  --secondary-hover: #262633;
+  --border: #2a2a38;
+  --popover: #17171e;
+  --popover-foreground: #f4f4f7;
   --primary: #9d6ee0;
   --primary-hover: #ac82e6;
   --primary-foreground: #ffffff;
@@ -56,6 +60,14 @@ export const STYLES = `
   /* One surface. The sidebar, the bar and the page are the same colour and are
      told apart by a single hairline, not by three shades of grey. Only things
      that float — a menu, a dialog, the corner window — sit on --popover. */
+  /* The panels are translucent and blurred over a ground that is not flat.
+     Glass over a single colour is just a colour, so the ground carries two
+     soft washes for the panels to have something to be in front of. */
+  --glass: rgba(23, 23, 30, .66);
+  --glass-strong: rgba(23, 23, 30, .80);
+  --glass-line: rgba(255, 255, 255, .09);
+  --blur: saturate(150%) blur(22px);
+
   --hover: rgba(255, 255, 255, .07);
   --shadow: 0 16px 40px rgba(0, 0, 0, .45);
   --ease: .15s ease;
@@ -70,22 +82,25 @@ export const STYLES = `
 /* Light, for when YouTube is light or the reader asks for it. The sibling
    extension's light palette, so the two match in either mode. */
 .app.light {
-  --ground: #dfe1e6;
-  --side-panel: #f2f3f5;
+  --ground: #f0f0f4;
+  --side-panel: #f7f7f9;
   --panel: #ffffff;
   --background: #ffffff;
-  --foreground: #16181c;
-  --muted-foreground: #63676f;
-  --secondary: #eceef2;
-  --secondary-hover: #e2e4e9;
-  --border: #dcdfe5;
+  --foreground: #141418;
+  --muted-foreground: #5e5e6e;
+  --secondary: #f0f0f4;
+  --secondary-hover: #e6e6ec;
+  --border: #e2e2e8;
   --popover: #ffffff;
-  --popover-foreground: #16181c;
+  --popover-foreground: #141418;
   --primary: #7e4dc5;
   --primary-hover: #8f61d0;
   --primary-foreground: #ffffff;
   --destructive: #d63b5e;
   --ring: #7e4dc5;
+  --glass: rgba(255, 255, 255, .66);
+  --glass-strong: rgba(255, 255, 255, .78);
+  --glass-line: rgba(0, 0, 0, .07);
   --hover: rgba(0, 0, 0, .05);
   --shadow: 0 16px 40px rgba(0, 0, 0, .16);
 }
@@ -133,7 +148,11 @@ export const STYLES = `
   display: grid;
   grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
   gap: var(--gap); padding: var(--gap);
-  background: var(--ground); color: var(--foreground);
+  background:
+    radial-gradient(72% 55% at 12% -8%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 62%),
+    radial-gradient(58% 46% at 96% 106%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 62%),
+    var(--ground);
+  color: var(--foreground);
   font: 14px/1.4285714 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo',
         'Noto Sans KR', 'Malgun Gothic', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -170,9 +189,10 @@ input { font: inherit; color: inherit; }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .side {
-  /* Darker than the content and edged, so the two are plainly two things.
-     Equal fills separated by nothing read as one wide column. */
-  background: var(--side-panel); border: 1px solid var(--border);
+  /* Glass, over the ground's wash. Edged with a light hairline rather than a
+     border colour, which is what makes a pane read as glass and not as a box. */
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
   padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
 }
@@ -240,6 +260,13 @@ input { font: inherit; color: inherit; }
   min-width: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.02em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.themeButton {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 34px; height: 34px; border-radius: var(--radius-md);
+  color: var(--muted-foreground); transition: background var(--ease), color var(--ease);
+}
+.themeButton:hover { color: var(--foreground); background: var(--hover); }
+
 .drawerClose {
   display: none; width: 34px; height: 34px; border-radius: var(--radius-md);
   align-items: center; justify-content: center; color: var(--muted-foreground);
@@ -249,7 +276,8 @@ input { font: inherit; color: inherit; }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
 .main {
-  background: var(--panel); border: 1px solid var(--border);
+  background: var(--glass-strong); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
   overflow-y: auto; padding: 28px 28px 48px; min-width: 0;
 }
@@ -304,6 +332,11 @@ input { font: inherit; color: inherit; }
 .row.dead { opacity: .4; }
 .row .idx { color: var(--muted-foreground); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
 .row .thumb { width: 56px; height: 32px; border-radius: 4px; background: var(--secondary) center/cover; }
+/* Square, because a playlist's picture is a cover. The trailing chevron is the
+   one from the sidebar's exit, turned around. */
+.row.plrow { grid-template-columns: 44px 1fr 20px; }
+.row.plrow .thumb { width: 44px; height: 44px; border-radius: 6px; }
+.row.plrow > svg { color: var(--muted-foreground); transform: rotate(180deg); justify-self: end; }
 .row .meta { min-width: 0; }
 .row .title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .by { color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -343,7 +376,7 @@ input { font: inherit; color: inherit; }
   position: absolute; right: 10px; bottom: 10px;
   width: 40px; height: 40px; border-radius: 999px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--primary); color: var(--primary-foreground);
+  background: oklch(0 0 0 / 74%); color: oklch(0.985 0 0);
   box-shadow: var(--shadow);
   opacity: 0; transform: translateY(6px);
   transition: opacity var(--ease), transform var(--ease);
@@ -444,8 +477,13 @@ input { font: inherit; color: inherit; }
 }
 .ctl button:hover, .right button:hover, .drawerToggle:hover { color: var(--foreground); }
 .ctl button.on, .right button.on { color: var(--foreground); }
-.ctl .big { background: var(--primary); color: var(--primary-foreground); border-radius: 999px; }
-.ctl .big:hover { background: var(--primary-hover); color: var(--primary-foreground); }
+/* The transport's play button is not the accent. It was the largest purple
+   thing on the screen, next to purple sliders and purple badges on every card,
+   and a colour used that often stops pointing at anything. It is the highest
+   contrast shape instead, which is what a play button wants to be; --primary
+   is left to the elapsed line and the one primary button a screen has. */
+.ctl .big { background: var(--foreground); color: var(--background); border-radius: 999px; }
+.ctl .big:hover { background: var(--foreground); color: var(--background); opacity: .88; }
 .seek {
   display: flex; align-items: center; gap: 12px; width: 100%; max-width: 620px;
   font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
@@ -483,8 +521,9 @@ input[type=range]::-moz-range-thumb {
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
 .menu {
   position: fixed; z-index: 2147483100; min-width: 208px; padding: 4px;
-  background: var(--popover); color: var(--popover-foreground);
-  border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow);
+  background: var(--glass-strong); color: var(--popover-foreground);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line); border-radius: var(--radius-md); box-shadow: var(--shadow);
 }
 .menu button {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -499,8 +538,9 @@ input[type=range]::-moz-range-thumb {
 }
 .modal {
   width: 420px; max-height: 72vh; display: flex; flex-direction: column;
-  background: var(--popover); color: var(--popover-foreground);
-  border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow);
+  background: var(--glass-strong); color: var(--popover-foreground);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line); border-radius: var(--radius-lg); box-shadow: var(--shadow);
 }
 .modal h3 { margin: 0; padding: 22px 22px 12px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
 .modal .list { overflow-y: auto; padding: 0 14px 8px; }
@@ -524,8 +564,9 @@ input[type=range]::-moz-range-thumb {
 }
 .toast {
   padding: 12px 18px; border-radius: var(--radius-md); font-size: 14px;
-  background: var(--popover); color: var(--popover-foreground);
-  border: 1px solid var(--border); box-shadow: var(--shadow);
+  background: var(--glass-strong); color: var(--popover-foreground);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line); box-shadow: var(--shadow);
 }
 .toast.bad { color: var(--destructive); }
 
@@ -595,10 +636,10 @@ input[type=range]::-moz-range-thumb {
   grid-row: 1; grid-column: 1;
   display: flex; align-items: center; gap: 9px;
   height: var(--top-all); padding: env(safe-area-inset-top) 10px 0;
-  background: var(--side-panel); border-bottom: 1px solid var(--border);
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border-bottom: 1px solid var(--glass-line);
 }
 .app.narrow .drawerToggle { display: inline-flex; width: 38px; height: 38px; margin-right: -3px; }
-.app.narrow .top > svg { flex: none; color: var(--muted-foreground); }
 .app.narrow .drawerClose { display: inline-flex; }
 
 .app.narrow .main {
@@ -622,16 +663,18 @@ input[type=range]::-moz-range-thumb {
    literal.) */
 .app.narrow .side {
   position: fixed; left: -302px; top: 0; height: 100dvh; width: 302px; z-index: 20;
-  border: 0; border-right: 1px solid var(--border); border-radius: 0;
+  background: var(--glass-strong);
+  border: 0; border-right: 1px solid var(--glass-line); border-radius: 0;
   transition: left .22s ease;
   padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
 }
 .app.narrow.drawer-open .side { left: 0; }
 .app.narrow .brand { padding: 4px 4px 14px; }
 /* A finger is not a cursor: every line in the drawer is a target. */
-.app.narrow .nav, .app.narrow .exit { padding: 11px 12px; font-size: 15px; }
+.app.narrow .nav { padding: 11px 12px; font-size: 15px; }
+.app.narrow .exit { height: 42px; margin-top: 14px; font-size: 14px; }
 .app.narrow .side .pl { padding: 9px 12px; font-size: 14px; }
-.app.narrow .exit { margin-top: 8px; border-top: 1px solid var(--border); border-radius: 0; padding-top: 16px; }
+
 /* Sized like the app, and for the same reason: inset: 0 measures a box that
    can be wider than the screen, and a scrim wider than the screen makes the
    page overflow. On a phone that is not a cosmetic problem — the browser zooms
@@ -656,13 +699,11 @@ input[type=range]::-moz-range-thumb {
 .app.narrow .bar {
   grid-row: 3; grid-column: 1; position: relative;
   display: flex; align-items: center; gap: 10px;
-  background: var(--side-panel); border-top: 1px solid var(--border);
-  padding: 6px 8px calc(13px + env(safe-area-inset-bottom));
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border-top: 1px solid var(--glass-line);
+  padding: 7px 8px calc(16px + env(safe-area-inset-bottom));
 }
-.app.narrow .now {
-  flex: 1; min-width: 0; gap: 10px; padding: 4px; margin: -4px;
-  border-radius: var(--radius-md); cursor: pointer;
-}
+.app.narrow .now { flex: 1; min-width: 0; gap: 10px; cursor: pointer; }
 .app.narrow .now .thumb { width: 38px; height: 38px; }
 .app.narrow .now .t { font-size: 13.5px; }
 .app.narrow .now .b { font-size: 11.5px; margin-top: 1px; }
@@ -685,8 +726,16 @@ input[type=range]::-moz-range-thumb {
 .app.narrow:not(.sheet-open) .seek {
   position: absolute; left: 14px; right: 14px; top: auto;
   bottom: calc(env(safe-area-inset-bottom) + 3px);
-  max-width: none; gap: 0;
+  /* width: auto, and it matters: the base rule sets width: 100%, which on an
+     absolutely positioned box wins over the left/right pair — the track began
+     at 14px and then took the full width anyway, so its right end hung 14px
+     off the side of the screen. */
+  width: auto; max-width: none; gap: 0;
 }
+/* A shorter box than the 16px the sliders take elsewhere, so the track clears
+   the row above it instead of overlapping the title by six pixels. */
+.app.narrow:not(.sheet-open) .seek input { height: 10px; }
+.app.narrow:not(.sheet-open) .seek input::-webkit-slider-thumb { margin-top: -3px; }
 .app.narrow:not(.sheet-open) .seek span { display: none; }
 /* Small, because it is a hint of where you are rather than a control asking
    to be dragged — the full-size one belongs in the opened player. */
@@ -705,6 +754,7 @@ input[type=range]::-moz-range-thumb {
   position: fixed; left: 0; top: 0; width: 100dvw; bottom: 0; z-index: 30;
   flex-direction: column; align-items: stretch; gap: 0;
   padding: calc(6px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+  background: var(--glass-strong);
   border-top: 0;
 }
 .app.narrow.sheet-open.has-stage .bar {
@@ -768,8 +818,12 @@ input[type=range]::-moz-range-thumb {
   .tile { width: 40vw; max-width: 176px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 20px 12px; }
   .cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px 12px; }
-  .head { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .head .cover { width: 160px; }
+  /* Side by side, not a big square with two lines stranded beneath it. The
+     screen's name is in the header now, so what is left here is a cover and a
+     couple of facts — which is a row. */
+  .head { flex-direction: row; align-items: center; gap: 14px; }
+  .head .cover { width: 88px; }
+  .head .sub { font-size: 13px; }
   .searchbox { margin-bottom: 16px; }
 
   /* The other shadow root: no .app around these, so they cannot be qualified

@@ -17,10 +17,6 @@ test('client shots', async () => {
     // Korean, pinned below. Not cosmetic: these pictures sit on a Korean page,
     // and a shot of an English UI puts two languages on one screen. The app
     // follows YouTube's own hl, which is not ours to assume.
-    //
-    // The theme is YouTube's own preference and cannot be asked for from here:
-    // colorScheme, the PREF cookie and setting the `dark` attribute were all
-    // measured and none of them moved it, so these come out light.
     colorScheme: 'dark',
   })
   const page = context.pages()[0] ?? (await context.newPage())
@@ -32,6 +28,12 @@ test('client shots', async () => {
   })
   await page.goto('https://www.youtube.com/watch?v=BzYnNdJhZQw', { waitUntil: 'domcontentloaded', timeout: 60_000 })
   const ui = page.locator('oc-easy-mode')
+  await ui.locator('.app').waitFor({ timeout: 60_000 })
+  // Dark, by pressing the product's own theme button — which changes YouTube's
+  // setting, which is the only thing the app follows. colorScheme, the PREF
+  // cookie and writing the attribute were each measured and none of them moved
+  // it; the button does, because it is the same switch a reader would press.
+  if (await ui.locator('.app.light').count()) await ui.locator('.themeButton').click()
   await ui.locator('.shelf .tile').first().waitFor()
   await page.waitForTimeout(6000)
   await page.screenshot({ path: `${OUT}/shot-explore.png` })

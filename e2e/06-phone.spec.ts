@@ -104,17 +104,18 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
   }
 })
 
-test('music mode on a narrow screen shows no floating picture', async () => {
+test('a narrow screen never floats the picture in a corner', async () => {
   const { context, page } = await phone()
   try {
     await page.goto('https://m.youtube.com/watch?v=BzYnNdJhZQw', {
       waitUntil: 'domcontentloaded',
       timeout: 60_000,
     })
-    await expect(page.locator('oc-easy-mode').locator('.app.narrow')).toBeVisible()
-    // A 288px window has nowhere to float on a 390px screen; it would sit on
-    // top of the list. The bar's artwork is the picture here.
-    await expect(page.locator('oc-easy-mode').locator('.slot')).toHaveClass(/hidden/)
+    const ui = page.locator('oc-easy-mode')
+    await expect(ui.locator('.app.narrow')).toBeVisible()
+    // A 280px window has nowhere to float on a 390px screen; it would sit on
+    // top of the list. Here the picture is either across the top or nowhere.
+    await expect(ui.locator('.slot')).not.toHaveClass(/corner/)
   } finally {
     await context.close()
   }
@@ -130,27 +131,23 @@ test('the picture never covers the header', async () => {
     const ui = page.locator('oc-easy-mode')
     await expect(ui.locator('.app.narrow')).toBeVisible()
 
-    // 영상 mode puts the picture across the top of the screen, and YouTube's
-    // player is drawn above the whole app — it has to be, or our panels would
-    // hide it. So anything of ours up there has to start below the stage, or
-    // it is unreachable: this is how the drawer button and the mode switch
-    // were both buried, leaving no way out of 영상 mode but Escape.
-    // The switch also closes the drawer here, because 둘러보기 is 음악's front
-    // screen and 영상 moves off it — so there is nothing left to close.
-    await ui.locator('.drawerToggle').click()
-    await ui.locator('.modeToggle').click()
+    // Playing something puts the picture across the top of the screen, and
+    // YouTube's player is drawn above the whole app — it has to be, or our
+    // panels would hide it. So anything of ours up there has to start below
+    // the stage, or it is unreachable: this is how the drawer button was
+    // buried, leaving no way out but Escape.
+    const first = ui.locator('.tile, .row').first()
+    await first.waitFor({ timeout: 60_000 })
+    await first.click()
     await expect(ui.locator('.slot')).toHaveClass(/stage/)
-    await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBeLessThan(0)
 
     const top = (await ui.locator('.top').boundingBox())!
     const stage = (await ui.locator('.slot').boundingBox())!
     expect(stage.y).toBeGreaterThanOrEqual(top.y + top.height - 1)
 
-    // And the way back is still there to be pressed — which was the whole
-    // point: the video used to cover the button that opens this.
+    // And the way back is still there to be pressed.
     await ui.locator('.drawerToggle').click()
-    await ui.locator('.modeToggle').click()
-    await expect(ui.locator('.slot')).toHaveClass(/hidden/)
+    await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBe(0)
   } finally {
     await context.close()
   }

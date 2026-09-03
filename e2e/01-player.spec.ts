@@ -44,6 +44,13 @@ test('the player is placed over the slot, and the slot moves with the layout', a
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
 
+    // Something has to be playing for there to be a picture at all: it is
+    // shown while a track is loaded and gone when none is.
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    await ui.locator('.searchbox input').fill('lofi')
+    await ui.locator('.searchbox input').press('Enter')
+    await ui.locator('.row').first().click()
+
     const rects = async () =>
       h.page.evaluate(() => {
         const host = document.querySelector('oc-easy-mode')!

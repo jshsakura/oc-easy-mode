@@ -49,7 +49,7 @@
     --text: #f4f4f7;
     --text-muted: #9c9ca9;
     --accent: #9d6ee0;
-    --accent-contrast: #0e0e12;
+    --accent-contrast: #ffffff;
     --code-bg: #1f1f2a;
     color-scheme: dark;
   }
@@ -63,7 +63,10 @@
   --text: #f4f4f7;
   --text-muted: #9c9ca9;
   --accent: #9d6ee0;
-  --accent-contrast: #0e0e12;
+  /* White on the purple, not near-black. The dark theme had the accent's
+     contrast colour set to the page background, which made the download
+     button read as a disabled chip. */
+  --accent-contrast: #ffffff;
   --code-bg: #1f1f2a;
   color-scheme: dark;
 }
@@ -341,7 +344,11 @@ svg {
 
 /* 화면 미리보기 영역 */
 .showcase {
-  padding: 0 0 var(--band);
+  /* padding-bottom, not the shorthand. This element carries .wrap too, and
+     `padding: 0 0 …` sets padding-inline to zero — so the cards ran to both
+     edges of a phone. The same trap is written up at .wrap itself, and it was
+     walked into a second time here. */
+  padding-bottom: var(--band);
 }
 
 .showcase-grid {

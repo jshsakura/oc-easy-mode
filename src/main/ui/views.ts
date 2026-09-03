@@ -321,25 +321,38 @@ async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
       h('div', { class: 'toolbar' }, create),
       list.length === 0
         ? nothing(t('재생목록이 없습니다.'), 'library')
-        : h('div', { class: 'cards' }, list.map((p) => card(ctx, p))),
+        : h('div', { class: 'rows' }, list.map((p) => card(ctx, p))),
     )
   } catch (err) {
     replace(main, h('h2', null, t('내 재생목록')), h('div', { class: 'err' }, explain(err)))
   }
 }
 
+/**
+ * One playlist, as a row.
+ *
+ * A wall of square covers looked handsome and was the wrong shape for the job:
+ * playlists are where songs are put in and taken out, and that is list work.
+ * Twelve of them fit on a screen this way instead of four.
+ */
 function card(ctx: Ctx, p: Playlist): HTMLElement {
   return h(
-    'button',
-    { class: 'card', 'data-nav': '', onclick: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }) },
+    'div',
+    {
+      class: 'row plrow',
+      'data-nav': '',
+      tabindex: '0',
+      role: 'button',
+      onclick: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }),
+    },
+    h('div', { class: 'thumb', style: p.cover ? `background-image: url(${p.cover})` : '' }),
     h(
       'div',
-      { class: 'cover', style: p.cover ? `background-image: url(${p.cover})` : '' },
-      !p.cover && icon('library', 28),
-      h('span', { class: 'play' }, icon('play', 20)),
+      { class: 'meta' },
+      h('div', { class: 'title', title: p.title }, p.title),
+      h('div', { class: 'by' }, p.subtitle),
     ),
-    h('div', { class: 't', title: p.title }, p.title),
-    h('div', { class: 's' }, p.subtitle),
+    icon('back', 16),
   )
 }
 

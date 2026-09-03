@@ -11,9 +11,9 @@ import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { layoutFor, youtubeIsDark } from '../store.ts'
+import { youtubeIsDark, type Mode } from '../store.ts'
 import { narrowNow } from './device.ts'
-import { h, icon, replace } from './dom.ts'
+import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
 import { clock, type Ctx, type View } from './ctx.ts'
 import { showMenu, toast } from './overlay.ts'
@@ -57,6 +57,54 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // change it while we are up, so it is watched rather than read once.
   function applyTheme(): void {
     app.classList.toggle('light', !youtubeIsDark())
+  }
+
+  /**
+   * The theme button, which changes **YouTube's** setting rather than keeping
+   * one of our own.
+   *
+   * The user's call, and the right one: two switches for one question is how
+   * you end up with a light panel over a dark page. So there is still no
+   * theme of ours — this presses YouTube's, and the observer above notices the
+   * attribute change and repaints us with it. The choice outlives the mode,
+   * which is the point of pressing it.
+   *
+   * The attribute is what YouTube reads right now; f6's 0x400 bit in the PREF
+   * cookie is what it reads on the next page. Both, or the page snaps back.
+   */
+  function setYouTubeDark(on: boolean): void {
+    const root = document.documentElement
+    if (on) root.setAttribute('dark', '')
+    else root.removeAttribute('dark')
+    try {
+      const raw = document.cookie.split('; ').find((c) => c.startsWith('PREF='))?.slice(5) ?? ''
+      const pref = new URLSearchParams(raw)
+      const f6 = Number.parseInt(pref.get('f6') ?? '0', 16) || 0
+      pref.set('f6', ((on ? f6 | 0x400 : f6 & ~0x400) >>> 0).toString(16))
+      document.cookie = `PREF=${pref.toString()}; domain=.youtube.com; path=/; max-age=63072000`
+    } catch {
+      // A browser that will not take the cookie still gets the attribute, and
+      // the choice lasts as long as the page does.
+    }
+  }
+
+  function themeButton(): HTMLElement {
+    const dark = youtubeIsDark()
+    return h(
+      'button',
+      {
+        class: 'themeButton',
+        'data-nav': '',
+        title: t('테마'),
+        'aria-label': t('테마'),
+        onclick: () => {
+          setYouTubeDark(!youtubeIsDark())
+          drawTop()
+          drawSide()
+        },
+      },
+      icon(dark ? 'sun' : 'moon', 18),
+    )
   }
   const themeWatch = new MutationObserver(applyTheme)
   themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['dark'] })
@@ -106,6 +154,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       }
       ctx.view = view
       engine.setView(nameOf(view))
+      engine.setMode(modeFor(view))
+      setLayout(pictureNow())
       app.classList.remove('sheet-open')
       drawTop()
       drawSide()
@@ -136,13 +186,25 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   ]
 
   /**
-   * 영상 모드, as one switch rather than two buttons.
+   * Which shape a screen's lists take.
    *
-   * It lives in the sidebar on every screen size, and it is a toggle because
-   * that is what it is: there are two states, one of them is on, and a pair of
-   * segmented buttons made a binary look like a choice between two places.
+   * There is no switch any more — the user's decision: "영상과 음악모드 이거
+   * 구분하지말자 홈가면 그냥 영상모드인거고", and 구독 with it. So the screen
+   * says it. YouTube's own feeds are video and are drawn as a wall of
+   * thumbnails; everything else is a list of tracks.
    */
-  function modes(): HTMLElement {
+  function modeFor(view: View): Mode {
+    return view.kind === 'home' || view.kind === 'subs' || view.kind === 'history' ? 'video' : 'music'
+  }
+
+  /**
+   * The override, in the sidebar where it was asked for.
+   *
+   * The screen sets the shape on the way in; this changes it for the screen
+   * you are on and stays until you go somewhere else. So the common case needs
+   * no press, and a list you would rather see as thumbnails is one press away.
+   */
+  function modeToggle(): HTMLElement {
     const on = engine.state.mode === 'video'
     return h(
       'button',
@@ -152,26 +214,9 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         role: 'switch',
         'aria-checked': on ? 'true' : 'false',
         onclick: () => {
-          const next = engine.state.mode === 'video' ? 'music' : 'video'
-          engine.setMode(next)
-          setLayout(layoutFor(next))
-          drawBar()
-          // Switching mode moves you off the *other* mode's front screen, and
-          // nowhere else.
-          //
-          // 둘러보기 browses YouTube's Music channel: it is music whatever
-          // shape its rows are drawn in, so 영상 mode sitting on it said video
-          // and showed music. 홈 is YouTube's general feed, which is what 영상
-          // means. But a search, a playlist or the queue belongs to neither
-          // mode — there the switch is exactly what it looks like, a list
-          // becoming a grid, and taking the screen away would be a bug.
-          const entry = { music: 'explore', video: 'home' } as const
-          if (ctx.view.kind === entry[next === 'video' ? 'music' : 'video']) {
-            closeDrawer()
-            ctx.go(next === 'video' ? { kind: 'home' } : { kind: 'explore' })
-          } else {
-            drawSide()
-          }
+          engine.setMode(on ? 'music' : 'video')
+          setLayout(pictureNow())
+          drawSide()
         },
       },
       icon(on ? 'video' : 'note', 16),
@@ -187,11 +232,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // below it, taking a band of a phone's height to say one word. The header
   // had the room and the content did not.
   function drawTop(): void {
+    // No glyph beside the name. The header is a strip with one button and one
+    // word on it; a second mark in that space reads as clutter, not as help.
     replace(
       top,
       menuButton,
-      icon(iconOf(ctx.view), 18),
       h('div', { class: 'name' }, titleOf(ctx.view)),
+      narrowNow() && themeButton(),
     )
   }
 
@@ -201,9 +248,12 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       h(
         'div',
         { class: 'brand' },
-        icon('note', 18),
+        mark(20),
         h('span', null, 'Easy Mode'),
         h('div', { class: 'spacer' }),
+        // The header carries this on a phone, where the sidebar is a drawer
+        // and out of the way most of the time.
+        !narrowNow() && themeButton(),
         // Only ever visible in the drawer. Reaching the scrim means reaching
         // across the screen, and a drawer with no close button reads as stuck.
         h(
@@ -212,7 +262,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           icon('close', 18),
         ),
       ),
-      modes(),
+      modeToggle(),
       NAV.map((item) => [
         item.section && h('h4', null, item.section),
         h(
@@ -515,6 +565,28 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // Stopped here, at the app, on the way up — before the document ever sees
   // it. shell.ts's panic key and the remote both listen in the capture phase,
   // which runs first, so neither loses anything.
+  // **The first tap is what makes playback possible on iOS.**
+  //
+  // WebKit lets script drive a media element only after a gesture has started
+  // that element at least once, and loadVideoById is asynchronous — by the
+  // time it has a source, the activation that asked for it is spent, so the
+  // track sits there loaded and paused. Playing and immediately pausing the
+  // element that is already there costs nothing visible and hands over the
+  // permission for the rest of the session. Once.
+  let unlocked = false
+  const unlockOnFirstTouch = () => {
+    if (unlocked) return
+    unlocked = true
+    const el = document.querySelector('video')
+    if (!el || !el.paused) return
+    void Promise.resolve(el.play())
+      .then(() => el.pause())
+      .catch(() => {
+        unlocked = false
+      })
+  }
+  app.addEventListener('pointerdown', unlockOnFirstTouch, { capture: true })
+
   const onKeyInField = (ev: KeyboardEvent) => {
     const el = ev.composedPath()[0] as HTMLElement | undefined
     if (!el) return
@@ -527,7 +599,32 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   const offRemote = installRemote(shell.root, shell.overlay)
 
+  // The picture is up while something is playing and gone when nothing is —
+  // asked for in those words ("재생할때는 위쪽에 플레이어 보여주고"), and it
+  // answers the question the lists cannot: whether what you are hearing is a
+  // video or a song. Choosing 구석에 두기 or 소리만 듣기 from the bar still
+  // wins until the next track.
+  /**
+   * Where the picture goes when something is playing.
+   *
+   * A phone gets the stage: there is nowhere to float on 390 pixels, and a
+   * window over the list is a window over the thing you are reading. A desktop
+   * gets the stage on the screens that are about pictures and the corner
+   * window on a track list, which is what the room is for.
+   */
+  function pictureNow(): VideoLayout {
+    if (!engine.current) return 'hidden'
+    if (narrowNow()) return 'stage'
+    return engine.state.mode === 'video' ? 'stage' : 'corner'
+  }
+
+  let showing = engine.current?.videoId
   const offChange = engine.subscribe(() => {
+    const id = engine.current?.videoId
+    if (id !== showing) {
+      showing = id
+      setLayout(pictureNow())
+    }
     drawBar()
     if (ctx.view.kind === 'queue') ctx.reload()
   })
@@ -539,7 +636,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   drawSide()
   drawBar()
   drawTick()
-  setLayout(engine.state.video)
+  engine.setMode(modeFor(ctx.view))
+  setLayout(pictureNow())
   void render(ctx, main)
 
   // The sidebar's playlist list arrives late and is not worth blocking on.
@@ -555,27 +653,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       offChange()
       offTick()
     },
-  }
-}
-
-/** The glyph the sidebar gives this screen, so the header agrees with it. */
-function iconOf(view: View): Parameters<typeof icon>[0] {
-  switch (view.kind) {
-    case 'explore':
-      return 'radio'
-    case 'search':
-      return 'search'
-    case 'home':
-      return 'home'
-    case 'subs':
-      return 'subs'
-    case 'history':
-      return 'history'
-    case 'playlists':
-    case 'playlist':
-      return 'library'
-    case 'queue':
-      return 'queue'
   }
 }
 

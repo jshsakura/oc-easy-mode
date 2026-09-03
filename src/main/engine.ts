@@ -329,6 +329,7 @@ export class Engine {
     save(this.state)
   }
 
+
   setMode(mode: Mode): void {
     this.state.mode = mode
     this.changed()
