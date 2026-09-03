@@ -1,5 +1,5 @@
 {
-  "name": "oc-tube-mode",
+  "name": "oc-easy-mode",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,7 +10,7 @@
     "dev": "node scripts/build.mjs --watch",
     "check": "tsc --noEmit",
     "icons": "python3 scripts/make-icons.py",
-    "zip": "npm run build && cd dist && zip -qr ../oc-tube-mode.zip . && cd .. && echo 'oc-tube-mode.zip'",
+    "zip": "npm run build && cd dist && zip -qr ../oc-easy-mode.zip . && cd .. && echo 'oc-easy-mode.zip'",
     "e2e": "npm run build && playwright test",
     "test": "npm run build && playwright test"
   },

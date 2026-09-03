@@ -29,9 +29,9 @@ export interface Persisted {
   view: string
 }
 
-const KEY = 'oc-tube-mode:state'
+const KEY = 'oc-easy-mode:state'
 /** A synchronous "is the mode on" flag, so the hide style can go in at document_start. */
-const KEY_ON = 'oc-tube-mode:on'
+const KEY_ON = 'oc-easy-mode:on'
 
 export const DEFAULTS: Persisted = {
   mode: 'music',

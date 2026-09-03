@@ -4,11 +4,30 @@
 // the MAIN world are not delivered by the old one.
 
 import { chromium, type BrowserContext, type Page } from '@playwright/test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 const DIST = resolve(import.meta.dirname, '../dist')
+
+/**
+ * A copy of the build with `world: "MAIN"` taken off the main script, which is
+ * what Safari and Orion do to it. The file then loads into the isolated world,
+ * where it must refuse to run and let the injection fallback carry it across.
+ */
+export function orionFlavour(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'oc-easy-mode-orion-'))
+  cpSync(DIST, dir, { recursive: true })
+  const manifestPath = join(dir, 'manifest.json')
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+    content_scripts: Array<{ js: string[]; world?: string }>
+  }
+  for (const entry of manifest.content_scripts) {
+    if (entry.js.includes('main.js')) delete entry.world
+  }
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+  return dir
+}
 
 export interface Harness {
   context: BrowserContext
@@ -18,7 +37,7 @@ export interface Harness {
 
 /** Opens `url` with the mode already switched on, unless `on` is false. */
 export async function open(url: string, on = true): Promise<Harness> {
-  const profile = mkdtempSync(join(tmpdir(), 'oc-tube-mode-'))
+  const profile = mkdtempSync(join(tmpdir(), 'oc-easy-mode-'))
   const context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`, '--lang=ko-KR'],
@@ -27,7 +46,7 @@ export async function open(url: string, on = true): Promise<Harness> {
   if (on) {
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('oc-tube-mode:on', '1')
+        localStorage.setItem('oc-easy-mode:on', '1')
       } catch {
         /* first-run about:blank has no storage; the real page will */
       }
@@ -48,5 +67,5 @@ export async function open(url: string, on = true): Promise<Harness> {
 
 /** The app's shadow root, as a locator that pierces it. */
 export function app(page: Page) {
-  return page.locator('oc-tube-mode')
+  return page.locator('oc-easy-mode')
 }

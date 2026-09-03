@@ -9,12 +9,19 @@
 > 유튜브의 노드는 **하나도 건드리지 않는다.**
 
 ```
-<style id="oc-tube-mode">     유튜브를 가리는 스타일시트 하나
-<oc-tube-mode>                내 UI 가 들어있는 섀도우 호스트
-<oc-tube-mode-overlay>        메뉴·모달·토스트. 영상보다 위에 있어야 해서 따로 둔다
+<style id="oc-easy-mode">     유튜브를 가리는 스타일시트 하나
+<oc-easy-mode>                내 UI 가 들어있는 섀도우 호스트
+<oc-easy-mode-overlay>        메뉴·모달·토스트. 영상보다 위에 있어야 해서 따로 둔다
 ```
 
 들어내면 끝이다. 저장해둔 상태가 없으니 **되돌리다 실패할 수 있는 지점 자체가 없다.**
+
+### 예외 하나 — 오리온의 주입 스크립트
+
+`world: "MAIN"` 을 무시하는 브라우저(오리온·사파리)에서는 `<script>` 하나를
+`document.head` 맨 앞에 넣는다. 유튜브의 노드에 자식이 하나 생기는 것이므로 위
+문장의 유일한 예외다. **로드되는 즉시, 실패해도 즉시 스스로 걷어낸다.** 남는 것은
+없고, `e2e/02-orion.spec.ts` 가 실제로 그것을 확인한다.
 
 ### 왜 `visibility` 이고 `display` 가 아닌가
 
@@ -22,7 +29,7 @@
 방법이 없지만 `visibility` 는 있다. 그래서 이렇게 한다.
 
 ```css
-body > *:not(oc-tube-mode):not(oc-tube-mode-overlay) { visibility: hidden }
+body > *:not(oc-easy-mode):not(oc-easy-mode-overlay) { visibility: hidden }
 #movie_player { visibility: visible; position: fixed; /* 우리 슬롯 위로 */ }
 ```
 

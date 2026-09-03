@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "튜브 모드",
+  "name": "이지 모드",
   "version": "0.1.0",
   "description": "유튜브 화면을 내 UI로 바꿉니다. 음악과 영상을 함께 다루고, 언제든 원래 화면으로 돌아갑니다.",
   "minimum_chrome_version": "120",
@@ -40,6 +40,16 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "튜브 모드"
-  }
+    "default_title": "이지 모드"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "main.js"
+      ],
+      "matches": [
+        "https://www.youtube.com/*"
+      ]
+    }
+  ]
 }

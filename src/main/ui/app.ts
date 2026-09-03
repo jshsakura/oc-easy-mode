@@ -87,7 +87,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     const mode = engine.state.mode
     replace(
       side,
-      h('div', { class: 'brand' }, icon('note', 20), h('span', null, '튜브 모드')),
+      h('div', { class: 'brand' }, icon('note', 20), h('span', null, '이지 모드')),
       h(
         'div',
         { class: 'modes' },

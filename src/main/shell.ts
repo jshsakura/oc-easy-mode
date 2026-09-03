@@ -3,8 +3,8 @@
 // **The invariant this whole file exists to keep: the extension owns exactly
 // two nodes in the page and mutates nothing else.**
 //
-//   <style id="oc-tube-mode">   one stylesheet, hiding YouTube's own chrome
-//   <oc-tube-mode>              one shadow host, holding all of our UI
+//   <style id="oc-easy-mode">   one stylesheet, hiding YouTube's own chrome
+//   <oc-easy-mode>              one shadow host, holding all of our UI
 //                               (plus its twin for menus, above the video)
 //
 // Nothing of YouTube's is moved, removed, reparented or rewritten — not one
@@ -30,9 +30,9 @@
 // again because the previous page wrote a flag. Uninstalling, disabling, or
 // simply not running is indistinguishable from plain YouTube.
 
-const STYLE_ID = 'oc-tube-mode'
-const HOST_TAG = 'oc-tube-mode'
-const OVERLAY_TAG = 'oc-tube-mode-overlay'
+const STYLE_ID = 'oc-easy-mode'
+const HOST_TAG = 'oc-easy-mode'
+const OVERLAY_TAG = 'oc-easy-mode-overlay'
 
 /** Everything the shell hands back to the app, and takes away on exit. */
 export interface Shell {

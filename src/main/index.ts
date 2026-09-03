@@ -21,6 +21,38 @@ import { explain, type Ctx } from './ui/ctx.ts'
 import { pick, toast } from './ui/overlay.ts'
 import { waitForYtCfg } from './ytcfg.ts'
 
+// ── Which world is this? ───────────────────────────────────────────────────
+//
+// `world: "MAIN"` is a Chrome manifest key. Browsers that do not implement it
+// do not fail — they load this same file into the ISOLATED world, where
+// `window.ytcfg` and `#movie_player`'s methods are invisible and the whole
+// product is a blank screen. Orion, which is where this extension actually
+// lives, is one of them.
+//
+// `chrome.runtime.id` is the exact test: it is the extension's id in an
+// isolated content script, and undefined on a page. So the copy that landed in
+// the wrong world stops here, says nothing, and lets the isolated side inject
+// a copy into the right one.
+const inPageWorld = (globalThis as { chrome?: { runtime?: { id?: string } } }).chrome?.runtime?.id === undefined
+
+// And once there, exactly one copy runs. Two scripts in the same world share
+// globals, so the manifest's copy and an injected one cannot both proceed.
+const CLAIM = '__ocEasyModeRunning'
+
+/**
+ * Announces which world we are in, asks for the setting, and starts if the
+ * fast flag already says to.
+ *
+ * Called from the very bottom of this file rather than here, because it reads
+ * module state that is declared below: a `let` is not merely undefined before
+ * its line, it throws.
+ */
+function boot(): void {
+  window.postMessage({ ns: NS, type: 'main-ready' } satisfies ToIsolated, location.origin)
+  ask({ ns: NS, type: 'get-config' })
+  if (config.musicMode) void start()
+}
+
 // ── The switch ─────────────────────────────────────────────────────────────
 //
 // Two sources say whether the mode is on, and they answer at different times.
@@ -33,7 +65,7 @@ let running: Runtime | null = null
 
 function quickFlag(): boolean {
   try {
-    return localStorage.getItem('oc-tube-mode:on') === '1'
+    return localStorage.getItem('oc-easy-mode:on') === '1'
   } catch {
     return false
   }
@@ -54,8 +86,6 @@ window.addEventListener('message', (ev) => {
   if (!config.musicMode && was) leave(false)
 })
 
-ask({ ns: NS, type: 'get-config' })
-
 // ── Boot ───────────────────────────────────────────────────────────────────
 
 interface Runtime {
@@ -75,7 +105,7 @@ async function start(): Promise<void> {
       // The panic key and the watchdog both mean the same thing: get out now.
       leave(reason === 'panic')
       if (reason === 'watchdog') {
-        console.warn('[튜브 모드] 화면을 띄우지 못해 원래 유튜브로 돌아갑니다.')
+        console.warn('[이지 모드] 화면을 띄우지 못해 원래 유튜브로 돌아갑니다.')
       }
     })
 
@@ -143,7 +173,7 @@ async function start(): Promise<void> {
       toast(shell.overlay, '유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.')
     }
   } catch (err) {
-    console.warn('[튜브 모드] 시작하지 못했습니다:', err)
+    console.warn('[이지 모드] 시작하지 못했습니다:', err)
     shell?.teardown()
     running = null
     leave(false)
@@ -202,7 +232,13 @@ async function reattach(): Promise<void> {
   if (player) running.engine.attach(player)
 }
 
-// A reload lands here with a queue already written down; nothing to do but let
-// the flag decide, which the message handler above does. This call covers the
-// case where the flag is on and chrome.storage is slow to answer.
-if (config.musicMode) void start()
+// Everything is declared; now decide whether any of it should happen.
+//
+// A reload lands here with a queue already written down, so the fast flag is
+// enough to start on: waiting for chrome.storage would show plain YouTube for
+// a moment first, and then swap it away under the reader.
+const claimed = (globalThis as Record<string, unknown>)[CLAIM] === true
+if (inPageWorld && !claimed) {
+  ;(globalThis as Record<string, unknown>)[CLAIM] = true
+  boot()
+}

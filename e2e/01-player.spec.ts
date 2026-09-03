@@ -45,7 +45,7 @@ test('the player is placed over the slot, and the slot moves with the layout', a
 
     const rects = async () =>
       h.page.evaluate(() => {
-        const host = document.querySelector('oc-tube-mode')!
+        const host = document.querySelector('oc-easy-mode')!
         const slot = host.shadowRoot!.querySelector('.slot')!.getBoundingClientRect()
         const player = document.getElementById('movie_player')!.getBoundingClientRect()
         return { slot: [slot.x, slot.y, slot.width, slot.height], player: [player.x, player.y, player.width, player.height] }
@@ -62,7 +62,7 @@ test('the player is placed over the slot, and the slot moves with the layout', a
     // Switch to the big layout and the player follows.
     // The menu lives in the second host, above the video rather than under it.
     await ui.locator('.right button[title="화면 위치"]').click()
-    await h.page.locator('oc-tube-mode-overlay').locator('.menu button', { hasText: '크게 보기' }).click()
+    await h.page.locator('oc-easy-mode-overlay').locator('.menu button', { hasText: '크게 보기' }).click()
     await expect
       .poll(async () => {
         const r = await rects()
@@ -91,7 +91,7 @@ test('the queue advances and the mode survives it', async () => {
 
     // Still in our UI, still one host, YouTube still hidden.
     await expect(ui.locator('.app')).toBeVisible()
-    await expect(h.page.locator('oc-tube-mode')).toHaveCount(1)
+    await expect(h.page.locator('oc-easy-mode')).toHaveCount(1)
   } finally {
     await h.close()
   }
