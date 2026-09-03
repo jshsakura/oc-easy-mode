@@ -14,10 +14,21 @@ test('client shots', async () => {
     channel: 'chromium',
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`, '--lang=ko-KR', '--autoplay-policy=no-user-gesture-required'],
     viewport: { width: 1440, height: 900 },
+    // Korean, pinned below. Not cosmetic: these pictures sit on a Korean page,
+    // and a shot of an English UI puts two languages on one screen. The app
+    // follows YouTube's own hl, which is not ours to assume.
+    //
+    // The theme is YouTube's own preference and cannot be asked for from here:
+    // colorScheme, the PREF cookie and setting the `dark` attribute were all
+    // measured and none of them moved it, so these come out light.
+    colorScheme: 'dark',
   })
   const page = context.pages()[0] ?? (await context.newPage())
   await page.addInitScript(() => {
-    try { localStorage.setItem('oc-easy-mode:on', '1') } catch {}
+    try {
+      localStorage.setItem('oc-easy-mode:on', '1')
+      localStorage.setItem('oc-easy-mode:state', JSON.stringify({ lang: 'ko' }))
+    } catch {}
   })
   await page.goto('https://www.youtube.com/watch?v=BzYnNdJhZQw', { waitUntil: 'domcontentloaded', timeout: 60_000 })
   const ui = page.locator('oc-easy-mode')

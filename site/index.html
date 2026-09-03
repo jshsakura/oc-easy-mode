@@ -148,7 +148,6 @@ svg {
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 20px;
 }
 
@@ -168,10 +167,15 @@ svg {
   display: block;
 }
 
+/* Pushed to the right rather than left in the middle. With three children and
+   space-between, the links floated in the centre of the bar with air on both
+   sides and belonged to neither end; the mark holds one edge and the links and
+   the theme button hold the other. */
 .nav {
   display: flex;
   align-items: center;
   gap: 24px;
+  margin-left: auto;
   font-size: 14px;
   color: var(--text-muted);
 }
@@ -184,6 +188,11 @@ svg {
   display: flex;
   align-items: center;
   gap: 10px;
+  /* On a phone the links are gone, so this has to hold the right edge itself. */
+  margin-left: auto;
+}
+@media (min-width: 721px) {
+  .header-controls { margin-left: 4px; }
 }
 
 .theme-button {
@@ -382,6 +391,9 @@ section {
 }
 
 .section-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -552,6 +564,46 @@ kbd {
   color: var(--text);
 }
 
+/* 아이콘 */
+.ico {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: currentColor;
+}
+
+/* A tile rather than a bare glyph: at 20px on a card this size an icon on its
+   own reads as a stray mark, and the tile gives it a place to be. */
+.icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  color: var(--accent);
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-heading .ico { color: var(--accent); }
+
+.section-label .ico { width: 15px; height: 15px; }
+
+/* The notices carry two-line titles beside one-line ones, and the box is held
+   at two lines so every card's body starts level. Centred, a one-line title
+   floated below its neighbours' first line — so the glyph lines up with the
+   first line instead. */
+.notice-item .card-heading { align-items: flex-start; }
+.notice-item .card-heading .ico { margin-top: 1px; }
+
 /* 바닥글 */
 .footer {
   padding: 44px 0;
@@ -565,6 +617,18 @@ kbd {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.footer-link span {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .footer a {
@@ -588,6 +652,27 @@ kbd {
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <symbol id="i-radio" viewBox="0 0 24 24"><path d="M3.2 6.2 18.6 1l.7 1.9L8 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8c0-.8.5-1.5 1.2-1.8zM7 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7-6h6v2h-6zm0-4h6v2h-6z"/></symbol>
+    <symbol id="i-queue" viewBox="0 0 24 24"><path d="M3 6h13v2H3zm0 4h13v2H3zm0 4h9v2H3zm15-2v6l5-3z"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z"/></symbol>
+    <symbol id="i-ban" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2c1.9 0 3.6.6 5 1.7L5.7 17A8 8 0 0 1 12 4zm0 16c-1.9 0-3.6-.6-5-1.7L18.3 7A8 8 0 0 1 12 20z"/></symbol>
+    <symbol id="i-dpad" viewBox="0 0 24 24"><path d="M12 2.5 17 8H7zM2.5 12 8 7v10zm19 0L16 17V7zM12 21.5 7 16h10z"/></symbol>
+    <symbol id="i-devices" viewBox="0 0 24 24"><path d="M3 4h13v2H4v9h8v2H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm3 15h6v2H6zm12-13h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 3v9h3V9z"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M13 2a3 3 0 0 1 3 3v1h3a1 1 0 0 1 1 1v4h-1a2.5 2.5 0 1 0 0 5h1v4a1 1 0 0 1-1 1h-4v-1a2.5 2.5 0 1 0-5 0v1H6a1 1 0 0 1-1-1v-4h1a2.5 2.5 0 1 0 0-5H5V7a1 1 0 0 1 1-1h4V5a3 3 0 0 1 3-3z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M4 4h5.2l2 2H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="i-exit" viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 1 5 5v2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v2h6V7a3 3 0 0 0-3-3z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6.1c0 5-3.4 9.3-8 10.9-4.6-1.6-8-5.9-8-10.9V5zm-4.6 5.3L6 8.7 15.3 18l1.4-1.4z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4.4 0-8 2.3-8 5v3h16v-3c0-2.7-3.6-5-8-5z"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 16 6 10l1.4-1.4L11 12.2V3h2v9.2l3.6-3.6L18 10zM5 20v-2h14v2z"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v2h-2zm0 4h2v6h-2z"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.4-3.4-1.4-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .3.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></symbol>
+  </defs>
+</svg>
 
 <header class="header">
   <div class="wrap header-inner">
@@ -616,7 +701,7 @@ kbd {
 
 <main>
   <div class="hero wrap">
-    <div class="badge">브라우저 확장 프로그램</div>
+    <div class="badge"><svg class="ico" width="14" height="14"><use href="#i-puzzle"/></svg>브라우저 확장 프로그램</div>
     <h1>심플하고 쉬운 유튜브 재생기</h1>
     <p class="hero-description">유튜브 화면을 심플하고 쉬운 재생기로 완전히 바꿔 드립니다. 음악과 영상을 한자리에서 다루며, 재생과 스트림은 유튜브가 그대로 맡습니다.</p>
     <div class="button-row">
@@ -628,9 +713,7 @@ kbd {
         <span id="version" class="version-pill"></span>
       </a>
       <a class="btn btn-secondary" href="https://github.com/jshsakura/oc-easy-mode">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.4-3.4-1.4-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .3.3.7 1 .7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/>
-        </svg>
+        <svg class="ico" width="18" height="18"><use href="#i-github"/></svg>
         GitHub
       </a>
     </div>
@@ -651,31 +734,37 @@ kbd {
   </div>
 
   <section id="features" class="wrap">
-    <p class="section-label">기능 안내</p>
+    <p class="section-label"><svg class="ico"><use href="#i-grid"/></svg>기능 안내</p>
     <h2 class="section-title">핵심 기능 구성</h2>
     <p class="section-description">복잡한 추천 피드 대신 정갈한 플레이어 화면을 제공합니다. 데이터와 재생은 유튜브가 그대로 맡고 화면만 바꿉니다.</p>
     <div class="feature-grid">
       <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-radio"/></svg></span>
         <h3>둘러보기</h3>
         <p>선반 형태로 구성된 첫 화면입니다. 유튜브 계정에 로그인하지 않으셔도 비어 있지 않고 음악과 영상 목록을 바로 탐색하실 수 있습니다.</p>
       </div>
       <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-queue"/></svg></span>
         <h3>대기열과 재생목록</h3>
         <p>재생 중인 대기열 목록을 자유롭게 확인하고 순서를 관리합니다. 무작위 재생, 반복 재생 기능과 함께 맞춤 재생목록을 간편하게 다룹니다.</p>
       </div>
       <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-video"/></svg></span>
         <h3>음악 모드와 영상 모드</h3>
         <p>가벼운 감상을 위한 트랙 줄 목록 형태와 큼직한 화면 감상을 위한 영상 썸네일 격자 형태를 버튼 하나로 자유롭게 오가실 수 있습니다.</p>
       </div>
       <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-ban"/></svg></span>
         <h3>쇼츠 없음</h3>
         <p>몰입을 방해하는 세로형 쇼츠 영상을 모든 화면과 탐색 목록에서 완전히 제외하여 정갈한 감상 환경을 유지합니다.</p>
       </div>
       <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-dpad"/></svg></span>
         <h3>방향키 조작</h3>
         <p>마우스 없이도 거실 TV를 다루듯 키보드 화살표 방향키로 항목을 이동하고 실행 키를 눌러 손쉽게 제어하실 수 있습니다.</p>
       </div>
       <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-devices"/></svg></span>
         <h3>데스크톱과 모바일</h3>
         <p>오리온, 크롬, 엣지 등 데스크톱 웹 브라우저는 물론, 모바일 오리온 브라우저에서도 동일하게 작동합니다.</p>
       </div>
@@ -683,12 +772,12 @@ kbd {
   </section>
 
   <section id="install" class="wrap">
-    <p class="section-label">설치 가이드</p>
+    <p class="section-label"><svg class="ico"><use href="#i-download"/></svg>설치 가이드</p>
     <h2 class="section-title">브라우저별 설치 방법</h2>
     <p class="section-description">내려받으신 파일을 브라우저에 등록해 주세요. 별도의 복잡한 과정 없이 1분 안에 설치하실 수 있습니다.</p>
     <div class="install-grid">
       <div class="install-card">
-        <h3>오리온 브라우저</h3>
+        <h3 class="card-heading"><svg class="ico"><use href="#i-puzzle"/></svg>오리온 브라우저</h3>
         <ol class="step-list">
           <li>상단의 <strong>내려받기</strong> 단추를 눌러 압축 파일(zip)을 받아 주세요.</li>
           <li>브라우저 메뉴에서 <strong>설정 → 확장</strong>으로 이동하신 후 <strong>+</strong> 단추를 눌러 해당 zip 파일을 선택해 주세요.</li>
@@ -696,7 +785,7 @@ kbd {
         </ol>
       </div>
       <div class="install-card">
-        <h3>크롬 및 엣지 브라우저</h3>
+        <h3 class="card-heading"><svg class="ico"><use href="#i-folder"/></svg>크롬 및 엣지 브라우저</h3>
         <ol class="step-list">
           <li>내려받으신 압축 파일(zip)을 원하시는 폴더에 풀어 주세요.</li>
           <li>주소창에 <code>chrome://extensions</code> 를 입력하여 이동하신 후, 우측 상단의 <strong>개발자 모드</strong>를 켜 주세요.</li>
@@ -707,24 +796,24 @@ kbd {
   </section>
 
   <section id="notes" class="wrap">
-    <p class="section-label">안내 사항</p>
+    <p class="section-label"><svg class="ico"><use href="#i-info"/></svg>안내 사항</p>
     <h2 class="section-title">이용 시 알아두실 점</h2>
     <p class="section-description">원활하고 투명한 이용을 위해 확장의 동작 방식과 범위를 미리 안내해 드립니다.</p>
     <dl class="notice-grid">
       <div class="notice-item">
-        <dt>Esc 두 번으로 언제든 종료</dt>
+        <dt class="card-heading"><svg class="ico"><use href="#i-exit"/></svg>Esc 두 번으로 언제든 종료</dt>
         <dd>유튜브의 본래 구조를 훼손하지 않습니다. 키보드의 <kbd>Esc</kbd> 키를 1초 안에 두 번 누르시면 언제든지 확장을 닫고 본래의 유튜브 화면으로 즉시 되돌아옵니다.</dd>
       </div>
       <div class="notice-item">
-        <dt>화면 잠금 재생은 브라우저 기능 사용</dt>
+        <dt class="card-heading"><svg class="ico"><use href="#i-lock"/></svg>화면 잠금 재생은 브라우저 기능 사용</dt>
         <dd>기기 화면이 꺼진 상태에서의 재생은 확장이 직접 제어하지 않으며, 오리온 브라우저 등이 자체적으로 지원하는 백그라운드 미디어 재생 기능을 활용합니다.</dd>
       </div>
       <div class="notice-item">
-        <dt>광고 차단 없음</dt>
+        <dt class="card-heading"><svg class="ico"><use href="#i-shield"/></svg>광고 차단 없음</dt>
         <dd>유튜브 스트림 규정을 준수하며 광고 차단 기능을 내장하지 않습니다. 기존에 사용하시던 차단 확장 프로그램이 있으실 경우 그대로 함께 켜 두시면 됩니다.</dd>
       </div>
       <div class="notice-item">
-        <dt>구독과 기록은 로그인 필요</dt>
+        <dt class="card-heading"><svg class="ico"><use href="#i-user"/></svg>구독과 기록은 로그인 필요</dt>
         <dd>검색과 기본 둘러보기는 로그인 없이도 자유롭게 이용하실 수 있습니다. 다만 개인 구독 채널 목록, 시청 기록 및 보관함 재생목록을 불러오시려면 유튜브 로그인이 필요합니다.</dd>
       </div>
     </dl>
@@ -734,7 +823,10 @@ kbd {
 <footer class="footer">
   <div class="wrap footer-inner">
     <p>Easy Mode — 유튜브를 위한 브라우저 확장 프로그램</p>
-    <p><a href="https://github.com/jshsakura/oc-easy-mode">GitHub 저장소 방문</a></p>
+    <p><a class="footer-link" href="https://github.com/jshsakura/oc-easy-mode">
+      <svg class="ico" width="18" height="18"><use href="#i-github"/></svg>
+      <span>GitHub 저장소 방문</span>
+    </a></p>
   </div>
 </footer>
 
