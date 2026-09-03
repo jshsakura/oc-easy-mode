@@ -131,12 +131,38 @@ export class Engine {
     if (this.state.volume > 0 && p.isMuted()) p.unMute()
   }
 
+  /**
+   * Lets WebKit play under script, once, from inside a gesture.
+   *
+   * On iOS a media element may only be started by script after a user gesture
+   * has started it at least once. `loadVideoById` does its work asynchronously,
+   * so the `playVideo()` that follows it runs a beat later with the activation
+   * already spent — and the video sits there, loaded and paused, which is
+   * exactly the report from the phone. Playing the element that is *already*
+   * loaded is synchronous, happens inside the gesture that asked for a track,
+   * and is what grants the element the permission for the rest of the session.
+   *
+   * Costs a few milliseconds of the outgoing video on the first press and
+   * nothing at all after that. Chromium and Gecko never needed it.
+   */
+  private unlocked = false
+  private unlockPlayback(): void {
+    if (this.unlocked) return
+    const el = document.querySelector('video')
+    if (!el) return
+    this.unlocked = true
+    void Promise.resolve(el.play()).catch(() => {
+      this.unlocked = false
+    })
+  }
+
   /** Points the player at the current track, navigating if there is no player yet. */
   private load(): void {
     const track = this.current
     if (!track) return
     this.loading = track.videoId
     if (this.player) {
+      this.unlockPlayback()
       this.player.loadVideoById(track.videoId)
       this.player.playVideo()
     } else {
@@ -156,7 +182,10 @@ export class Engine {
     }
     const s = p.getPlayerState()
     if (s === State.Playing || s === State.Buffering) p.pauseVideo()
-    else p.playVideo()
+    else {
+      this.unlockPlayback()
+      p.playVideo()
+    }
   }
 
   seek(seconds: number): void {

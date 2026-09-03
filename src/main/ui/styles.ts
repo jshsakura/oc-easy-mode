@@ -113,7 +113,21 @@ export const STYLES = `
      dvh is the dynamic viewport — exactly the visible area, in the page's own
      units — and it is the unit this problem was invented for.
      No backticks anywhere in this file: it is one template literal. */
-  position: fixed; top: 0; left: 0; right: 0; z-index: 2147482000;
+  /* Sized in viewport units on BOTH axes, and this is not a style choice.
+     A fixed element resolves against the viewport only while no ancestor has
+     a transform, a filter or containment — any of those becomes the containing
+     block instead, and YouTube has one. So right:0 was measuring that ancestor:
+     on a 390-pixel phone the app came out 508 wide, and everything along its
+     right edge — the next button, and the mode switch back when it was up
+     there — sat off the side of the screen where no thumb could reach it.
+     shell.ts carries the same note about the player, which is why it places
+     that by measuring rather than by trusting the rect it asked for.
+     The height was already in viewport units for a different reason and was
+     therefore right; the width was left to right:0 and was wrong.
+     (No backticks anywhere in this file: it is one template literal.) */
+  position: fixed; top: 0; left: 0; z-index: 2147482000;
+  width: 100vw;
+  width: 100dvw;
   height: 100vh;
   height: 100dvh;
   display: grid;
@@ -139,7 +153,7 @@ input { font: inherit; color: inherit; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 
 /* One hover, everywhere something can be pressed. */
-.nav:hover, .mode:hover, .exit:hover, .row:hover, .tile:hover, .card:hover,
+.nav:hover, .exit:hover, .row:hover, .tile:hover, .card:hover,
 .menu button:hover, .modal .list button:hover, .ctl button:hover,
 .right button:hover, .row .more:hover, .drawerToggle:hover, .btn.ghost:hover {
   background: var(--hover);
@@ -162,20 +176,37 @@ input { font: inherit; color: inherit; }
   border-radius: var(--radius-lg);
   padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
 }
+/* Everything in this column shares one left edge and one icon-to-label gap:
+   10px of padding, an 18px glyph, 12px of gap. They had been 8/20/8, 10/18/10
+   and 10/18/12, so the brand, the switch and the destinations each started at
+   a different x and the column read as three lists stacked. */
 .brand {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 8px 16px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 10px 18px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
 }
-.modes {
-  display: flex; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius-md);
-  padding: 2px; margin: 0 0 12px;
-}
-.mode {
-  flex: 1; padding: 6px 0; border-radius: 6px;
-  font-size: 13px; font-weight: 500; color: var(--muted-foreground);
+/* One switch, not two buttons. There are two states and one of them is on;
+   a segmented pair made that binary look like a choice between two places. */
+.modeToggle {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 8px 10px; margin: 0 0 12px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500; color: var(--muted-foreground);
   transition: color var(--ease), background var(--ease);
 }
-.mode.on { background: var(--secondary); color: var(--foreground); }
+.modeToggle .lbl { flex: 1; text-align: left; }
+.modeToggle .sw {
+  position: relative; flex: none; width: 36px; height: 20px;
+  border-radius: 999px; background: var(--secondary);
+  transition: background var(--ease);
+}
+.modeToggle .knob {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  border-radius: 999px; background: var(--muted-foreground);
+  transition: left var(--ease), background var(--ease);
+}
+.modeToggle:hover { color: var(--foreground); background: var(--hover); }
+.modeToggle.on { color: var(--foreground); }
+.modeToggle.on .sw { background: var(--primary); }
+.modeToggle.on .knob { left: 18px; background: var(--primary-foreground); }
 .nav {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 8px 10px; border-radius: var(--radius-md);
@@ -190,13 +221,29 @@ input { font: inherit; color: inherit; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
 }
 .side .spacer { flex: 1; }
+/* A bordered button, not another line in the list. Leaving is the one thing
+   in here that is not a destination, and it should not look like one. */
 .exit {
-  display: flex; align-items: center; gap: 12px; width: 100%;
-  padding: 8px 10px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 38px; margin-top: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
   font-size: 14px; font-weight: 500; color: var(--muted-foreground);
-  transition: color var(--ease), background var(--ease);
+  transition: color var(--ease), background var(--ease), border-color var(--ease);
 }
-.exit:hover { color: var(--foreground); }
+.exit:hover { color: var(--foreground); background: var(--hover); border-color: var(--muted-foreground); }
+
+/* ── The header strip, on a narrow screen only ───────────────────────────── */
+.top { display: none; }
+.top .name {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+}
+.drawerClose {
+  display: none; width: 34px; height: 34px; border-radius: var(--radius-md);
+  align-items: center; justify-content: center; color: var(--muted-foreground);
+  transition: background var(--ease), color var(--ease);
+}
+.drawerClose:hover { color: var(--foreground); background: var(--hover); }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
 .main {
@@ -344,11 +391,18 @@ input { font: inherit; color: inherit; }
 
 /* ── Player bar ──────────────────────────────────────────────────────────── */
 .bar {
-  grid-column: 1 / -1; background: transparent;
+  /* min-width: 0, or a long title makes the bar wider than the screen.
+     A grid item's automatic minimum size is its min-content width, and the
+     min-content of a bar holding a nowrap title is that whole title — so the
+     track said 390 and the bar took 508, carrying the play and next buttons
+     off the right-hand edge. The ellipsis cannot save it: it only applies once
+     something has decided the box is narrower than its text. */
+  grid-column: 1 / -1; min-width: 0; background: transparent;
   display: grid; grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr) minmax(200px, 1fr);
   align-items: center; padding: 0; gap: 16px;
 }
-.now { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.now { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: hidden; }
+.now .nowText { min-width: 0; }
 .now .thumb {
   width: 56px; height: 56px; flex: none; border-radius: var(--radius-md);
   background: var(--secondary) center/cover;
@@ -381,13 +435,30 @@ input { font: inherit; color: inherit; }
 .right { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .right .vol { width: 84px; margin-left: 4px; }
 
+/* A range input draws no progress of its own: left alone it is a grey line
+   with a dot on it, which reads as a setting rather than as elapsed time. The
+   filled part is a gradient whose stop is --p, written by the tick.
+
+   The input is 16px tall and transparent while the visible line is 4px, so
+   the part a finger has to hit is four times the part the eye sees. */
 input[type=range] {
   -webkit-appearance: none; appearance: none;
-  height: 4px; border-radius: 999px; background: var(--secondary); outline: 0; cursor: pointer;
+  height: 16px; margin: 0; background: transparent; outline: 0; cursor: pointer;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px;
+  background: linear-gradient(to right, var(--primary) var(--p, 0%), var(--secondary) var(--p, 0%));
 }
 input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
+  -webkit-appearance: none; appearance: none; margin-top: -4px;
   width: 12px; height: 12px; border-radius: 999px; background: var(--foreground);
+}
+input[type=range]::-moz-range-track {
+  height: 4px; border-radius: 999px;
+  background: linear-gradient(to right, var(--primary) var(--p, 0%), var(--secondary) var(--p, 0%));
+}
+input[type=range]::-moz-range-thumb {
+  width: 12px; height: 12px; border: 0; border-radius: 999px; background: var(--foreground);
 }
 
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
@@ -440,20 +511,28 @@ input[type=range]::-webkit-slider-thumb {
 .toast.bad { color: var(--destructive); }
 
 /* ── Responsive ──────────────────────────────────────────────────────────
-   Three steps. Between them nothing is squeezed: each step gives something up
-   instead of making everything narrower.
-   
-   Plain media queries, deliberately. The app is position:fixed with inset 0,
-   so its width IS the viewport's — a container query measures the same number
-   by a longer route. It also cost an hour: a container cannot style itself,
-   and moving the container to the shadow host does not work either, because
-   all:initial makes the host inline and an inline element cannot be a size
-   container. Every phone rule was being ignored in silence.
-   
-   The earlier objection to media queries was about detecting the *device* from
-   the viewport, which is a different question and still a bad idea. Asking
-   whether there is room for a sidebar is exactly what a width query is for. */
-.drawerScrim, .drawerToggle { display: none; }
+   Three steps, and each one gives something up rather than making everything
+   narrower.
+
+   **The last step is a class, not a width query, and that is deliberate.**
+   Whether there is room for a sidebar is a question only the app can answer,
+   because the honest answer needs two numbers: the viewport, and the screen.
+   Orion on iPhone sends a desktop user agent, is served the desktop page, and
+   until our viewport meta lands it reports a layout viewport near 980 — a
+   width query calls that a desktop and lays a phone out as one. device.ts
+   takes the smaller of the two and stamps a narrow class on the app; every rule
+   below reads that stamp, so the layout and the code that decides where the
+   picture goes can no longer disagree. The two steps above it are about a
+   window being dragged narrower, which is exactly what a width query is for.
+
+   Menus, dialogs and toasts are drawn in the *other* shadow root, where there
+   is no .app to qualify them, so those keep a width query of their own at the
+   bottom of this file.
+
+   Container queries do not work here and cost an hour to find out: a container
+   cannot style itself, and the shadow host is inline under all: initial, so it
+   cannot be a size container either. */
+.drawerScrim, .drawerToggle, .sheetClose { display: none; }
 
 /* The volume slider is the first thing that can go; the button stays. */
 @media (max-width: 1240px) {
@@ -471,82 +550,178 @@ input[type=range]::-webkit-slider-thumb {
   .row { grid-template-columns: 24px 52px 1fr auto 32px; gap: 12px; }
 }
 
-/* Below this the sidebar cannot be a column at all, and becomes a drawer. */
+/* ── Narrow ───────────────────────────────────────────────────────────────
+   The sidebar becomes a drawer, the header becomes a strip of its own, and
+   the player bar becomes something that can be opened. */
+.app.narrow {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  gap: 0; padding: 0;
+  --bar: auto;
+  --top-h: 52px;
+  --top-all: calc(var(--top-h) + env(safe-area-inset-top));
+  --stage-h: calc(100vw * 0.5625);
+}
+
+/* ── The header strip ─────────────────────────────────────────────────────
+   A row in the grid rather than two buttons fixed to the corners.
+
+   The floating version was covered by the video the moment anyone pressed
+   영상: the stage is fixed to the top of the screen and the player is drawn
+   above the entire app — it has to be, or our own panels would hide the
+   picture — so the drawer button and the mode switch ended up underneath it
+   with no way to reach either. A row cannot be covered, because the stage
+   starts below it. */
+.app.narrow .top {
+  grid-row: 1; grid-column: 1;
+  display: flex; align-items: center; gap: 8px;
+  height: var(--top-all); padding: env(safe-area-inset-top) 10px 0;
+  background: var(--side-panel); border-bottom: 1px solid var(--border);
+}
+.app.narrow .drawerToggle { display: inline-flex; width: 40px; height: 40px; }
+.app.narrow .drawerClose { display: inline-flex; }
+
+.app.narrow .main {
+  grid-row: 2; grid-column: 1; position: relative;
+  border: 0; border-radius: 0;
+  padding: 20px 16px 24px;
+}
+.app.narrow .main h2 { font-size: 22px; margin-bottom: 16px; }
+
+/* ── The drawer ─────────────────────────────────────────────────────────── */
+/* Slid with left, not transform.
+   A transformed element becomes the containing block for any fixed-position
+   descendant, and that took the mode switch off-canvas with the drawer when
+   it still lived in here. Animating left costs a little smoothness and avoids
+   the whole class of problem. (No backticks in this file: it is one template
+   literal.) */
+.app.narrow .side {
+  position: fixed; left: -302px; top: 0; bottom: 0; width: 302px; z-index: 20;
+  border: 0; border-right: 1px solid var(--border); border-radius: 0;
+  transition: left .22s ease;
+  padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+}
+.app.narrow.drawer-open .side { left: 0; }
+.app.narrow .brand { padding: 4px 4px 14px; }
+/* A finger is not a cursor: every line in the drawer is a target. */
+.app.narrow .nav, .app.narrow .exit { padding: 11px 12px; font-size: 15px; }
+.app.narrow .side .pl { padding: 9px 12px; font-size: 14px; }
+.app.narrow .exit { margin-top: 8px; border-top: 1px solid var(--border); border-radius: 0; padding-top: 16px; }
+.app.narrow .drawerScrim {
+  display: block; position: fixed; inset: 0; z-index: 15;
+  background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
+  transition: opacity .22s ease;
+}
+.app.narrow.drawer-open .drawerScrim { opacity: 1; pointer-events: auto; }
+
+/* ── The picture ────────────────────────────────────────────────────────── */
+.app.narrow .slot.corner { display: none; }
+.app.narrow.has-corner .main { padding-bottom: 24px; }
+.app.narrow .slot.stage { left: 0; right: 0; top: var(--top-all); height: var(--stage-h); border-radius: 0; }
+.app.narrow.has-stage .main { padding-top: calc(var(--stage-h) + 16px); }
+
+/* ── The bar, closed ──────────────────────────────────────────────────────
+   What is playing, a play button, a next button, and the progress as a
+   hairline along the top edge. Everything else is one tap away rather than
+   squeezed in beside them. */
+.app.narrow .bar {
+  grid-row: 3; grid-column: 1; position: relative;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--side-panel); border-top: 1px solid var(--border);
+  padding: 8px 8px calc(16px + env(safe-area-inset-bottom));
+}
+.app.narrow .now {
+  flex: 1; min-width: 0; gap: 10px; padding: 4px; margin: -4px;
+  border-radius: var(--radius-md); cursor: pointer;
+}
+.app.narrow .now .thumb { width: 44px; height: 44px; }
+.app.narrow .now .t { font-size: 14px; }
+.app.narrow .now .b { font-size: 12px; }
+.app.narrow .center { flex-direction: row; gap: 0; }
+.app.narrow .ctl { gap: 2px; }
+.app.narrow .ctl button { width: 42px; height: 42px; }
+.app.narrow .ctl .big { width: 46px; height: 46px; }
+
+/* Shuffle and repeat put away, which is where they already were. Previous,
+   play and next stay exactly where they have always been. */
+.app.narrow:not(.sheet-open) .ctl .sh,
+.app.narrow:not(.sheet-open) .ctl .rp,
+.app.narrow:not(.sheet-open) .right { display: none; }
+/* The elapsed line goes along the *bottom* edge, under everything — asked for
+   twice. Above the controls it was a second horizontal rule in a bar that
+   already has one. */
+.app.narrow:not(.sheet-open) .seek {
+  position: absolute; left: 0; right: 0; top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 2px);
+  max-width: none; gap: 0;
+}
+.app.narrow:not(.sheet-open) .seek span { display: none; }
+.app.narrow:not(.sheet-open) .seek input::-webkit-slider-runnable-track { border-radius: 0; }
+.app.narrow:not(.sheet-open) .seek input::-webkit-slider-thumb { opacity: 0; }
+
+/* ── The bar, opened ──────────────────────────────────────────────────────
+   The same element and the same controls, laid out down the screen instead of
+   across it. There is no second player to keep in step, which is the whole
+   reason it is done this way.
+
+   In 영상 mode it opens under the picture rather than over it: the player is
+   drawn above the app and cannot be covered, and a sheet that hid the video
+   would be a sheet about a video you cannot see. */
+.app.narrow.sheet-open .bar {
+  position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 30;
+  flex-direction: column; align-items: stretch; gap: 0;
+  padding: calc(6px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+  border-top: 0;
+}
+.app.narrow.sheet-open.has-stage .bar {
+  top: calc(var(--top-all) + var(--stage-h));
+  padding-top: 6px;
+}
+.app.narrow.sheet-open .sheetClose {
+  display: inline-flex; align-items: center; justify-content: center;
+  align-self: flex-start; flex: none;
+  width: 40px; height: 40px; margin-left: -10px;
+  border-radius: var(--radius-md); color: var(--muted-foreground);
+}
+.app.narrow.sheet-open .sheetClose:hover { color: var(--foreground); background: var(--hover); }
+
+.app.narrow.sheet-open .now {
+  flex: 0 1 auto; flex-direction: column; align-items: center; text-align: center;
+  gap: 0; padding: 0; margin: 0; cursor: default; min-width: 0;
+}
+.app.narrow.sheet-open .now .thumb {
+  width: min(70vw, 300px); height: auto; aspect-ratio: 1;
+  border-radius: var(--radius-lg); box-shadow: var(--shadow); margin: 6px 0 26px;
+}
+/* The picture is already on screen above; a cover under it would be a second
+   answer to the same question. */
+.app.narrow.sheet-open.has-stage .now .thumb { display: none; }
+.app.narrow.sheet-open .now .nowText { width: 100%; }
+.app.narrow.sheet-open .now .t {
+  font-size: 19px; line-height: 1.3; white-space: normal;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.app.narrow.sheet-open .now .b { font-size: 14px; margin-top: 6px; }
+
+/* column-reverse, so the times sit above the transport with the children in
+   the order the desktop bar wants them. */
+/* Back to a column: the compact bar above put these side by side, and without
+   saying so here the opened player kept the row and pushed the elapsed line
+   off the right edge. */
+.app.narrow.sheet-open .center {
+  flex: 1; flex-direction: column; justify-content: center; gap: 26px;
+}
+.app.narrow.sheet-open .seek { position: static; width: 100%; max-width: none; font-size: 12px; }
+.app.narrow.sheet-open .ctl { gap: 8px; }
+.app.narrow.sheet-open .ctl button { width: 52px; height: 52px; }
+.app.narrow.sheet-open .ctl .big { width: 66px; height: 66px; }
+.app.narrow.sheet-open .right { display: flex; flex: none; justify-content: center; gap: 6px; }
+.app.narrow.sheet-open .right .vol { display: block; width: 116px; margin-left: 8px; }
+
+/* ── Lists, at a phone's width ────────────────────────────────────────────
+   Still width queries: these are about how much room a row of cards has, and
+   nothing here depends on knowing what kind of screen it is. */
 @media (max-width: 860px) {
-  /* ── Narrow ─────────────────────────────────────────────────────────────
-     The sidebar slides in from the left rather than lying along the bottom.
-     Eight destinations across a phone is a row of stamps: too small to read
-     and too small to hit. As a drawer each one is a full-width line. */
-  .app {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-    gap: 0; padding: 0;
-    --bar: auto;
-    --stage-h: calc(100vw * 0.5625);
-  }
-
-  /* A header strip of its own above the content: the drawer button on the
-     left, the mode switch on the right, and the title beneath them with the
-     whole width. Squeezing the title in beside the switch put every screen
-     name onto two lines. */
-  .main {
-    grid-column: 1; grid-row: 1; position: relative;
-    border: 0; border-radius: 0;
-    padding: calc(60px + env(safe-area-inset-top)) 16px 20px;
-  }
-  .main h2 { font-size: 22px; margin-bottom: 16px; padding-right: 0; }
-
-  .drawerToggle {
-    display: inline-flex; position: fixed; z-index: 6;
-    top: calc(10px + env(safe-area-inset-top)); left: 10px;
-    width: 40px; height: 40px;
-  }
-
-  /* Slid with left, not transform.
-     A transformed element becomes the containing block for any fixed-position
-     descendant, and the mode switch lives inside this one — so with a
-     transform it went off-canvas with the drawer instead of staying on screen.
-     Animating left costs a little smoothness and avoids the whole class of
-     problem. (No backticks in this file: it is one template literal.) */
-  .side {
-    position: fixed; left: -282px; top: 0; bottom: 0; width: 282px; z-index: 20;
-    border: 0; border-right: 1px solid var(--border); border-radius: 0;
-    transition: left .22s ease;
-    padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom));
-  }
-  .drawer-open .side { left: 0; }
-  .drawerScrim {
-    display: block; position: fixed; inset: 0; z-index: 15;
-    background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
-    transition: opacity .22s ease;
-  }
-  .drawer-open .drawerScrim { opacity: 1; pointer-events: auto; }
-  /* The track and its buttons on one line, the progress under them. */
-  .bar {
-    grid-column: 1; grid-row: 2;
-    grid-template-columns: 1fr auto; grid-template-rows: auto auto;
-    background: var(--side-panel); border-top: 1px solid var(--border);
-    padding: 10px 12px calc(8px + env(safe-area-inset-bottom));
-    gap: 6px 10px; align-items: center;
-  }
-  .now { grid-row: 1; grid-column: 1; gap: 10px; }
-  .now .thumb { width: 46px; height: 46px; }
-  .now .t { font-size: 15px; }
-  .center { grid-row: 1; grid-column: 2; gap: 0; }
-  .seek { grid-row: 2; grid-column: 1 / -1; max-width: none; font-size: 11px; }
-  .ctl { gap: 2px; }
-  .ctl button { width: 40px; height: 40px; }
-  .ctl .big { width: 46px; height: 46px; }
-  .ctl > button:first-child, .ctl > button:last-child { display: none; }
-  .right { display: none; }
-
-  .modes {
-    position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 12px;
-    z-index: 6; margin: 0; width: auto; min-width: 124px;
-    background: var(--side-panel); border-color: var(--border);
-  }
-  .mode { font-size: 12px; padding: 5px 12px; }
-
   .row { grid-template-columns: 52px 1fr 32px; gap: 12px; padding: 8px 4px; }
   .row .idx, .row .dur { display: none; }
   .row .thumb { width: 52px; height: 30px; }
@@ -560,13 +735,10 @@ input[type=range]::-webkit-slider-thumb {
   .head .cover { width: 160px; }
   .searchbox { margin-bottom: 16px; }
 
-  .slot.corner { display: none; }
-  .app.has-corner .main { padding-bottom: 20px; }
-  .slot.stage { left: 0; right: 0; top: 0; height: var(--stage-h); border-radius: 0; }
-  .app.has-stage .main { padding-top: calc(var(--stage-h) + 14px); }
-
+  /* The other shadow root: no .app around these, so they cannot be qualified
+     by the narrow class the way everything above is. */
   .menu { min-width: 200px; }
   .modal { width: calc(100vw - 28px); }
-  .toasts { bottom: 140px; }
+  .toasts { bottom: 108px; }
 }
 `

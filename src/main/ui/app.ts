@@ -36,10 +36,18 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const slot = h('div', { class: 'slot' })
   const side = h('div', { class: 'side' })
   const bar = h('div', { class: 'bar' })
-  // The sidebar is a column when there is room beside the content and a drawer
-  // when there is not. Decided by the viewport, which is the only thing that
-  // knows — see device.ts.
-  const app = h('div', { class: narrowNow() ? 'app narrow' : 'app' }, side, main, slot, bar)
+  // A strip of its own across the top, on a narrow screen only.
+  //
+  // **It exists because the video used to eat the chrome.** The drawer button
+  // and the mode switch were fixed to the top corners and the stage was fixed
+  // to the top of the screen, and the player is drawn above the whole app —
+  // it has to be, or our panels would cover the picture. So in 영상 mode the
+  // video landed squarely on top of both, and there was no way to open the
+  // menu or get back to 음악 without knowing about Escape. Given a row of its
+  // own, the header is above the stage rather than under it, and cannot be
+  // covered by anything.
+  const top = h('div', { class: 'top' })
+  const app = h('div', { class: narrowNow() ? 'app narrow' : 'app' }, top, side, main, slot, bar)
 
   // Light or dark follows YouTube, and nothing else. There is no switch: the
   // page underneath already has one, and two switches for one question is a
@@ -82,6 +90,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     go(view) {
       ctx.view = view
       engine.setView(nameOf(view))
+      app.classList.remove('sheet-open')
       drawSide()
       void render(ctx, main)
       main.scrollTop = 0
@@ -96,42 +105,76 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   // ── Sidebar ──────────────────────────────────────────────────────────────
 
-  const NAV: Array<{ view: View; label: string; icon: Parameters<typeof icon>[0] }> = [
+  // Two groups, because seven destinations in one column is a list to read
+  // rather than a menu to glance at. The first four are YouTube's own screens;
+  // the last three are the listener's, and a heading says which is which.
+  const NAV: Array<{ view: View; label: string; icon: Parameters<typeof icon>[0]; section?: string }> = [
     { view: { kind: 'explore' }, label: t('둘러보기'), icon: 'radio' },
     { view: { kind: 'search', query: '' }, label: t('검색'), icon: 'search' },
     { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
     { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
-    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history' },
+    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history', section: t('내 라이브러리') },
     { view: { kind: 'playlists' }, label: t('내 재생목록'), icon: 'library' },
     { view: { kind: 'queue' }, label: t('대기열'), icon: 'queue' },
   ]
 
+  /**
+   * 영상 모드, as one switch rather than two buttons.
+   *
+   * It lives in the sidebar on every screen size, and it is a toggle because
+   * that is what it is: there are two states, one of them is on, and a pair of
+   * segmented buttons made a binary look like a choice between two places.
+   */
+  function modes(): HTMLElement {
+    const on = engine.state.mode === 'video'
+    return h(
+      'button',
+      {
+        class: on ? 'modeToggle on' : 'modeToggle',
+        'data-nav': '',
+        role: 'switch',
+        'aria-checked': on ? 'true' : 'false',
+        onclick: () => {
+          const next = engine.state.mode === 'video' ? 'music' : 'video'
+          engine.setMode(next)
+          setLayout(layoutFor(next))
+          drawSide()
+          drawBar()
+        },
+      },
+      icon(on ? 'video' : 'note', 18),
+      h('span', { class: 'lbl' }, t('영상 모드')),
+      h('span', { class: 'sw' }, h('span', { class: 'knob' })),
+    )
+  }
+
+  // The header carries the way into the drawer and the name of the thing you
+  // are in. Not the screen's own title, which the content already states, and
+  // not the mode switch, which belongs in the sidebar.
+  function drawTop(): void {
+    replace(top, menuButton, h('div', { class: 'name' }, icon('note', 17), h('span', null, 'Easy Mode')))
+  }
+
   function drawSide(): void {
-    const mode = engine.state.mode
     replace(
       side,
-      h('div', { class: 'brand' }, icon('note', 20), h('span', null, 'Easy Mode')),
       h(
         'div',
-        { class: 'modes' },
-        (['music', 'video'] as const).map((m) =>
-          h(
-            'button',
-            {
-              class: mode === m ? 'mode on' : 'mode',
-              'data-nav': '',
-              onclick: () => {
-                engine.setMode(m)
-                setLayout(layoutFor(m))
-                drawSide()
-                drawBar()
-              },
-            },
-            m === 'music' ? t('음악') : t('영상'),
-          ),
+        { class: 'brand' },
+        icon('note', 18),
+        h('span', null, 'Easy Mode'),
+        h('div', { class: 'spacer' }),
+        // Only ever visible in the drawer. Reaching the scrim means reaching
+        // across the screen, and a drawer with no close button reads as stuck.
+        h(
+          'button',
+          { class: 'drawerClose', 'data-nav': '', title: t('닫기'), 'aria-label': t('닫기'), onclick: closeDrawer },
+          icon('close', 18),
         ),
       ),
-      NAV.map((item) =>
+      modes(),
+      NAV.map((item) => [
+        item.section && h('h4', null, item.section),
         h(
           'button',
           {
@@ -145,7 +188,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           icon(item.icon, 18),
           h('span', null, item.label),
         ),
-      ),
+      ]),
       ctx.playlists.length > 0 && h('h4', null, t('재생목록')),
       ctx.playlists.slice(0, 30).map((p) =>
         h(
@@ -186,6 +229,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // ── Player bar ───────────────────────────────────────────────────────────
 
   const seek = h('input', { type: 'range', min: '0', max: '1000', value: '0' })
+  /** Paints how much of a slider is behind the thumb. */
+  const fill = (el: HTMLInputElement, ratio: number) => {
+    el.style.setProperty('--p', `${Math.max(0, Math.min(1, ratio)) * 100}%`)
+  }
   const elapsed = h('span', null, '0:00')
   const total = h('span', null, '0:00')
   let scrubbing = false
@@ -199,6 +246,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   seek.addEventListener('change', commit)
   seek.addEventListener('input', () => {
     const d = engine.position.duration
+    fill(seek, Number(seek.value) / 1000)
     if (d > 0) elapsed.textContent = clock((Number(seek.value) / 1000) * d)
   })
 
@@ -208,7 +256,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     title: t('메뉴'),
     'aria-label': t('메뉴'),
     onclick: () => app.classList.toggle('drawer-open'),
-  }, icon('queue', 20))
+  }, icon('menu', 20))
 
   const nowThumb = h('div', { class: 'thumb' })
   const nowTitle = h('div', { class: 't' }, t('재생 중인 항목 없음'))
@@ -216,23 +264,26 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const playButton = h('button', { class: 'big', 'data-nav': '', title: t('재생 / 일시정지') }, icon('play', 20))
   playButton.addEventListener('click', () => engine.toggle())
 
-  const prevButton = h('button', { 'data-nav': '', title: t('이전') }, icon('prev', 20))
+  const prevButton = h('button', { class: 'pv', 'data-nav': '', title: t('이전') }, icon('prev', 20))
   prevButton.addEventListener('click', () => engine.prev())
-  const nextButton = h('button', { 'data-nav': '', title: t('다음') }, icon('next', 20))
+  const nextButton = h('button', { class: 'nx', 'data-nav': '', title: t('다음') }, icon('next', 20))
   nextButton.addEventListener('click', () => engine.next())
-  const shuffleButton = h('button', { 'data-nav': '', title: t('셔플') }, icon('shuffle', 18))
+  const shuffleButton = h('button', { class: 'sh', 'data-nav': '', title: t('셔플') }, icon('shuffle', 18))
   shuffleButton.addEventListener('click', () => {
     engine.setShuffle(!engine.state.shuffle)
     drawBar()
   })
-  const repeatButton = h('button', { 'data-nav': '', title: t('반복') }, icon('repeat', 18))
+  const repeatButton = h('button', { class: 'rp', 'data-nav': '', title: t('반복') }, icon('repeat', 18))
   repeatButton.addEventListener('click', () => {
     engine.cycleRepeat()
     drawBar()
   })
 
   const volume = h('input', { type: 'range', class: 'vol', min: '0', max: '100', value: String(engine.state.volume) })
-  volume.addEventListener('input', () => engine.setVolume(Number(volume.value)))
+  volume.addEventListener('input', () => {
+    fill(volume, Number(volume.value) / 100)
+    engine.setVolume(Number(volume.value))
+  })
   const muteButton = h('button', { 'data-nav': '', title: t('음소거') }, icon('volume', 18))
   muteButton.addEventListener('click', () => {
     const on = engine.state.volume === 0
@@ -253,8 +304,32 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const queueButton = h('button', { 'data-nav': '', title: t('대기열') }, icon('queue', 18))
   queueButton.addEventListener('click', () => ctx.go({ kind: 'queue' }))
 
+  // ── The bar, and the full player it becomes on a phone ───────────────────
+  //
+  // **One set of controls, two layouts.** A phone has no room for a track, a
+  // transport, a seek bar and four buttons on one line, and every attempt to
+  // fit them made the bar a row of stamps. So on a narrow screen the bar shows
+  // the track and two buttons, with the progress drawn as a hairline along its
+  // top edge, and tapping it opens the same element full-screen with
+  // everything on it. Rearranged entirely in CSS, so there is no second player
+  // to keep in step and nothing extra to wire.
+  const sheetClose = h(
+    'button',
+    { class: 'sheetClose', 'data-nav': '', title: t('내리기'), 'aria-label': t('내리기'), onclick: () => setSheet(false) },
+    icon('down', 22),
+  )
+  const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy))
+  // The track itself is the handle: a phone opens the player by tapping what
+  // is playing, which is what every music app has taught. It is a button on a
+  // narrow screen only — on a desktop the bar is already showing everything,
+  // and a click that did nothing visible would only puzzle.
+  now.addEventListener('click', () => {
+    if (app.classList.contains('narrow') && !app.classList.contains('sheet-open')) setSheet(true)
+  })
+
   bar.append(
-    h('div', { class: 'now' }, menuButton, nowThumb, h('div', { style: 'min-width:0' }, nowTitle, nowBy)),
+    sheetClose,
+    now,
     h(
       'div',
       { class: 'center' },
@@ -263,6 +338,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     ),
     h('div', { class: 'right' }, videoButton, queueButton, muteButton, volume),
   )
+
+  function setSheet(open: boolean): void {
+    app.classList.toggle('sheet-open', open)
+    if (open) sheetClose.focus()
+  }
 
   function drawBar(): void {
     const track = engine.current
@@ -274,6 +354,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     replace(repeatButton, icon(engine.state.repeat === 'one' ? 'repeatOne' : 'repeat', 18))
     repeatButton.title = { off: t('반복 안 함'), all: t('전체 반복'), one: t('한 곡 반복') }[engine.state.repeat]
     replace(muteButton, icon(engine.state.volume === 0 ? 'mute' : 'volume', 18))
+    fill(volume, engine.state.volume / 100)
     replace(videoButton, icon(engine.state.video === 'hidden' ? 'videoOff' : 'video', 18))
     videoButton.classList.toggle('on', engine.state.video === 'stage')
     prevButton.disabled = engine.state.queue.length === 0
@@ -286,7 +367,9 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     total.textContent = clock(p.duration)
     if (!scrubbing) {
       elapsed.textContent = clock(p.current)
-      seek.value = String(p.duration > 0 ? Math.round((p.current / p.duration) * 1000) : 0)
+      const ratio = p.duration > 0 ? p.current / p.duration : 0
+      seek.value = String(Math.round(ratio * 1000))
+      fill(seek, ratio)
     }
   }
 
@@ -297,9 +380,26 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     const narrow = narrowNow()
     if (narrow === app.classList.contains('narrow')) return
     app.classList.toggle('narrow', narrow)
-    if (!narrow) app.classList.remove('drawer-open')
+    // A remote should not be able to land on the track block where tapping it
+    // does nothing, and must be able to where it opens the player.
+    if (narrow) now.setAttribute('data-nav', '')
+    else now.removeAttribute('data-nav')
+    if (!narrow) {
+      app.classList.remove('drawer-open')
+      app.classList.remove('sheet-open')
+    }
   }
   window.addEventListener('resize', onResize)
+
+  // Escape closes the player, then the drawer. The second Escape within a
+  // second still leaves the mode — that is shell.ts, on the document in the
+  // capture phase, and nothing here consumes the key.
+  const onEscape = (ev: KeyboardEvent) => {
+    if (ev.key !== 'Escape') return
+    if (app.classList.contains('sheet-open')) app.classList.remove('sheet-open')
+    else if (app.classList.contains('drawer-open')) closeDrawer()
+  }
+  document.addEventListener('keydown', onEscape)
   // Adding a viewport meta reflows the page; on some engines that lands
   // without a resize event, so the first two frames are checked directly.
   requestAnimationFrame(onResize)
@@ -314,6 +414,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const offTick = engine.onTick(drawTick)
 
   applyTheme()
+  if (narrowNow()) now.setAttribute('data-nav', '')
+  drawTop()
   drawSide()
   drawBar()
   drawTick()
@@ -328,6 +430,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     destroy() {
       themeWatch.disconnect()
       window.removeEventListener('resize', onResize)
+      document.removeEventListener('keydown', onEscape)
       offRemote()
       offChange()
       offTick()

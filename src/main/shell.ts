@@ -82,6 +82,27 @@ body > *:not(${HOST_TAG}):not(${OVERLAY_TAG}) { visibility: hidden !important; }
   width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important;
 }
 #movie_player video { object-fit: contain !important; }
+
+/* The sibling ad blocker's picture-in-picture button.
+ *
+ * It is parented to <html> rather than to <body>, and fixed at the highest
+ * z-index there is, so nothing here reaches it: not the rule above that blanks
+ * the page, not our own app, not the overlay. It therefore floats over Easy
+ * Mode's player bar looking like one of our controls.
+ *
+ * It is a control for a picture, so it is shown exactly when there is one on
+ * screen. --oc-pip is written by place(), which is the one place that knows.
+ * The default is grid because that is the display the button sets on itself
+ * inline, so putting it back puts back exactly what it had. */
+#oc-abp-pip { display: var(--oc-pip, grid) !important; }
+
+/* Our two nodes, ordered against the page rather than against each other. The
+ * app sits below the player so the picture is never covered; the overlay sits
+ * above it, because a menu that opens behind the video is a menu nobody can
+ * read. Both hosts are inline under all: initial, and an inline box takes no
+ * z-index — hence the display. */
+${HOST_TAG} { display: block !important; position: relative !important; z-index: 2147482000 !important; }
+${OVERLAY_TAG} { display: block !important; position: relative !important; z-index: 2147483100 !important; }
 `
 
 /**
@@ -190,9 +211,76 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   let target: HTMLElement | null = null
   let raf = 0
 
+  // ── Making the player the thing you actually see ─────────────────────────
+  //
+  // Positioning the player over the stage is not enough on the desktop page.
+  // **The app painted over the video whatever z-index either side was given**
+  // — measured 2026-09-03: the player at 2147483000 still lost to the app at
+  // 1, and the stage came out a black rectangle. That black rectangle is what
+  // "영상 모드에서 재생이 안 된다" looks like from the outside; the video was
+  // playing the whole time, underneath. On m.youtube.com the same code is
+  // fine, which is why it went unnoticed.
+  //
+  // What does move it is giving every element between <body> and the player a
+  // position and a z-index of its own. The chain is blanked by the rule above,
+  // so lifting it shows nothing except the player itself.
+  //
+  // The selectors are :nth-child paths, so the page still gets no attribute,
+  // no class and no inline style written onto it, and the rule lives in our
+  // stylesheet, so it leaves when the sheet does.
+  const LIFT = 2147482050
+  let liftText = ''
+  let liftIndex = -1
+
+  const lift = (): void => {
+    const player = document.getElementById('movie_player')
+    const sheet = style.sheet
+    if (!player || !sheet) return
+    const steps: string[] = []
+    for (let el = player.parentElement; el && el !== document.body; el = el.parentElement) {
+      const parent = el.parentElement
+      if (!parent) break
+      const i = Array.prototype.indexOf.call(parent.children, el) + 1
+      steps.unshift(`${el.tagName.toLowerCase()}:nth-child(${i})`)
+    }
+    if (steps.length === 0) return
+    const selectors = steps.map((_, i) => `body > ${steps.slice(0, i + 1).join(' > ')}`)
+    const text = `${selectors.join(', ')} { position: relative !important; z-index: ${LIFT} !important; }`
+    // A page that navigated may have a different chain; anything else is the
+    // same string every second, and rewriting that would be churn.
+    if (text === liftText) return
+    try {
+      if (liftIndex >= 0) sheet.deleteRule(liftIndex)
+      liftIndex = sheet.insertRule(text, sheet.cssRules.length)
+      liftText = text
+    } catch {
+      // A selector we cannot express is a player we cannot lift; the UI still
+      // works, it is the picture that suffers, and that is not worth throwing.
+    }
+  }
+
+  /**
+   * Puts the chain back down.
+   *
+   * Required whenever the picture has nowhere to be: parking the player relies
+   * on the app being above it, and a lifted chain is exactly what stops that.
+   * Without this, 소리만 듣기 leaves a small video in the top-left corner.
+   */
+  const unlift = (): void => {
+    if (liftIndex < 0 || !style.sheet) return
+    try {
+      style.sheet.deleteRule(liftIndex)
+    } catch {
+      /* the sheet is going away anyway */
+    }
+    liftIndex = -1
+    liftText = ''
+  }
+
   const apply = () => {
     raf = 0
     if (!target) return
+    lift()
     const want = target.getBoundingClientRect()
     if (want.width < 2 || want.height < 2) return
     vars.setProperty('--oc-x', `${Math.round(want.left)}px`)
@@ -223,8 +311,11 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     alive = true
     observer.disconnect()
     target = next
+    // A button for a picture nobody can see is a button for nothing.
+    vars.setProperty('--oc-pip', next ? 'grid' : 'none')
     if (!next) {
       // Nowhere to be: park it behind the app, still playing, never seen.
+      unlift()
       vars.setProperty('--oc-z', '1')
       vars.setProperty('--oc-x', '0px')
       vars.setProperty('--oc-y', '0px')

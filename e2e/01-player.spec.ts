@@ -98,3 +98,44 @@ test('the queue advances and the mode survives it', async () => {
     await h.close()
   }
 })
+
+test('the picture is on top of the app, and out of the way when it is not wanted', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+
+    // Placing the player over the stage is not enough: our own panel painted
+    // over it, and the stage came out a black rectangle with the video playing
+    // underneath. Geometry alone never caught it — the rects matched exactly
+    // the whole time — so this asks the page who is actually on top.
+    await ui.locator('.right button[title="화면 위치"]').click()
+    await h.page.locator('oc-easy-mode-overlay').locator('.menu button', { hasText: '크게 보기' }).click()
+
+    const topOfStage = async () =>
+      h.page.evaluate(() => {
+        const slot = document.querySelector('oc-easy-mode')!.shadowRoot!.querySelector('.slot')!
+        const b = slot.getBoundingClientRect()
+        const top = document.elementsFromPoint(b.x + b.width / 2, b.y + b.height / 2)[0]
+        return top ? top.tagName : ''
+      })
+    await expect.poll(topOfStage).not.toBe('OC-EASY-MODE')
+
+    // And with no picture asked for, nothing of the player may show: it is
+    // parked behind the app, which only works while the app is above it.
+    await ui.locator('.right button[title="화면 위치"]').click()
+    await h.page.locator('oc-easy-mode-overlay').locator('.menu button', { hasText: '소리만 듣기' }).click()
+    await expect(ui.locator('.slot')).toHaveClass(/hidden/)
+    await expect
+      .poll(async () =>
+        h.page.evaluate(() => {
+          const p = document.getElementById('movie_player')!.getBoundingClientRect()
+          const top = document.elementsFromPoint(p.x + p.width / 2, p.y + p.height / 2)[0]
+          return top ? top.tagName : ''
+        }),
+      )
+      .toBe('OC-EASY-MODE')
+  } finally {
+    await h.close()
+  }
+})

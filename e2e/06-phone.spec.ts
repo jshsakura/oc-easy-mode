@@ -67,20 +67,28 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     // waiting for m.youtube.com to fill three shelves made it the slowest and
     // flakiest thing in the suite. 04-tv covers the shelves.
 
-    // The sidebar is a bottom tab bar, not a column and not a drawer: it sits
-    // across the foot of the screen, under a thumb.
-    const side = (await ui.locator('.side').boundingBox())!
+    // The sidebar is a drawer: parked off the left edge, and the content has
+    // the whole width until it is asked for.
     const app = (await ui.locator('.app').boundingBox())!
-    expect(side.x).toBe(0)
-    expect(Math.round(side.width)).toBe(Math.round(app.width))
-    expect(side.y + side.height).toBeCloseTo(app.y + app.height, 0)
-    // And the content above it has the whole width.
+    const parked = (await ui.locator('.side').boundingBox())!
+    expect(parked.x + parked.width).toBeLessThanOrEqual(0)
     const main = (await ui.locator('.main').boundingBox())!
     expect(Math.round(main.width)).toBe(Math.round(app.width))
 
-    // Tapping a tab navigates.
+    // The header is a row of its own, above everything the player can cover.
+    const top = (await ui.locator('.top').boundingBox())!
+    expect(top.y).toBe(0)
+    expect(Math.round(top.width)).toBe(Math.round(app.width))
+    await expect(ui.locator('.top .name')).toBeVisible()
+
+    // Its button opens the drawer, and choosing a destination closes it.
+    await ui.locator('.drawerToggle').click()
+    await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBe(0)
     await ui.locator('.nav').filter({ hasText: '검색' }).click()
     await expect(ui.locator('.searchbox input')).toBeVisible()
+    await expect
+      .poll(async () => (await ui.locator('.side').boundingBox())!.x)
+      .toBeLessThan(0)
 
   } finally {
     await context.close()
@@ -98,6 +106,71 @@ test('music mode on a narrow screen shows no floating picture', async () => {
     // A 288px window has nowhere to float on a 390px screen; it would sit on
     // top of the list. The bar's artwork is the picture here.
     await expect(page.locator('oc-easy-mode').locator('.slot')).toHaveClass(/hidden/)
+  } finally {
+    await context.close()
+  }
+})
+
+test('the picture never covers the header', async () => {
+  const { context, page } = await phone()
+  try {
+    await page.goto('https://m.youtube.com/watch?v=BzYnNdJhZQw', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    })
+    const ui = page.locator('oc-easy-mode')
+    await expect(ui.locator('.app.narrow')).toBeVisible()
+
+    // 영상 mode puts the picture across the top of the screen, and YouTube's
+    // player is drawn above the whole app — it has to be, or our panels would
+    // hide it. So anything of ours up there has to start below the stage, or
+    // it is unreachable: this is how the drawer button and the mode switch
+    // were both buried, leaving no way out of 영상 mode but Escape.
+    await ui.locator('.drawerToggle').click()
+    await ui.locator('.modeToggle').click()
+    await ui.locator('.drawerScrim').click()
+    await expect(ui.locator('.slot')).toHaveClass(/stage/)
+
+    const top = (await ui.locator('.top').boundingBox())!
+    const stage = (await ui.locator('.slot').boundingBox())!
+    expect(stage.y).toBeGreaterThanOrEqual(top.y + top.height - 1)
+
+    // And the way back is still there to be pressed.
+    await ui.locator('.drawerToggle').click()
+    await ui.locator('.modeToggle').click()
+    await expect(ui.locator('.slot')).toHaveClass(/hidden/)
+  } finally {
+    await context.close()
+  }
+})
+
+test('the player bar opens into a full player and closes again', async () => {
+  const { context, page } = await phone()
+  try {
+    await page.goto('https://m.youtube.com/watch?v=BzYnNdJhZQw', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    })
+    const ui = page.locator('oc-easy-mode')
+    await expect(ui.locator('.app.narrow')).toBeVisible()
+
+    // Closed, the bar is a strip at the foot with the shuffle and repeat
+    // buttons put away; there is no room for them beside a track title.
+    const app = (await ui.locator('.app').boundingBox())!
+    const closed = (await ui.locator('.bar').boundingBox())!
+    expect(closed.height).toBeLessThan(app.height / 3)
+    await expect(ui.locator('.ctl .sh')).toBeHidden()
+
+    // Tapping what is playing opens the same element full-screen, with
+    // everything on it.
+    await ui.locator('.bar .now').click()
+    await expect(ui.locator('.ctl .sh')).toBeVisible()
+    await expect(ui.locator('.right')).toBeVisible()
+    const open = (await ui.locator('.bar').boundingBox())!
+    expect(open.height).toBeGreaterThan(app.height / 2)
+
+    await ui.locator('.sheetClose').click()
+    await expect(ui.locator('.ctl .sh')).toBeHidden()
   } finally {
     await context.close()
   }

@@ -52,11 +52,11 @@ test('video mode lays a list out as a grid of big cards, music mode as rows', as
     await expect(ui.locator('.row').first()).toBeVisible()
     await expect(ui.locator('.grid')).toHaveCount(0)
 
-    await ui.locator('.modes button', { hasText: '영상' }).click()
+    await ui.locator('.modeToggle').click()
     await expect(ui.locator('.grid .tile').first()).toBeVisible()
     await expect(ui.locator('.row')).toHaveCount(0)
 
-    await ui.locator('.modes button', { hasText: '음악' }).click()
+    await ui.locator('.modeToggle').click()
     await expect(ui.locator('.row').first()).toBeVisible()
   } finally {
     await h.close()
