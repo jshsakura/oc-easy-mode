@@ -15,6 +15,7 @@ import { h, icon, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
 import { clock, type Ctx, type View } from './ctx.ts'
 import { showMenu, toast } from './overlay.ts'
+import { installRemote } from './remote.ts'
 import { render } from './views.ts'
 
 export interface AppOptions {
@@ -75,6 +76,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // ── Sidebar ──────────────────────────────────────────────────────────────
 
   const NAV: Array<{ view: View; label: string; icon: Parameters<typeof icon>[0] }> = [
+    { view: { kind: 'explore' }, label: '둘러보기', icon: 'radio' },
     { view: { kind: 'search', query: '' }, label: '검색', icon: 'search' },
     { view: { kind: 'home' }, label: '홈', icon: 'home' },
     { view: { kind: 'subs' }, label: '구독', icon: 'subs' },
@@ -96,6 +98,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
             'button',
             {
               class: mode === m ? 'mode on' : 'mode',
+              'data-nav': '',
               onclick: () => {
                 engine.setMode(m)
                 setLayout(LAYOUT_FOR[m])
@@ -112,6 +115,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           'button',
           {
             class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
+            'data-nav': '',
             onclick: () => ctx.go(item.view),
           },
           icon(item.icon, 18),
@@ -122,14 +126,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       ctx.playlists.slice(0, 30).map((p) =>
         h(
           'button',
-          { class: 'nav pl', title: p.title, onclick: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }) },
+          { class: 'nav pl', 'data-nav': '', title: p.title, onclick: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }) },
           p.title,
         ),
       ),
       h('div', { class: 'spacer' }),
       h(
         'button',
-        { class: 'exit', title: '원래 유튜브 화면으로 (Esc 두 번)', onclick: opts.exit },
+        { class: 'exit', 'data-nav': '', title: '원래 유튜브 화면으로 (Esc 두 번)', onclick: opts.exit },
         icon('back', 18),
         h('span', null, '유튜브로 돌아가기'),
       ),
@@ -169,19 +173,19 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const nowThumb = h('div', { class: 'thumb' })
   const nowTitle = h('div', { class: 't' }, '재생 중인 항목 없음')
   const nowBy = h('div', { class: 'b' })
-  const playButton = h('button', { class: 'big', title: '재생 / 일시정지' }, icon('play', 20))
+  const playButton = h('button', { class: 'big', 'data-nav': '', title: '재생 / 일시정지' }, icon('play', 20))
   playButton.addEventListener('click', () => engine.toggle())
 
-  const prevButton = h('button', { title: '이전' }, icon('prev', 20))
+  const prevButton = h('button', { 'data-nav': '', title: '이전' }, icon('prev', 20))
   prevButton.addEventListener('click', () => engine.prev())
-  const nextButton = h('button', { title: '다음' }, icon('next', 20))
+  const nextButton = h('button', { 'data-nav': '', title: '다음' }, icon('next', 20))
   nextButton.addEventListener('click', () => engine.next())
-  const shuffleButton = h('button', { title: '셔플' }, icon('shuffle', 18))
+  const shuffleButton = h('button', { 'data-nav': '', title: '셔플' }, icon('shuffle', 18))
   shuffleButton.addEventListener('click', () => {
     engine.setShuffle(!engine.state.shuffle)
     drawBar()
   })
-  const repeatButton = h('button', { title: '반복' }, icon('repeat', 18))
+  const repeatButton = h('button', { 'data-nav': '', title: '반복' }, icon('repeat', 18))
   repeatButton.addEventListener('click', () => {
     engine.cycleRepeat()
     drawBar()
@@ -189,7 +193,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   const volume = h('input', { type: 'range', class: 'vol', min: '0', max: '100', value: String(engine.state.volume) })
   volume.addEventListener('input', () => engine.setVolume(Number(volume.value)))
-  const muteButton = h('button', { title: '음소거' }, icon('volume', 18))
+  const muteButton = h('button', { 'data-nav': '', title: '음소거' }, icon('volume', 18))
   muteButton.addEventListener('click', () => {
     const on = engine.state.volume === 0
     engine.setVolume(on ? 70 : 0)
@@ -197,7 +201,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     drawBar()
   })
 
-  const videoButton = h('button', { title: '화면 위치' }, icon('video', 18))
+  const videoButton = h('button', { 'data-nav': '', title: '화면 위치' }, icon('video', 18))
   videoButton.addEventListener('click', () =>
     showMenu(shell.overlay, videoButton, [
       { label: '크게 보기', icon: 'expand', onSelect: () => setLayout('stage') },
@@ -206,7 +210,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     ]),
   )
 
-  const queueButton = h('button', { title: '대기열' }, icon('queue', 18))
+  const queueButton = h('button', { 'data-nav': '', title: '대기열' }, icon('queue', 18))
   queueButton.addEventListener('click', () => ctx.go({ kind: 'queue' }))
 
   bar.append(
@@ -248,6 +252,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   // ── Wiring ───────────────────────────────────────────────────────────────
 
+  const offRemote = installRemote(shell.root, shell.overlay)
+
   const offChange = engine.subscribe(() => {
     drawBar()
     if (ctx.view.kind === 'queue') ctx.reload()
@@ -266,6 +272,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   return {
     ctx,
     destroy() {
+      offRemote()
       offChange()
       offTick()
     },
@@ -284,6 +291,7 @@ function viewFromName(name: string): View {
     if (cut > 0) return { kind: 'playlist', id: rest.slice(0, cut), title: rest.slice(cut + 1) }
   }
   switch (name) {
+    case 'explore':
     case 'home':
     case 'subs':
     case 'history':

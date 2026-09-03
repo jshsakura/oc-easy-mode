@@ -20,7 +20,7 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
   const playing = ctx.engine.current?.videoId === track.videoId
   const classes = ['row', playing ? 'now' : '', track.unavailable ? 'dead' : ''].filter(Boolean).join(' ')
 
-  const menuButton = h('button', { class: 'more', title: '더보기', 'aria-label': '더보기' }, icon('more', 18))
+  const menuButton = h('button', { class: 'more', title: '더보기', 'aria-label': '더보기', 'data-nav': '' }, icon('more', 18))
   menuButton.addEventListener('click', (ev) => {
     ev.stopPropagation()
     showMenu(ctx.overlay, menuButton, [
@@ -41,19 +41,19 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
     opts.onPlay()
   }
 
+  // One handler on the row rather than one per part: the whole row is the
+  // target, which is also what makes it work under a remote control.
   return h(
     'div',
-    { class: classes },
+    { class: classes, 'data-nav': '', tabindex: '0', role: 'button', onclick: open },
     h('div', { class: 'idx' }, playing ? '▶' : opts.index !== undefined ? String(opts.index) : ''),
     h('div', {
       class: 'thumb',
       style: `background-image: url(${thumbnail(track.videoId)})`,
-      title: '재생',
-      onclick: open,
     }),
     h(
       'div',
-      { class: 'meta', onclick: open },
+      { class: 'meta' },
       h('div', { class: 'title', title: track.title }, track.title || track.videoId),
       h('div', { class: 'by' }, track.unavailable ? '재생할 수 없음' : track.byline),
     ),

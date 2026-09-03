@@ -41,7 +41,9 @@ export const DEFAULTS: Persisted = {
   shuffle: false,
   volume: 100,
   video: 'corner',
-  view: 'search',
+  // Not 'search', which opens on an empty box, and not 'home', which YouTube
+  // leaves empty until it knows you.
+  view: 'explore',
 }
 
 /** The video layout each mode falls back to when it is switched on. */

@@ -8,15 +8,22 @@ import { call, hasSession, InnertubeError } from './innertube.ts'
 import {
   continuationToken,
   playlists as parsePlaylists,
+  shelves as parseShelves,
   tracks as parseTracks,
   dedupe,
   type Playlist,
+  type Shelf,
   type Track,
 } from './parse.ts'
 import type { YtCfg } from './ytcfg.ts'
 
 export interface Page {
   tracks: Track[]
+  /**
+   * The response's titled rows, when it had any. A screen with shelves is laid
+   * out like a television's; one without falls back to the flat list above.
+   */
+  shelves: Shelf[]
   /** Pass back to `more()` for the next page; undefined at the end. */
   continuation?: string
   /** Which endpoint the continuation belongs to. */
@@ -29,20 +36,20 @@ const VIDEOS_ONLY = 'EgIQAQ%3D%3D'
 
 export async function search(cfg: YtCfg, query: string): Promise<Page> {
   const res = await call(cfg, 'search', { query, params: VIDEOS_ONLY })
-  return { tracks: parseTracks(res), continuation: continuationToken(res), endpoint: 'search' }
+  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: 'search' }
 }
 
 /** A mix seeded from one video: the page's own "radio" for it. */
 export async function mix(cfg: YtCfg, videoId: string): Promise<Page> {
   const res = await call(cfg, 'next', { videoId, playlistId: `RD${videoId}` })
-  return { tracks: parseTracks(res), continuation: continuationToken(res), endpoint: 'next' }
+  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: 'next' }
 }
 
 /** The next page of any of the above. */
 export async function more(cfg: YtCfg, page: Page): Promise<Page> {
-  if (!page.continuation) return { tracks: [], endpoint: page.endpoint }
+  if (!page.continuation) return { tracks: [], shelves: [], endpoint: page.endpoint }
   const res = await call(cfg, page.endpoint, { continuation: page.continuation })
-  return { tracks: parseTracks(res), continuation: continuationToken(res), endpoint: page.endpoint }
+  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: page.endpoint }
 }
 
 /** The signed-in user's playlists. Throws an `auth` error when signed out. */
@@ -110,5 +117,30 @@ export async function feed(cfg: YtCfg, browseId: FeedId): Promise<Page> {
     throw new InnertubeError('signed out', 'auth', 401)
   }
   const res = await call(cfg, 'browse', { browseId })
-  return { tracks: parseTracks(res), continuation: continuationToken(res), endpoint: 'browse' }
+  return {
+    tracks: parseTracks(res),
+    shelves: parseShelves(res),
+    continuation: continuationToken(res),
+    endpoint: 'browse',
+  }
+}
+
+/**
+ * The screen that is never empty.
+ *
+ * YouTube's own home needs a watch history to say anything — signed out, and
+ * signed in on a fresh account, it answers with "start by searching" and no
+ * feed at all (measured 2026-09-03). That is a poor front door for something
+ * meant to feel like a television.
+ *
+ * This is YouTube's Music channel, which anyone can browse and which comes
+ * back as nine titled shelves of playlists and albums. It is a browse of an
+ * ordinary channel, so nothing about it is private or personal — which is
+ * exactly why it always works.
+ */
+const MUSIC_CHANNEL = 'UC-9-kyTW8ZkZNDHQJ6FgpwQ'
+
+export async function explore(cfg: YtCfg): Promise<Page> {
+  const res = await call(cfg, 'browse', { browseId: MUSIC_CHANNEL })
+  return { tracks: parseTracks(res), shelves: parseShelves(res), endpoint: 'browse' }
 }

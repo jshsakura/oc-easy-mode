@@ -70,8 +70,20 @@ export interface Playlist {
   title: string
   /** Free text under the title, usually the count. */
   subtitle: string
-  /** A video id to build a cover from, when the row offered one. */
-  coverVideoId?: string
+  /** A ready-to-use image URL, when the row offered one. */
+  cover?: string
+}
+
+/**
+ * One titled row of a feed — what a television's home screen is made of.
+ *
+ * A shelf holds videos or playlists but rarely both, so both are carried and
+ * whichever is empty is simply not drawn.
+ */
+export interface Shelf {
+  title: string
+  tracks: Track[]
+  playlists: Playlist[]
 }
 
 /** The medium thumbnail for any video, without asking the API for it. */
@@ -220,34 +232,65 @@ export function tracks(root: unknown): Track[] {
   ])
 }
 
-/** Playlists from a library or search response. */
+/**
+ * Playlists from a library, a search, or a shelf.
+ *
+ * Albums count. YouTube gives them their own content type, but the id is an
+ * ordinary playlist id and opening one does exactly what opening a playlist
+ * does, so the distinction would only cost the reader a dead end.
+ */
 export function playlists(root: unknown): Playlist[] {
   const out: Playlist[] = []
-  for (const item of lockups(root, 'LOCKUP_CONTENT_TYPE_PLAYLIST')) {
+  const AS_PLAYLIST = new Set(['LOCKUP_CONTENT_TYPE_PLAYLIST', 'LOCKUP_CONTENT_TYPE_ALBUM'])
+  for (const item of collect(root, 'lockupViewModel')) {
+    if (!isObject(item) || !AS_PLAYLIST.has(String(item.contentType))) continue
     const id = typeof item.contentId === 'string' ? item.contentId : undefined
     if (!id) continue
     const cover = findFirst(item.contentImage, 'url')
-    const m = typeof cover === 'string' ? /\/vi\/([\w-]{11})\//.exec(cover) : null
     out.push({
       id,
       title: lockupTitle(item),
       subtitle: [lockupBadge(item), ...lockupRows(item)].filter(Boolean).join(' · '),
-      coverVideoId: m?.[1],
+      cover: typeof cover === 'string' ? cover : undefined,
     })
   }
   for (const key of ['gridPlaylistRenderer', 'playlistRenderer', 'compactPlaylistRenderer']) {
     for (const item of collect(root, key)) {
       if (!isObject(item) || typeof item.playlistId !== 'string') continue
+      const seed = watchVideoId(item)
       out.push({
         id: item.playlistId,
         title: text(item.title),
         subtitle: text(item.videoCountText) || text(item.videoCountShortText),
-        coverVideoId: watchVideoId(item),
+        cover: seed ? thumbnail(seed) : undefined,
       })
     }
   }
   const seen = new Set<string>()
   return out.filter((p) => !seen.has(p.id) && seen.add(p.id))
+}
+
+/**
+ * The titled rows of a feed, in the order they are meant to be read.
+ *
+ * A response that has none is not an error — most screens are one flat list —
+ * so the caller falls back to `tracks` rather than showing nothing.
+ */
+export function shelves(root: unknown): Shelf[] {
+  const out: Shelf[] = []
+  for (const key of ['richShelfRenderer', 'shelfRenderer']) {
+    for (const shelf of collect(root, key)) {
+      if (!isObject(shelf)) continue
+      // `contents` on the modern renderer, `content` on the older one, which
+      // wraps its items in a horizontal list.
+      const items = shelf.contents ?? shelf.content
+      const inside = tracks(items)
+      const lists = playlists(items)
+      if (inside.length === 0 && lists.length === 0) continue
+      out.push({ title: text(shelf.title), tracks: inside, playlists: lists })
+    }
+  }
+  return out
 }
 
 /** The token that asks for the next page, in either of the forms YouTube emits. */

@@ -1,0 +1,122 @@
+// The television shape: shelves, a grid, and arrow keys that move between them.
+
+import { expect, test } from '@playwright/test'
+import { app, open } from './fixture.ts'
+
+const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
+
+test('둘러보기 comes back as titled shelves, signed out', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '둘러보기' }).click()
+
+    const shelves = ui.locator('.shelf')
+    await expect(shelves.first()).toBeVisible()
+    expect(await shelves.count()).toBeGreaterThan(3)
+    // Each shelf is a titled row of cards.
+    expect((await shelves.first().locator('h3').textContent())?.trim().length).toBeGreaterThan(0)
+    expect(await shelves.first().locator('.tile').count()).toBeGreaterThan(2)
+  } finally {
+    await h.close()
+  }
+})
+
+test('opening a shelf card opens that playlist', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '둘러보기' }).click()
+    const card = ui.locator('.shelf .tile').first()
+    await expect(card).toBeVisible()
+    const name = (await card.locator('.t').textContent())?.trim() ?? ''
+
+    await card.click()
+    await expect(ui.locator('.head h2')).toHaveText(name)
+    await expect(ui.locator('.row').first()).toBeVisible()
+  } finally {
+    await h.close()
+  }
+})
+
+test('video mode lays a list out as a grid of big cards, music mode as rows', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    await ui.locator('.searchbox input').fill('아이유')
+    await ui.locator('.searchbox input').press('Enter')
+    await expect(ui.locator('.row').first()).toBeVisible()
+    await expect(ui.locator('.grid')).toHaveCount(0)
+
+    await ui.locator('.modes button', { hasText: '영상' }).click()
+    await expect(ui.locator('.grid .tile').first()).toBeVisible()
+    await expect(ui.locator('.row')).toHaveCount(0)
+
+    await ui.locator('.modes button', { hasText: '음악' }).click()
+    await expect(ui.locator('.row').first()).toBeVisible()
+  } finally {
+    await h.close()
+  }
+})
+
+test('arrow keys move focus, and Enter opens what is focused', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    await ui.locator('.searchbox input').fill('아이유 밤편지')
+    await ui.locator('.searchbox input').press('Enter')
+    await expect(ui.locator('.row').first()).toBeVisible()
+
+    const focused = () =>
+      h.page.evaluate(() => {
+        const root = document.querySelector('oc-easy-mode')!.shadowRoot!
+        const el = root.activeElement as HTMLElement | null
+        return el ? `${el.className}|${el.textContent?.slice(0, 24) ?? ''}` : null
+      })
+
+    // Down out of the search field, through the toolbar, and into the rows.
+    await ui.locator('.searchbox input').focus()
+    let landed = ''
+    for (let i = 0; i < 8 && !landed.includes('row'); i++) {
+      await h.page.keyboard.press('ArrowDown')
+      landed = (await focused()) ?? ''
+    }
+    expect(landed).toContain('row')
+
+    // Enter plays it, and the bar agrees.
+    await h.page.keyboard.press('Enter')
+    await expect(ui.locator('.bar .now .t')).not.toHaveText('재생 중인 항목 없음')
+  } finally {
+    await h.close()
+  }
+})
+
+test('left from the first card reaches the sidebar', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '둘러보기' }).click()
+    // Wait for the shelves to settle: focusing an element that a redraw is
+    // about to replace loses the focus and the press with it.
+    await expect(ui.locator('.shelf').nth(3)).toBeVisible()
+
+    await ui.locator('.shelf .tile').first().focus()
+    await h.page.keyboard.press('ArrowLeft')
+
+    const inSidebar = await h.page.evaluate(() => {
+      const root = document.querySelector('oc-easy-mode')!.shadowRoot!
+      const el = root.activeElement
+      return el !== null && root.querySelector('.side')!.contains(el)
+    })
+    expect(inSidebar).toBe(true)
+  } finally {
+    await h.close()
+  }
+})

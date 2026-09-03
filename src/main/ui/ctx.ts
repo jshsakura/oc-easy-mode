@@ -6,6 +6,7 @@ import type { Playlist, Track } from '../parse.ts'
 import type { YtCfg } from '../ytcfg.ts'
 
 export type View =
+  | { kind: 'explore' }
   | { kind: 'home' }
   | { kind: 'search'; query: string }
   | { kind: 'subs' }

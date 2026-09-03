@@ -11,6 +11,7 @@ test('search returns tracks, and choosing one drives the page\'s player', async 
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
 
+    await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('아이유 밤편지')
     await ui.locator('.searchbox input').press('Enter')
     const first = ui.locator('.row').first()
@@ -79,6 +80,7 @@ test('the queue advances and the mode survives it', async () => {
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '검색' }).click()
     await ui.locator('.searchbox input').fill('lofi')
     await ui.locator('.searchbox input').press('Enter')
     await expect(ui.locator('.row').first()).toBeVisible()
