@@ -193,17 +193,17 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   const splashStyle = document.createElement('style')
   splashStyle.textContent = `
     .splash { position: fixed; inset: 0; z-index: 1; display: grid;
-      grid-template-columns: 244px 1fr; grid-template-rows: 1fr 76px;
+      grid-template-columns: 244px 1fr; grid-template-rows: 1fr 72px;
       gap: 8px; padding: 8px; box-sizing: border-box;
       background: ${dark ? '#141210' : '#faf8f4'};
       transition: opacity .3s ease; }
     .splash.gone { opacity: 0; pointer-events: none; }
-    .splash > div { background: ${dark ? '#1b1815' : '#ffffff'}; border-radius: 14px;
+    .splash > div { background: ${dark ? '#1b1815' : '#ffffff'}; border-radius: 0;
       padding: 20px; box-sizing: border-box; overflow: hidden; }
     .splash .sideCol { display: flex; flex-direction: column; gap: 14px; }
     .splash .body { grid-column: 2; display: flex; flex-direction: column; gap: 16px; }
     .splash .barRow { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
-    .splash i { display: block; background: ${ink}; border-radius: 8px;
+    .splash i { display: block; background: ${ink}; border-radius: 0;
       animation: splash-pulse 1.2s ease-in-out infinite; }
     @keyframes splash-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
     @media (prefers-reduced-motion: reduce) {
@@ -394,7 +394,21 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   let liftText = ''
   let liftIndex = -1
 
-  const lift = (): void => {
+  /**
+   * Raises the player's ancestors so the picture can paint above the app, and
+   * lowers them again without letting go.
+   *
+   * `z` is the whole difference between the two. **The rule must not simply be
+   * deleted to get the player out of the way**: it also carries
+   * `position: relative`, and that is what keeps YouTube's own
+   * absolutely-positioned furniture — its guide drawer, its overlays —
+   * resolving against `ytd-app` instead of the page. Delete it and they escape
+   * to the initial containing block; on a phone the desktop layout is wider
+   * than the screen, the document grows with them, and the browser shrinks the
+   * whole page to fit. Measured: opening our drawer took the layout viewport
+   * from 390 to 425 and everything with it.
+   */
+  const lift = (z: number | string = LIFT): void => {
     const player = document.getElementById('movie_player')
     const sheet = style.sheet
     if (!player || !sheet) return
@@ -407,7 +421,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     }
     if (steps.length === 0) return
     const selectors = steps.map((_, i) => `body > ${steps.slice(0, i + 1).join(' > ')}`)
-    const text = `${selectors.join(', ')} { position: relative !important; z-index: ${LIFT} !important; }`
+    const text = `${selectors.join(', ')} { position: relative !important; z-index: ${z} !important; }`
     // A page that navigated may have a different chain; anything else is the
     // same string every second, and rewriting that would be churn.
     if (text === liftText) return
@@ -503,11 +517,14 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     if (covered === on) return
     covered = on
     if (on) {
-      // Both, and on purpose. Taking the chain down is what lets the app be on
+      // Both, and on purpose. Lowering the chain is what lets the app be on
       // top; dropping --oc-z as well is a direct style write that does not
       // depend on the rule bookkeeping having stayed in step, and the drawer
       // has to be reachable even if it has not.
-      unlift()
+      //
+      // Lowered rather than removed — see lift(). Removing it is what made the
+      // menu button shrink the page.
+      lift(0)
       vars.setProperty('--oc-z', '1')
       vars.setProperty('--oc-pe', 'none')
       // The picture is behind the app now, so its button has nothing to be
