@@ -566,6 +566,15 @@ input[type=range]::-moz-range-thumb {
 }
 .menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px -4px; }
 
+/* The narrow form: a sheet at the foot of the screen. Placed here rather than
+   in the width query below because this root has no .app to qualify it and the
+   decision is made in script anyway. */
+.menu.sheetMenu {
+  left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
+  top: auto; min-width: 0; padding: 6px;
+}
+.menu.sheetMenu button { padding: 13px 12px; font-size: 15px; }
+
 .scrim {
   position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 2147483090;
   background: oklch(0 0 0 / 70%); display: flex; align-items: center; justify-content: center;

@@ -12,7 +12,7 @@ import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { youtubeIsDark, type Mode } from '../store.ts'
+import { youtubeIsDark } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
@@ -158,7 +158,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       }
       ctx.view = view
       engine.setView(nameOf(view))
-      engine.setMode(modeFor(view))
       setLayout(pictureNow())
       app.classList.remove('sheet-open')
       drawTop()
@@ -190,23 +189,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   ]
 
   /**
-   * Which shape a screen's lists take.
+   * 영상 모드, and it is the only thing that decides.
    *
-   * There is no switch any more — the user's decision: "영상과 음악모드 이거
-   * 구분하지말자 홈가면 그냥 영상모드인거고", and 구독 with it. So the screen
-   * says it. YouTube's own feeds are video and are drawn as a wall of
-   * thumbnails; everything else is a list of tracks.
-   */
-  function modeFor(view: View): Mode {
-    return view.kind === 'home' || view.kind === 'subs' || view.kind === 'history' ? 'video' : 'music'
-  }
-
-  /**
-   * The override, in the sidebar where it was asked for.
-   *
-   * The screen sets the shape on the way in; this changes it for the screen
-   * you are on and stays until you go somewhere else. So the common case needs
-   * no press, and a list you would rather see as thumbnails is one press away.
+   * The screen used to set it on the way in — 홈 and 구독 turned it on — and
+   * that meant walking to 홈 claimed the top of the screen for a picture
+   * whatever the switch said. The switch has to be the authority or it is not
+   * a switch: it says whether there is a picture and whether lists are drawn
+   * as rows or as thumbnails, it is remembered, and nothing else touches it.
    */
   function modeToggle(): HTMLElement {
     const on = engine.state.mode === 'video'
@@ -392,9 +381,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   videoButton.addEventListener('click', () =>
     showMenu(shell.overlay, videoButton, [
       { label: t('크게 보기'), icon: 'expand', onSelect: () => setLayout('stage') },
-      { label: t('구석에 두기'), icon: 'video', onSelect: () => setLayout('corner') },
+      // 구석에 두기 is a desktop answer. On a phone there is nowhere to float
+      // — the corner window is 280px on a 390px screen, so it is display:none
+      // there — and offering it meant offering a button that did nothing but
+      // put the layout into a state the phone then had to ignore.
+      !narrowNow() && { label: t('구석에 두기'), icon: 'video', onSelect: () => setLayout('corner') },
       { label: t('소리만 듣기'), icon: 'videoOff', onSelect: () => setLayout('hidden') },
-    ]),
+    ].filter(Boolean) as Parameters<typeof showMenu>[2]),
   )
 
   const queueButton = h('button', { 'data-nav': '', title: t('대기열') }, icon('queue', 18))
@@ -718,7 +711,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   drawSide()
   drawBar()
   drawTick()
-  engine.setMode(modeFor(ctx.view))
   setLayout(pictureNow())
   void render(ctx, main)
 

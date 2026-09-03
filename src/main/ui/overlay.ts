@@ -43,15 +43,27 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
   )
   root.appendChild(menu)
   openMenu = menu
-  const r = anchor.getBoundingClientRect()
-  const w = menu.offsetWidth
-  const hgt = menu.offsetHeight
-  let x = r.right - w
-  let y = r.bottom + 4
-  if (x < 8) x = 8
-  if (y + hgt > window.innerHeight - 8) y = r.top - hgt - 4
-  menu.style.left = `${x}px`
-  menu.style.top = `${y}px`
+  // On a narrow screen it is a sheet along the bottom rather than a popover.
+  //
+  // Anchored to its button, a menu opened from the player's action row has
+  // nowhere to go but up — over the transport, which is what it was covering:
+  // the play button sat behind the list of choices. Full width at the foot of
+  // the screen it covers nothing that matters and every item is a full line
+  // for a thumb.
+  const narrow = Math.min(window.innerWidth, window.screen.width) < 900
+  if (narrow) {
+    menu.classList.add('sheetMenu')
+  } else {
+    const r = anchor.getBoundingClientRect()
+    const w = menu.offsetWidth
+    const hgt = menu.offsetHeight
+    let x = r.right - w
+    let y = r.bottom + 4
+    if (x < 8) x = 8
+    if (y + hgt > window.innerHeight - 8) y = r.top - hgt - 4
+    menu.style.left = `${x}px`
+    menu.style.top = `${y}px`
+  }
   // Dismissal listens on the document, not on this shadow root.
   //
   // The menu lives in the overlay root; everything a person would click to
