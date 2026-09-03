@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+      # 브라우저를 띄우지 않는 테스트만 돈다. 나머지는 live 유튜브에 붙으므로
+      # CI 에서 돌리면 유튜브의 그날 사정이 우리 빌드의 합격 여부가 된다.
+      - run: npx playwright test e2e/03-parse.spec.ts
+
+      # 빌드가 조용히 반쪽이 되는 것을 막는다. 확장은 파일 하나가 빠져도
+      # "로드는 되지만 아무 일도 안 일어나는" 상태가 되고, 그건 로그가 없다.
+      - name: 패키지에 있어야 할 것이 다 있나
+        run: |
+          set -e
+          for f in dist/manifest.json dist/main.js dist/isolated.js dist/popup.html \
+                   dist/popup.js dist/popup.css dist/icons/icon16.png \
+                   dist/icons/icon48.png dist/icons/icon128.png; do
+            test -s "$f" || { echo "빠졌습니다: $f"; exit 1; }
+          done
+          node -e '
+            const m = require("./dist/manifest.json");
+            const main = m.content_scripts?.find((c) => c.js.includes("main.js"));
+            // world:MAIN 이 빠지면 크롬에서 ytcfg 가 안 보인다. 오리온은 이 키를
+            // 어차피 무시하고 주입 폴백으로 가지만, 그 폴백은 아래 한 줄이 있어야
+            // 페이지가 main.js 를 받아올 수 있다.
+            if (main?.world !== "MAIN") throw new Error("main.js 의 world 가 MAIN 이 아닙니다");
+            const war = m.web_accessible_resources?.[0]?.resources ?? [];
+            if (!war.includes("main.js")) throw new Error("main.js 가 web_accessible_resources 에 없습니다 — 오리온에서 주입이 막힙니다");
+            if (m.version !== require("./package.json").version) {
+              throw new Error("manifest 와 package.json 의 버전이 다릅니다");
+            }
+          '
+          echo "확인했습니다"

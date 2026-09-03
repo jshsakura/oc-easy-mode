@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>이지 모드</title>
+<meta name="description" content="유튜브 화면을 내 UI로 바꾸는 확장. 음악과 영상을 한 자리에서, 쇼츠 없이, 언제든 원래 화면으로.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2394e2d5'/><ellipse cx='12' cy='22' rx='4' ry='3' fill='%2311111b'/><rect x='14.4' y='6' width='2' height='16' fill='%2311111b'/><path d='M16.4 6 23 10.5V16l-2.5-3.5-4.1-2Z' fill='%2311111b'/></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="이지 모드">
+<meta property="og:description" content="유튜브 화면을 내 UI로. 음악과 영상을 한 자리에서, 쇼츠 없이.">
+<meta property="og:locale" content="ko_KR">
+
+<style>
+/* shadcn/ui — default theme. The extension wears the same tokens; the page
+   should not be a different product. Light by default, dark by system. */
+:root {
+  --radius: 10px;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --primary-hover: oklch(0.3 0 0);
+  --secondary: oklch(0.97 0 0);
+  --accent: oklch(0.97 0 0);
+  --border: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --primary-hover: oklch(0.86 0 0);
+    --secondary: oklch(0.269 0 0);
+    --accent: oklch(0.269 0 0);
+    --border: oklch(1 0 0 / 10%);
+    --ring: oklch(0.556 0 0);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--background); color: var(--foreground);
+  font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+        'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 760px; margin: 0 auto; padding: 72px 24px 96px; }
+h1 { margin: 0 0 12px; font-size: 44px; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em; }
+h2 { margin: 56px 0 16px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+p { margin: 0 0 16px; }
+.lead { font-size: 19px; color: var(--muted-foreground); margin-bottom: 32px; }
+.mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: var(--radius);
+  background: oklch(0.86 0.09 180); color: oklch(0.145 0 0); margin-bottom: 24px;
+}
+ul { margin: 0 0 16px; padding-left: 20px; }
+li { margin-bottom: 8px; }
+a { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border); }
+a:hover { text-decoration-color: currentColor; }
+code, kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em;
+  background: var(--muted); padding: 2px 6px; border-radius: 6px;
+}
+kbd { border: 1px solid var(--border); }
+
+.get { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 22px; border-radius: 8px; border: 0;
+  background: var(--primary); color: var(--primary-foreground);
+  font: inherit; font-size: 15px; font-weight: 500; text-decoration: none; cursor: pointer;
+  transition: background .15s;
+}
+.btn:hover { background: var(--primary-hover); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 5px var(--ring); }
+.btn.quiet { background: transparent; color: var(--foreground); border: 1px solid var(--border); }
+.btn.quiet:hover { background: var(--accent); }
+.meta { color: var(--muted-foreground); font-size: 14px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 16px; }
+.card {
+  border: 1px solid var(--border); border-radius: 14px;
+  background: var(--card); padding: 20px;
+}
+.card p { margin: 0; color: var(--muted-foreground); font-size: 14.5px; }
+
+.note {
+  border: 1px solid var(--border); border-left: 3px solid var(--foreground);
+  border-radius: 10px; background: var(--card); padding: 16px 20px; margin: 0 0 16px;
+}
+.note p:last-child { margin-bottom: 0; }
+
+ol { padding-left: 22px; margin: 0 0 16px; }
+ol li { margin-bottom: 10px; }
+
+footer {
+  border-top: 1px solid var(--border); margin-top: 72px; padding-top: 24px;
+  color: var(--muted-foreground); font-size: 14px;
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="mark" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.6A4 4 0 1 0 14 17V7h4V3z"/></svg>
+  </div>
+
+  <h1>이지 모드</h1>
+  <p class="lead">유튜브 화면을 내 UI로 바꿉니다. 음악과 영상을 한 자리에서, 쇼츠 없이,
+  언제든 원래 화면으로 돌아갈 수 있게.</p>
+
+  <div class="get">
+    <a class="btn" id="download" href="https://github.com/jshsakura/oc-easy-mode/releases">내려받기</a>
+    <a class="btn quiet" href="https://github.com/jshsakura/oc-easy-mode">GitHub</a>
+    <span class="meta" id="meta"></span>
+  </div>
+  <p class="meta">오리온 · 크롬 · 엣지에서 같은 파일을 씁니다. 스토어에는 올리지 않습니다.</p>
+
+  <h2>무엇을 하나</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>둘러보기 · 검색 · 구독</h3>
+      <p>선반으로 된 첫 화면. 로그인 없이도 늘 채워져 있습니다.</p>
+    </div>
+    <div class="card">
+      <h3>대기열과 재생목록</h3>
+      <p>셔플, 반복, 라디오. 재생목록을 만들고 넣고 빼고 지웁니다.</p>
+    </div>
+    <div class="card">
+      <h3>음악 · 영상 두 모드</h3>
+      <p>같은 목록이 트랙 줄이 되거나 큰 썸네일 격자가 됩니다.</p>
+    </div>
+    <div class="card">
+      <h3>쇼츠는 나오지 않습니다</h3>
+      <p>세로로 자동 재생되며 넘어가는 클립은 어느 목록에도 넣지 않습니다.</p>
+    </div>
+    <div class="card">
+      <h3>화살표 키로만도</h3>
+      <p>리모컨처럼 움직입니다. Enter로 열고, 초점이 그대로 보입니다.</p>
+    </div>
+    <div class="card">
+      <h3>재생은 유튜브가</h3>
+      <p>유튜브 자신의 플레이어가 그대로 재생합니다. 내려받지 않습니다.</p>
+    </div>
+  </div>
+
+  <h2>설치</h2>
+
+  <h3 style="margin-top:24px">오리온 (맥 · 아이폰 · 아이패드)</h3>
+  <ol>
+    <li>위 <strong>내려받기</strong>로 zip을 받습니다.</li>
+    <li>설정 → 확장 → <strong>+</strong> → 받은 zip을 고릅니다.</li>
+    <li>주소창 옆 아이콘을 눌러 <strong>음악 모드 켜기</strong>.</li>
+  </ol>
+
+  <h3 style="margin-top:24px">크롬 · 엣지</h3>
+  <ol>
+    <li>zip을 받아 풉니다.</li>
+    <li><code>chrome://extensions</code> → 개발자 모드 → <strong>압축해제된 확장 프로그램을 로드</strong>.</li>
+    <li>푼 폴더를 고르고, 툴바 아이콘을 눌러 켭니다.</li>
+  </ol>
+
+  <h2>언제든 원래 화면으로</h2>
+  <div class="note">
+    <p>이 확장은 <strong>유튜브의 DOM을 건드리지 않습니다.</strong> 스타일시트 하나와
+    자기 화면 하나를 얹을 뿐이고, 나가는 것은 복원이 아니라 그 둘을 지우는 것입니다.
+    되돌릴 상태가 없으니 되돌리다 실패할 수도 없습니다.</p>
+    <p>나가는 길은 셋입니다. 사이드바의 <strong>유튜브로 돌아가기</strong>, 툴바 스위치,
+    그리고 어디서든 <kbd>Esc</kbd> <kbd>Esc</kbd>(1초 안에 두 번). 화면이 8초 안에
+    안 뜨면 확장이 알아서 손을 뗍니다.</p>
+  </div>
+
+  <h2>안 되는 것</h2>
+  <ul>
+    <li><strong>아이폰에서 화면을 끄고 듣기.</strong> 구글이 서버에서 막았고 확장으로는
+      풀 수 없습니다.</li>
+    <li>구독 · 시청 기록 · 내 재생목록은 유튜브에 로그인해야 보입니다.</li>
+    <li>채널 화면이 없습니다. "유튜브에서 열기"로 넘깁니다.</li>
+  </ul>
+
+  <footer>
+    <p>개인용으로 만들었고 스토어에는 올리지 않습니다. 광고 제거는 하지 않습니다.<br>
+    GPL-3.0-or-later · <a href="https://github.com/jshsakura/oc-easy-mode">소스</a></p>
+  </footer>
+</main>
+
+<script>
+  // The button's real address lives in download/index.json, written by both
+  // `npm run site` and the Pages workflow. If it is missing — a first deploy,
+  // or a failed build — the markup's GitHub link is already correct, so the
+  // button is never dead.
+  fetch('download/index.json', { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      if (!d) return;
+      const a = document.getElementById('download');
+      a.href = 'download/' + d.name;
+      a.setAttribute('download', d.name);
+      document.getElementById('meta').textContent =
+        'v' + d.version + ' · ' + Math.round(d.size / 1024) + 'KB';
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>
