@@ -12,7 +12,7 @@ import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
+import { getStoredTheme, setStoredTheme, youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
@@ -57,7 +57,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // YouTube says which it is with an attribute on the root element, and can
   // change it while we are up, so it is watched rather than read once.
   function applyTheme(): void {
-    app.classList.toggle('light', !youtubeIsDark())
+    const light = !youtubeIsDark()
+    app.classList.toggle('light', light)
+    // The overlay is a second shadow root with its own :host, and the palette
+    // has to reach it or menus come out dark over a light page.
+    ;(shell.overlay.host as HTMLElement).classList.toggle('light', light)
   }
 
   /**
@@ -92,7 +96,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   function themeButton(compact: boolean): HTMLElement {
     const dark = youtubeIsDark()
     const press = () => {
-      setYouTubeDark(!youtubeIsDark())
+      const nextDark = !youtubeIsDark()
+      setStoredTheme(nextDark ? 'dark' : 'light')
+      setYouTubeDark(nextDark)
+      applyTheme()
       drawTop()
       drawSide()
     }
@@ -112,6 +119,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   }
   const themeWatch = new MutationObserver(applyTheme)
   themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['dark'] })
+  applyTheme()
 
   // The drawer has to be above the picture while it is out, and the picture is
   // drawn above the app — so the shell puts it back down for as long as the
@@ -496,8 +504,12 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     repeatButton.title = { off: t('반복 안 함'), all: t('전체 반복'), one: t('한 곡 반복') }[engine.state.repeat]
     replace(muteButton, icon(engine.state.volume === 0 ? 'mute' : 'volume', 18))
     fill(volume, engine.state.volume / 100)
+    // The glyph is the *next* state, not the current one: a button showing a
+    // crossed-out camera while the picture is already off says nothing about
+    // what it does. Pressed, it shows the picture — so it shows a camera.
     const where = engine.state.video
-    replace(videoButton, icon(where === 'hidden' ? 'videoOff' : where === 'stage' ? 'expand' : 'video', 18))
+    const next = { hidden: 'video', corner: 'expand', stage: 'videoOff' } as const
+    replace(videoButton, icon(next[where], 18))
     videoButton.className = where === 'hidden' ? 'vid' : 'vid on'
     videoButton.title = where === 'hidden' ? t('화면 보기') : where === 'stage' ? t('크게 보기') : t('구석에 두기')
     prevButton.disabled = engine.state.queue.length === 0
@@ -688,6 +700,9 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   })
   const offTick = engine.onTick(drawTick)
 
+  // Put the remembered choice back before the first paint, so neither the page
+  // nor the app flashes the wrong side.
+  if (engine.state.theme !== 'auto') setYouTubeDark(engine.state.theme === 'dark')
   applyTheme()
   if (narrowNow()) now.setAttribute('data-nav', '')
   drawTop()

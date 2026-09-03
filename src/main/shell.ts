@@ -386,7 +386,13 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
       vars.setProperty('--oc-h', '180px')
       return
     }
-    if (!covered) vars.setProperty('--oc-z', PLAYER_Z)
+    if (!covered) {
+      vars.setProperty('--oc-z', PLAYER_Z)
+      // ...and pointer events with it. Only cover() used to set this back, so
+      // a drawer opened while the picture was away left the player deaf: it
+      // returned to the screen and no tap on it did anything at all.
+      vars.setProperty('--oc-pe', 'auto')
+    }
     observer.observe(next)
     schedule()
   }

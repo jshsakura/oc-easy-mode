@@ -33,7 +33,7 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
 }
 
 function busy(text = t('가져오는 중…')): HTMLElement {
-  return h('div', { class: 'empty' }, text)
+  return h('div', { class: 'empty' }, h('div', { class: 'spinner' }), h('div', null, text))
 }
 
 /**
@@ -441,7 +441,12 @@ function queue(ctx: Ctx, main: HTMLElement): void {
       : h(
           'div',
           { class: 'rows' },
-          q.map((track, i) =>
+          // Headed, because a queue's whole job is to answer two questions —
+          // what is playing and what comes after it — and a flat list of forty
+          // rows with one of them tinted answers neither at a glance.
+          q.map((track, i) => [
+            i === ctx.engine.state.index && h('h3', { class: 'queueMark' }, t('지금 재생 중')),
+            i === ctx.engine.state.index + 1 && h('h3', { class: 'queueMark' }, t('다음 재생')),
             row(ctx, track, {
               index: i + 1,
               onPlay: () => ctx.engine.jumpTo(i),
@@ -457,7 +462,7 @@ function queue(ctx: Ctx, main: HTMLElement): void {
                 },
               ],
             }),
-          ),
+          ]),
         ),
   )
 }

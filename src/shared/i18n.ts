@@ -20,6 +20,8 @@ const EN: Record<string, string> = {
   '시청 기록': 'History',
   '내 재생목록': 'Playlists',
   '대기열': 'Queue',
+  '지금 재생 중': 'Now playing',
+  '다음 재생': 'Up next',
   '재생목록': 'Playlists',
   '음악': 'Music',
   '영상': 'Video',

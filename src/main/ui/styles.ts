@@ -79,9 +79,16 @@ export const STYLES = `
 }
 * { box-sizing: border-box; }
 
-/* Light, for when YouTube is light or the reader asks for it. The sibling
-   extension's light palette, so the two match in either mode. */
-.app.light {
+/* Light, for when YouTube is light or the reader asks for it.
+   **Both selectors, and that is the whole point.** Menus, dialogs and toasts
+   are drawn in the *second* shadow root, which has no .app in it — so a light
+   palette written only on .app left every popover with the dark tokens, and a
+   black menu opened over a white page. The host carries the class too. */
+:host(.light),
+.app.light,
+.menu.light,
+.modal.light,
+.sheetMenu.light {
   --ground: #f0f0f4;
   --side-panel: #f7f7f9;
   --panel: #ffffff;
@@ -98,9 +105,9 @@ export const STYLES = `
   --primary-foreground: #ffffff;
   --destructive: #d63b5e;
   --ring: #7e4dc5;
-  --glass: rgba(255, 255, 255, .66);
-  --glass-strong: rgba(255, 255, 255, .78);
-  --glass-line: rgba(0, 0, 0, .07);
+  --glass: #ffffff;
+  --glass-strong: #ffffff;
+  --glass-line: #e2e2e8;
   --hover: rgba(0, 0, 0, .05);
   --shadow: 0 16px 40px rgba(0, 0, 0, .16);
 }
@@ -233,7 +240,7 @@ input { font: inherit; color: inherit; }
 /* The screen's name, at the size a header wants rather than the size a page
    title wants. It replaces the 22px heading that used to sit in the content. */
 .top .name {
-  min-width: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.02em;
+  flex: 1; min-width: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.02em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .themeButton {
@@ -263,6 +270,16 @@ input { font: inherit; color: inherit; }
 .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 10px; }
 .empty { color: var(--muted-foreground); padding: 56px 0; text-align: center; font-size: 14px; }
 .empty svg { display: block; margin: 0 auto 14px; opacity: .45; }
+
+/* Waiting has a shape. A line of text that says 가져오는 중 reads like a
+   result; a turning ring reads like a wait. */
+.spinner {
+  width: 26px; height: 26px; margin: 0 auto 14px;
+  border: 2px solid var(--secondary); border-top-color: var(--primary);
+  border-radius: 999px; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
 .err { color: var(--destructive); font-size: 14px; padding: 16px 0 20px; }
 
 .searchbox {
@@ -298,6 +315,11 @@ input { font: inherit; color: inherit; }
 
 /* ── Track rows ──────────────────────────────────────────────────────────── */
 .rows { display: flex; flex-direction: column; }
+.queueMark {
+  margin: 18px 0 6px; font-size: 12px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground);
+}
+.rows > .queueMark:first-child { margin-top: 4px; }
 .row {
   display: grid; grid-template-columns: 24px 56px 1fr auto 32px;
   align-items: center; gap: 16px; padding: 8px;
@@ -309,11 +331,15 @@ input { font: inherit; color: inherit; }
  * A flat tint was easy to miss in a list of forty; this is tinted, edged on
  * the left in the accent, and carries three bars that move. Motion is the
  * thing the eye finds without looking for it. */
+/* Glass, like everything else that stands out here — not a coloured rule down
+   one side. The bars say which row it is; the pane says it is lifted off the
+   list. */
 .row.now {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 16%, transparent), transparent 60%);
-  box-shadow: inset 2px 0 0 var(--primary);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: 0 1px 0 var(--glass-line) inset, 0 8px 20px rgba(0, 0, 0, .18);
 }
-.row.now .title { color: var(--primary); font-weight: 600; }
+.row.now .title { font-weight: 600; }
 .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 13px; }
 .eq i { width: 3px; border-radius: 1px; background: var(--primary); animation: eq .9s ease-in-out infinite; }
 .eq i:nth-child(1) { height: 40%; animation-delay: -.2s; }
@@ -474,7 +500,10 @@ input { font: inherit; color: inherit; }
   transition: background var(--ease), color var(--ease);
 }
 .ctl button:hover, .right button:hover, .drawerToggle:hover { color: var(--foreground); }
-.ctl button.on, .right button.on { color: var(--foreground); }
+/* On is a filled chip, not a slightly brighter glyph. Shuffle and repeat were
+   telling the difference with a colour half a step apart from off. */
+.ctl button.on, .right button.on { color: var(--primary); background: color-mix(in srgb, var(--primary) 18%, transparent); }
+.ctl button.on:hover, .right button.on:hover { color: var(--primary); }
 /* The transport's play button is not the accent. It was the largest purple
    thing on the screen, next to purple sliders and purple badges on every card,
    and a colour used that often stops pointing at anything. It is the highest
@@ -531,26 +560,31 @@ input[type=range]::-moz-range-thumb {
 
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
 .menu {
-  position: fixed; z-index: 2147483100; min-width: 208px; padding: 4px;
-  background: var(--glass-strong); color: var(--popover-foreground);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  border: 1px solid var(--glass-line); border-radius: var(--radius-md); box-shadow: var(--shadow);
+  position: fixed; z-index: 2147483100; min-width: 208px; padding: 6px;
+  background: var(--popover); color: var(--popover-foreground);
+  border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow);
 }
 .menu button {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  padding: 8px 10px; border-radius: 6px; font-size: 14px;
-  color: var(--foreground); transition: background var(--ease);
+  padding: 9px 12px; border-radius: 6px; font-size: 14px; font-weight: 500;
+  color: var(--popover-foreground); transition: background var(--ease), color var(--ease);
 }
-.menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px -4px; }
+.menu button svg {
+  width: 18px; height: 18px; flex: none; color: var(--muted-foreground);
+  transition: color var(--ease);
+}
+.menu button:hover { background: var(--hover); color: var(--foreground); }
+.menu button:hover svg { color: var(--foreground); }
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px -2px; }
 
 /* The narrow form: a sheet at the foot of the screen. Placed here rather than
    in the width query below because this root has no .app to qualify it and the
    decision is made in script anyway. */
 .menu.sheetMenu {
   left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
-  top: auto; min-width: 0; padding: 6px;
+  top: auto; min-width: 0; padding: 8px; border-radius: var(--radius-lg);
 }
-.menu.sheetMenu button { padding: 13px 12px; font-size: 15px; }
+.menu.sheetMenu button { padding: 13px 14px; font-size: 15px; }
 
 .scrim {
   position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 2147483090;

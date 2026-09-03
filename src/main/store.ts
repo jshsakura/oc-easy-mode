@@ -18,8 +18,13 @@ export type VideoLayout = 'hidden' | 'corner' | 'stage'
  */
 export type Mode = 'music' | 'video'
 
+/** Which side the UI takes. 'auto' is whatever YouTube is set to. */
+export type Theme = 'auto' | 'dark' | 'light'
+
 export interface Persisted {
   mode: Mode
+  /** Remembered so a reload comes back the way it was left. */
+  theme: Theme
   /** null follows YouTube's interface language. */
   lang: 'ko' | 'en' | null
   queue: Track[]
@@ -33,14 +38,36 @@ export interface Persisted {
 }
 
 const KEY = 'oc-easy-mode:state'
+const THEME_KEY = 'oc-easy-mode:theme'
+
+export function getStoredTheme(): 'light' | 'dark' | null {
+  try {
+    const v = localStorage.getItem(THEME_KEY)
+    if (v === 'light' || v === 'dark') return v
+  } catch {}
+  return null
+}
+
+export function setStoredTheme(theme: 'light' | 'dark'): void {
+  try {
+    localStorage.setItem(THEME_KEY, theme)
+  } catch {}
+}
+
 /**
- * Whether YouTube itself is in dark mode.
- *
- * It says so on the root element, and has for years. Following it means the
- * page and the thing standing in front of it are never a different colour.
+ * Whether the mode should be in dark theme.
+ * Explicit user selection in Easy Mode wins and survives reloads.
+ * Fallbacks follow YouTube's root attribute and system preference.
  */
 export function youtubeIsDark(): boolean {
-  return document.documentElement.hasAttribute('dark')
+  const stored = getStoredTheme()
+  if (stored) return stored === 'dark'
+  if (document.documentElement.hasAttribute('dark')) return true
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  } catch {
+    return true
+  }
 }
 
 /** A synchronous "is the mode on" flag, so the hide style can go in at document_start. */
@@ -48,6 +75,7 @@ const KEY_ON = 'oc-easy-mode:on'
 
 export const DEFAULTS: Persisted = {
   mode: 'music',
+  theme: 'auto',
   lang: null,
   queue: [],
   index: -1,

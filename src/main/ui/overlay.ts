@@ -1,6 +1,5 @@
-// Menus, modals and toasts: the things that float over a view.
-
 import { t } from '../../shared/i18n.ts'
+import { youtubeIsDark } from '../store.ts'
 import { h, icon, type IconName } from './dom.ts'
 
 export interface MenuItem {
@@ -20,9 +19,13 @@ export function closeMenu(): void {
 /** A popover anchored to the element that was clicked. `'-'` draws a divider. */
 export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<MenuItem | '-'>): void {
   closeMenu()
+  const isLight = !youtubeIsDark()
+  try {
+    (root.host as HTMLElement).classList.toggle('light', isLight)
+  } catch {}
   const menu = h(
     'div',
-    { class: 'menu', role: 'menu' },
+    { class: `menu ${isLight ? 'light' : ''}`.trim(), role: 'menu' },
     items.map((it) =>
       it === '-'
         ? h('hr')

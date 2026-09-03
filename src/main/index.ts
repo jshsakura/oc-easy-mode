@@ -216,8 +216,20 @@ function leave(persist: boolean): void {
   state.destroy()
   state.shell.teardown()
 
+  // The URL is corrected, not followed.
+  //
+  // Navigating here reloaded the page, and a reload stops the music — you
+  // leave the mode and the song you were listening to dies with it, which is
+  // the one thing leaving should not do. replaceState makes the address agree
+  // with what is playing without touching the player. YouTube's own titles
+  // around it stay stale until the next navigation; that is a smaller lie than
+  // silence.
   if (playing && playing !== videoIdInUrl()) {
-    location.assign(`https://www.youtube.com/watch?v=${playing}`)
+    try {
+      history.replaceState(history.state, '', `/watch?v=${playing}`)
+    } catch {
+      /* a browser that will not have it keeps the old address */
+    }
   }
 }
 

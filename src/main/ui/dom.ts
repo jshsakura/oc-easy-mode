@@ -86,55 +86,72 @@ export function mark(size = 20): SVGSVGElement {
   return svg
 }
 
-/** Inline SVG icons: 24-unit grid, current color. */
+type IconItem = string | { d: string; fill?: boolean; noStroke?: boolean }
+
+/** Inline SVG icons: 24-unit grid, refined 1.75px client line strokes. */
 export function icon(name: keyof typeof PATHS, size = 20): SVGSVGElement {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('viewBox', '0 0 24 24')
   svg.setAttribute('width', String(size))
   svg.setAttribute('height', String(size))
   svg.setAttribute('aria-hidden', 'true')
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-  path.setAttribute('d', PATHS[name])
-  path.setAttribute('fill', 'currentColor')
-  svg.appendChild(path)
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('stroke-width', '1.75')
+  svg.setAttribute('stroke-linecap', 'round')
+  svg.setAttribute('stroke-linejoin', 'round')
+
+  const def = PATHS[name]
+  const list = (Array.isArray(def) ? def : [def]) as readonly IconItem[]
+  for (const item of list) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    if (typeof item === 'string') {
+      path.setAttribute('d', item)
+    } else {
+      path.setAttribute('d', item.d)
+      if (item.fill) path.setAttribute('fill', 'currentColor')
+      if (item.noStroke) path.setAttribute('stroke', 'none')
+    }
+    svg.appendChild(path)
+  }
   return svg
 }
 
 const PATHS = {
-  play: 'M8 5v14l11-7z',
-  pause: 'M6 5h4v14H6zm8 0h4v14h-4z',
-  next: 'M6 6l8.5 6L6 18zM16 6h2v12h-2z',
-  prev: 'M18 6l-8.5 6L18 18zM6 6h2v12H6z',
-  shuffle: 'M10.6 9.2 7.4 6H3V4h5.2l3.8 3.8-1.4 1.4zM17 4h4v4l-1.5-1.5-3.1 3.1-1.4-1.4 3.1-3.1zm4 12v4h-4l1.6-1.6-3.1-3.1 1.4-1.4 3.1 3.1zM3 18h4.4L18 7.4 19.4 8.8 8.2 20H3z',
-  repeat: 'M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z',
-  repeatOne: 'M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2zm-4-2V9h-1l-2 1v1h1.5v4z',
-  search: 'M10 3a7 7 0 1 0 4.2 12.6l4.6 4.6 1.4-1.4-4.6-4.6A7 7 0 0 0 10 3zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10z',
-  queue: 'M3 6h13v2H3zm0 4h13v2H3zm0 4h9v2H3zm15-2v6l5-3z',
-  library: 'M4 6H2v14c0 1.1.9 2 2 2h14v-2H4zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5z',
-  radio: 'M3.2 6.2 18.6 1l.7 1.9L8 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8c0-.8.5-1.5 1.2-1.8zM7 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7-6h6v2h-6zm0-4h6v2h-6z',
-  more: 'M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z',
-  menu: 'M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z',
-  down: 'M12 15.4 5.6 9 7 7.6l5 5 5-5L18.4 9z',
-  close: 'M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4l5.6 5.6L5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6z',
-  back: 'M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z',
-  leave: 'M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5zm7.6 4L16.2 8.4 18.8 11H9v2h9.8l-2.6 2.6 1.4 1.4 5-5z',
-  volume: 'M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z',
-  mute: 'M16.5 12A4.5 4.5 0 0 0 14 8v2.2l2.5 2.5V12zM19 12a7 7 0 0 1-1.5 4.3l1.5 1.5A9 9 0 0 0 21 12a9 9 0 0 0-7-8.8v2.1A7 7 0 0 1 19 12zM4.3 3 3 4.3 6.7 8H3v6h4l5 5v-6.7l4.3 4.3a7 7 0 0 1-2.3 1.2v2.1a9 9 0 0 0 3.7-1.8l2 2 1.3-1.3zM12 4 9.9 6.1 12 8.2z',
-  video: 'M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z',
-  videoOff: 'M21 6.5l-4 4V7a1 1 0 0 0-1-1H9.8l11.2 11.2zM3.3 2 2 3.3 3.7 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12l4.7 4.7 1.3-1.3z',
-  expand: 'M7 14H5v5h5v-2H7zm-2-4h2V7h3V5H5zm12 7h-3v2h5v-5h-2zM14 5v2h3v3h2V5z',
-  plus: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z',
-  trash: 'M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z',
-  check: 'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
-  external: 'M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2zM14 3v2h3.6l-9.8 9.8 1.4 1.4L19 6.4V10h2V3z',
-  note: 'M12 3v10.6A4 4 0 1 0 14 17V7h4V3z',
-  sun: 'M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zM11 1h2v3h-2zm0 19h2v3h-2zM3.5 4.9 4.9 3.5l2.1 2.1-1.4 1.4zm13.5 13.5 1.4-1.4 2.1 2.1-1.4 1.4zM1 11h3v2H1zm19 0h3v2h-3zM5.6 18.4 3.5 20.5l1.4 1.4 2.1-2.1zM18.4 5.6l2.1-2.1 1.4 1.4-2.1 2.1z',
-  moon: 'M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z',
-  auto: 'M12 2a10 10 0 1 0 0 20zm0 2v16a8 8 0 0 0 0-16z',
-  globe: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.9 9h-3a15 15 0 0 0-1.2-5.3A8 8 0 0 1 18.9 11zM12 4.2c.7 1 1.5 2.9 1.8 6.8h-3.6c.3-3.9 1.1-5.8 1.8-6.8zM5.1 11a8 8 0 0 1 4.2-5.3A15 15 0 0 0 8.1 11zm0 2h3a15 15 0 0 0 1.2 5.3A8 8 0 0 1 5.1 13zM12 19.8c-.7-1-1.5-2.9-1.8-6.8h3.6c-.3 3.9-1.1 5.8-1.8 6.8zm2.7-1.5a15 15 0 0 0 1.2-5.3h3a8 8 0 0 1-4.2 5.3z',
-  home: 'M12 3 2 12h3v8h6v-6h2v6h6v-8h3z',
-  subs: 'M6 2h12v2H6zM4 6h16v2H4zm0 4h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm6 2.5v7l6-3.5z',
-  history: 'M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.1 5l-1.5 1.4A9 9 0 1 0 13 3zm-1 5v5l4.3 2.5.7-1.2-3.5-2.1V8z',
+  play: [{ d: 'M6 4.5a1 1 0 0 1 1.5-.86l13 7.5a1 1 0 0 1 0 1.72l-13 7.5A1 1 0 0 1 6 19.5z', fill: true, noStroke: true }],
+  pause: [{ d: 'M6 5h3.5v14H6z', fill: true, noStroke: true }, { d: 'M14.5 5h3.5v14h-3.5z', fill: true, noStroke: true }],
+  next: ['M5 4.5l10 7.5-10 7.5V4.5z', 'M19 5v14'],
+  prev: ['M19 4.5l-10 7.5 10 7.5V4.5z', 'M5 5v14'],
+  shuffle: ['M16 3h5v5', 'M4 20l17-17', 'M21 16v5h-5', 'M15 15l6 6', 'M4 4l5 5'],
+  repeat: ['M17 2l4 4-4 4', 'M3 11v-1a4 4 0 0 1 4-4h14', 'M7 22l-4-4 4-4', 'M21 13v1a4 4 0 0 1-4 4H3'],
+  repeatOne: ['M17 2l4 4-4 4', 'M3 11v-1a4 4 0 0 1 4-4h14', 'M7 22l-4-4 4-4', 'M21 13v1a4 4 0 0 1-4 4H3', 'M11 10h1v4'],
+  search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', 'M21 21l-4.35-4.35'],
+  queue: ['M4 6h16', 'M4 11h10', 'M4 16h7', { d: 'M17 14l5 3-5 3v-6z', fill: true, noStroke: true }],
+  library: ['M4 6h16', 'M4 11h11', 'M4 16h8', 'M19 13v5a2 2 0 1 1-2-2h2'],
+  radio: ['M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z', 'M16.24 7.76a6 6 0 0 1 0 8.49', 'M7.76 16.24a6 6 0 0 1 0-8.49', 'M19.07 4.93a10 10 0 0 1 0 14.14', 'M4.93 19.07a10 10 0 0 1 0-14.14'],
+  more: [{ d: 'M12 12m-1.25 0a1.25 1.25 0 1 0 2.5 0 1.25 1.25 0 1 0-2.5 0', fill: true, noStroke: true }, { d: 'M12 5m-1.25 0a1.25 1.25 0 1 0 2.5 0 1.25 1.25 0 1 0-2.5 0', fill: true, noStroke: true }, { d: 'M12 19m-1.25 0a1.25 1.25 0 1 0 2.5 0 1.25 1.25 0 1 0-2.5 0', fill: true, noStroke: true }],
+  menu: ['M4 6h16', 'M4 12h16', 'M4 18h16'],
+  down: 'M6 9l6 6 6-6',
+  close: ['M18 6L6 18', 'M6 6l12 12'],
+  back: ['M19 12H5', 'M12 19l-7-7 7-7'],
+  leave: ['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'M16 17l5-5-5-5', 'M21 12H9'],
+  volume: ['M11 5L6 9H2v6h4l5 4V5z', 'M15.54 8.46a5 5 0 0 1 0 7.07', 'M19.07 4.93a10 10 0 0 1 0 14.14'],
+  mute: ['M11 5L6 9H2v6h4l5 4V5z', 'M23 9l-6 6', 'M17 9l6 6'],
+  video: ['M15 10l5-3v10l-5-3v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v2z'],
+  videoOff: ['M1 1l22 22', 'M15 10.5l5-3v10l-2.5-1.5', 'M10 6h3a2 2 0 0 1 2 2v3', 'M2 8a2 2 0 0 1 2-2h1', 'M2 16a2 2 0 0 0 2 2h10a2 2 0 0 0 1.5-.7'],
+  expand: ['M15 3h6v6', 'M9 21H3v-6', 'M21 3l-7 7', 'M3 21l7-7'],
+  plus: ['M12 5v14', 'M5 12h14'],
+  trash: ['M3 6h18', 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6', 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2', 'M10 11v6', 'M14 11v6'],
+  check: 'M20 6L9 17l-5-5',
+  external: ['M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', 'M15 3h6v6', 'M10 14L21 3'],
+  note: ['M9 18V5l12-2v13', 'M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z', 'M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z'],
+  sun: ['M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', 'M12 2v2', 'M12 20v2', 'M4.93 4.93l1.41 1.41', 'M17.66 17.66l1.41 1.41', 'M2 12h2', 'M20 12h2', 'M6.34 17.66l-1.41 1.41', 'M19.07 4.93l-1.41 1.41'],
+  moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z',
+  auto: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M12 2v20'],
+  globe: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'],
+  home: ['M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M9 22V12h6v10'],
+  subs: ['M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z', 'M6 2h12', { d: 'M10 11l5 3-5 3v-6z', fill: true, noStroke: true }],
+  history: ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5', 'M12 7v5l4 2'],
 } as const
 
 export type IconName = keyof typeof PATHS
