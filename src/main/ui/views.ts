@@ -119,7 +119,15 @@ function relayoutOnModeChange(ctx: Ctx, el: HTMLElement, draw: () => void): void
  * shape of the artwork: a playlist or an album is square, the way every music
  * app draws a cover, and a video keeps the 16:9 of its thumbnail.
  */
-function tile(opts: { cover?: string; title: string; sub: string; square?: boolean; onOpen(): void }): HTMLElement {
+function tile(opts: {
+  cover?: string
+  title: string
+  sub: string
+  /** Drawn on the artwork: a running time, a track count. */
+  badge?: string
+  square?: boolean
+  onOpen(): void
+}): HTMLElement {
   return h(
     'button',
     { class: opts.square ? 'tile square' : 'tile', 'data-nav': '', onclick: opts.onOpen },
@@ -127,6 +135,8 @@ function tile(opts: { cover?: string; title: string; sub: string; square?: boole
       'div',
       { class: 'cover', style: opts.cover ? `background-image: url(${opts.cover})` : '' },
       !opts.cover && icon('note', 26),
+      opts.badge && h('span', { class: 'badge' }, opts.badge),
+      h('span', { class: 'play' }, icon('play', 20)),
     ),
     h('div', { class: 't', title: opts.title }, opts.title),
     h('div', { class: 's' }, opts.sub),
@@ -138,7 +148,8 @@ function trackTile(ctx: Ctx, list: Track[], i: number): HTMLElement {
   return tile({
     cover: thumbnail(t.videoId),
     title: t.title,
-    sub: [t.byline, t.duration].filter(Boolean).join(' · '),
+    sub: t.byline,
+    badge: t.duration,
     onOpen: () => ctx.engine.play(list, i),
   })
 }
@@ -301,6 +312,7 @@ function card(ctx: Ctx, p: Playlist): HTMLElement {
       'div',
       { class: 'cover', style: p.cover ? `background-image: url(${p.cover})` : '' },
       !p.cover && icon('library', 28),
+      h('span', { class: 'play' }, icon('play', 20)),
     ),
     h('div', { class: 't', title: p.title }, p.title),
     h('div', { class: 's' }, p.subtitle),
@@ -344,7 +356,13 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
         'div',
         { class: 'head' },
         h('div', { class: 'cover', style: cover ? `background-image: url(${thumbnail(cover)})` : '' }),
-        h('div', null, h('h2', { style: 'margin-bottom:4px' }, title), h('div', { class: 'sub' }, `${tracks.length}곡`)),
+        h(
+          'div',
+          { style: 'min-width:0' },
+          h('div', { class: 'label' }, '재생목록'),
+          h('h2', null, title),
+          h('div', { class: 'sub' }, `${tracks.length}곡`),
+        ),
       ),
       h(
         'div',

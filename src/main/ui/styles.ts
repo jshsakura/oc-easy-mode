@@ -56,6 +56,8 @@ export const STYLES = `
   /* One surface. The sidebar, the bar and the page are the same colour and are
      told apart by a single hairline, not by three shades of grey. Only things
      that float — a menu, a dialog, the corner window — sit on --popover. */
+  --ground: oklch(0.115 0 0);
+  --panel: oklch(0.165 0 0);
   --hover: oklch(1 0 0 / 6%);
   --shadow: 0 16px 40px oklch(0 0 0 / 45%);
   --ease: .15s ease;
@@ -70,10 +72,16 @@ export const STYLES = `
 .app {
   --bar: 84px;
   --side: 244px;
+  --gap: 8px;
 
+  /* Two panels floating on a darker ground, with the player bar across the
+     bottom. This is what separates an application from a web page: the chrome
+     is a frame the content sits inside, not a strip of the document. */
   position: fixed; inset: 0; z-index: 2147482000;
-  display: grid; grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
-  background: var(--background); color: var(--foreground);
+  display: grid;
+  grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
+  gap: var(--gap); padding: var(--gap) var(--gap) 0;
+  background: var(--ground); color: var(--foreground);
   font: 14px/1.4285714 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo',
         'Noto Sans KR', 'Malgun Gothic', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -104,8 +112,8 @@ input { font: inherit; color: inherit; }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .side {
-  background: var(--background); border-right: 1px solid var(--border);
-  padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+  background: var(--panel); border-radius: var(--radius-lg);
+  padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
 }
 .brand {
   display: flex; align-items: center; gap: 8px;
@@ -144,10 +152,14 @@ input { font: inherit; color: inherit; }
 .exit:hover { color: var(--foreground); }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
-.main { overflow-y: auto; padding: 32px 32px 40px; min-width: 0; }
+.main {
+  background: var(--panel); border-radius: var(--radius-lg);
+  overflow-y: auto; padding: 32px 32px 48px; min-width: 0;
+}
 .main h2 { margin: 0 0 20px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
 .main h3 { margin: 24px 0 8px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
 .sub { color: var(--muted-foreground); font-size: 14px; }
+.label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 10px; }
 .empty { color: var(--muted-foreground); padding: 56px 0; text-align: center; font-size: 14px; }
 .err { color: var(--destructive); font-size: 14px; padding: 16px 0 20px; }
 
@@ -209,9 +221,34 @@ input { font: inherit; color: inherit; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 24px 16px; }
 .card, .tile { text-align: left; border-radius: var(--radius-md); transition: background var(--ease); }
 .card .cover, .tile .cover {
-  aspect-ratio: 16/9; border-radius: var(--radius-lg);
+  position: relative; aspect-ratio: 16/9; border-radius: var(--radius-lg);
   background: var(--secondary) center/cover;
   display: flex; align-items: center; justify-content: center; color: var(--muted-foreground);
+}
+/* Sits on the artwork and appears on hover or focus, like every music client.
+   It is decoration only — the whole card is the button. */
+.cover .play {
+  position: absolute; right: 10px; bottom: 10px;
+  width: 40px; height: 40px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primary); color: var(--primary-foreground);
+  box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(6px);
+  transition: opacity var(--ease), transform var(--ease);
+}
+.card:hover .play, .tile:hover .play,
+.card:focus-visible .play, .tile:focus-visible .play { opacity: 1; transform: none; }
+/* A finger cannot hover. On a touch screen the button is simply there. */
+@media (hover: none) {
+  .cover .play { opacity: 1; transform: none; width: 34px; height: 34px; }
+}
+
+/* The running time, where every video player puts it. */
+.cover .badge {
+  position: absolute; left: 8px; bottom: 8px;
+  padding: 2px 6px; border-radius: 4px;
+  background: oklch(0 0 0 / 72%); color: oklch(0.985 0 0);
+  font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums;
 }
 .cards .card .cover, .tile.square .cover { aspect-ratio: 1; }
 .card .t, .tile .t { margin-top: 10px; font-size: 14px; font-weight: 500; }
@@ -226,23 +263,30 @@ input { font: inherit; color: inherit; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: 28px 16px; }
 .grid .tile { width: auto; }
 
-.head { display: flex; gap: 24px; align-items: flex-end; margin-bottom: 24px; }
+.head { display: flex; gap: 28px; align-items: flex-end; margin-bottom: 28px; }
 .head .cover {
-  width: 176px; aspect-ratio: 1; flex: none;
+  width: 208px; aspect-ratio: 1; flex: none;
   border-radius: var(--radius-lg); background: var(--secondary) center/cover;
+  box-shadow: var(--shadow);
 }
+.head h2 { font-size: clamp(28px, 4vw, 44px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 10px; }
+.head .sub { font-size: 14px; }
 
 /* ── The slot YouTube's player is positioned over ────────────────────────── */
 .slot { position: fixed; pointer-events: none; border-radius: var(--radius-lg); background: oklch(0.145 0 0); }
 .slot.hidden { display: none; }
-.slot.corner { right: 24px; bottom: calc(var(--bar) + 24px); width: 280px; aspect-ratio: 16/9; box-shadow: var(--shadow); }
-.slot.stage { left: var(--side); top: 0; right: 0; width: auto; height: min(46vh, 520px); border-radius: 0; }
-.app.has-stage .main { padding-top: calc(min(46vh, 520px) + 28px); }
+.slot.corner { right: 24px; bottom: calc(var(--bar) + 16px); width: 280px; aspect-ratio: 16/9; box-shadow: var(--shadow); }
+.slot.stage {
+  left: calc(var(--side) + var(--gap) * 2); top: var(--gap);
+  right: var(--gap); width: auto; height: min(46vh, 520px);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.app.has-stage .main { padding-top: calc(min(46vh, 520px) + 24px); }
 .app.has-corner .main { padding-bottom: 220px; }
 
 /* ── Player bar ──────────────────────────────────────────────────────────── */
 .bar {
-  grid-column: 1 / -1; background: var(--background); border-top: 1px solid var(--border);
+  grid-column: 1 / -1; background: transparent;
   display: grid; grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr) minmax(200px, 1fr);
   align-items: center; padding: 0 16px; gap: 16px;
 }
