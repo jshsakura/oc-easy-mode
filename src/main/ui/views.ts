@@ -252,7 +252,20 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
   try {
     const page = await api.feed(ctx.cfg, id)
     if (page.tracks.length === 0) {
-      return replace(main, h('h2', null, title), h('div', { class: 'empty' }, t('보여줄 것이 없습니다.')))
+      // A dead end otherwise, and 영상 mode lands here on purpose: YouTube's
+      // home is empty until it knows you, so a session with no watch history
+      // gets this screen and nothing to press. 둘러보기 always has something.
+      return replace(
+        main,
+        h('h2', null, title),
+        h('div', { class: 'empty' }, t('보여줄 것이 없습니다.')),
+        h(
+          'div',
+          { class: 'toolbar', style: 'justify-content: center' },
+          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('둘러보기')),
+          h('button', { class: 'btn', 'data-nav': '', onclick: () => ctx.go({ kind: 'search', query: '' }) }, icon('search', 16), t('검색')),
+        ),
+      )
     }
     // A feed that came with its own titled rows keeps them. YouTube's home is
     // shaped that way when there is a history behind it, and flattening it

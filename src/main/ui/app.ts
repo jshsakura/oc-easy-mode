@@ -146,8 +146,23 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           const next = engine.state.mode === 'video' ? 'music' : 'video'
           engine.setMode(next)
           setLayout(layoutFor(next))
-          drawSide()
           drawBar()
+          // Switching mode moves you off the *other* mode's front screen, and
+          // nowhere else.
+          //
+          // 둘러보기 browses YouTube's Music channel: it is music whatever
+          // shape its rows are drawn in, so 영상 mode sitting on it said video
+          // and showed music. 홈 is YouTube's general feed, which is what 영상
+          // means. But a search, a playlist or the queue belongs to neither
+          // mode — there the switch is exactly what it looks like, a list
+          // becoming a grid, and taking the screen away would be a bug.
+          const entry = { music: 'explore', video: 'home' } as const
+          if (ctx.view.kind === entry[next === 'video' ? 'music' : 'video']) {
+            closeDrawer()
+            ctx.go(next === 'video' ? { kind: 'home' } : { kind: 'explore' })
+          } else {
+            drawSide()
+          }
         },
       },
       icon(on ? 'video' : 'note', 18),

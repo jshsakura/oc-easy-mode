@@ -133,19 +133,19 @@ test('the picture never covers the header', async () => {
     // hide it. So anything of ours up there has to start below the stage, or
     // it is unreachable: this is how the drawer button and the mode switch
     // were both buried, leaving no way out of 영상 mode but Escape.
-    // Closed with its own button, not the scrim: the scrim covers the whole
-    // screen, so its centre — the point a click aims at — is inside the open
-    // drawer, and the click can never land.
+    // The switch also closes the drawer here, because 둘러보기 is 음악's front
+    // screen and 영상 moves off it — so there is nothing left to close.
     await ui.locator('.drawerToggle').click()
     await ui.locator('.modeToggle').click()
-    await ui.locator('.drawerClose').click()
     await expect(ui.locator('.slot')).toHaveClass(/stage/)
+    await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBeLessThan(0)
 
     const top = (await ui.locator('.top').boundingBox())!
     const stage = (await ui.locator('.slot').boundingBox())!
     expect(stage.y).toBeGreaterThanOrEqual(top.y + top.height - 1)
 
-    // And the way back is still there to be pressed.
+    // And the way back is still there to be pressed — which was the whole
+    // point: the video used to cover the button that opens this.
     await ui.locator('.drawerToggle').click()
     await ui.locator('.modeToggle').click()
     await expect(ui.locator('.slot')).toHaveClass(/hidden/)
