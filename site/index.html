@@ -110,8 +110,21 @@ svg {
   display: block;
 }
 
+/* Vertical rhythm, in one place.
+   --band  the space above and below a full section
+   --gap   the space between a thing and the thing it belongs to
+   Every block below is written in these two, so changing the rhythm is one
+   edit and the mobile step is one override rather than five. */
+:root {
+  --band: 96px;
+  --gap: 48px;
+}
+@media (max-width: 720px) {
+  :root { --band: 60px; --gap: 32px; }
+}
+
 .wrap {
-  max-width: 1080px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -218,7 +231,7 @@ svg {
 /* 주요 소개 영역 */
 .hero {
   text-align: center;
-  padding: 84px 0 48px;
+  padding: calc(var(--band) - 12px) 0 var(--gap);
 }
 
 .badge {
@@ -314,39 +327,42 @@ svg {
 
 /* 화면 미리보기 영역 */
 .showcase {
-  padding: 32px 0 80px;
+  padding: 0 0 var(--band);
 }
 
 .showcase-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 36px;
+  gap: var(--gap);
 }
 
 .showcase-card {
   border: 1px solid var(--border);
   background-color: var(--surface);
-  border-radius: 12px;
-  overflow: hidden;
+  border-radius: 16px;
+  /* The screenshot sits inside the card rather than filling it edge to edge.
+     A picture flush against a border reads as a picture that has been cut. */
+  padding: 12px;
 }
 
 .showcase-card img {
   display: block;
   width: 100%;
   height: auto;
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
 .showcase-caption {
-  padding: 16px 20px;
-  font-size: 14.5px;
+  padding: 14px 8px 4px;
+  font-size: 14px;
   color: var(--text-muted);
   text-align: center;
 }
 
 /* 본문 구역 공통 */
 section {
-  padding: 80px 0;
+  padding: var(--band) 0;
   border-top: 1px solid var(--border);
 }
 
@@ -543,17 +559,9 @@ kbd {
   .nav {
     display: none;
   }
-  .hero {
-    padding: 56px 0 32px;
-  }
-  section {
-    padding: 56px 0;
-  }
-  .showcase {
-    padding-bottom: 56px;
-  }
   .showcase-card {
-    border-radius: 8px;
+    border-radius: 12px;
+    padding: 8px;
   }
 }
 </style>

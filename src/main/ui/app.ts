@@ -47,9 +47,38 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     app.classList.toggle('light', !dark)
   }
 
+  // Theme and language live top right, over the content, where an application
+  // puts the controls that are about the app rather than about what is in it.
+  const themeButton = h('button', { 'data-nav': '', title: t('테마') }, icon('auto', 18))
+  const langButton = h('button', { 'data-nav': '', title: 'ko / en' }, icon('globe', 18))
+  const utils = h('div', { class: 'utils' }, themeButton, langButton)
+
+  themeButton.addEventListener('click', () => {
+    const order: Theme[] = ['auto', 'light', 'dark']
+    engine.setTheme(order[(order.indexOf(engine.state.theme) + 1) % order.length]!)
+    applyTheme()
+    drawUtils()
+  })
+  langButton.addEventListener('click', () => {
+    const next: Lang = getLang() === 'ko' ? 'en' : 'ko'
+    setLang(next)
+    engine.setLang(next)
+    drawSide()
+    drawBar()
+    drawUtils()
+    ctx.reload()
+  })
+
+  function drawUtils(): void {
+    replace(themeButton, icon(engine.state.theme === 'light' ? 'sun' : engine.state.theme === 'dark' ? 'moon' : 'auto', 18))
+    themeButton.title = `${t('테마')} · ${THEME_LABEL[engine.state.theme]}`
+    replace(langButton, icon('globe', 18))
+    langButton.title = getLang() === 'ko' ? '한국어 / English' : 'English / 한국어'
+  }
+
   const closeDrawer = () => app.classList.remove('drawer-open')
   const scrim = h('div', { class: 'drawerScrim', onclick: closeDrawer })
-  app.appendChild(scrim)
+  app.append(scrim, utils)
 
   const style = document.createElement('style')
   style.textContent = STYLES
@@ -157,40 +186,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         ),
       ),
       h('div', { class: 'spacer' }),
-      h(
-        'button',
-        {
-          class: 'nav',
-          'data-nav': '',
-          title: t('테마'),
-          onclick: () => {
-            const order: Theme[] = ['auto', 'light', 'dark']
-            engine.setTheme(order[(order.indexOf(engine.state.theme) + 1) % order.length]!)
-            applyTheme()
-            drawSide()
-          },
-        },
-        icon(engine.state.theme === 'light' ? 'sun' : engine.state.theme === 'dark' ? 'moon' : 'auto', 18),
-        h('span', null, `${t('테마')} · ${THEME_LABEL[engine.state.theme]}`),
-      ),
-      h(
-        'button',
-        {
-          class: 'nav',
-          'data-nav': '',
-          title: 'ko / en',
-          onclick: () => {
-            const next: Lang = getLang() === 'ko' ? 'en' : 'ko'
-            setLang(next)
-            engine.setLang(next)
-            drawSide()
-            drawBar()
-            ctx.reload()
-          },
-        },
-        icon('globe', 18),
-        h('span', null, getLang() === 'ko' ? '한국어' : 'English'),
-      ),
       h(
         'button',
         { class: 'exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
@@ -320,8 +315,28 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   // ── Wiring ───────────────────────────────────────────────────────────────
 
+  // ── The app is as tall as what is actually on screen ─────────────────────
+  //
+  // `position: fixed; inset: 0` measures against the *layout* viewport, and on
+  // a phone that is not what you can see: a page handed the desktop site gets
+  // a layout viewport taller than the screen, and iOS measures a bottom offset
+  // against it too. The bottom row — the tab bar, the thing a thumb reaches
+  // for — ends up below the fold, present and unreachable. The sibling
+  // extension learned this the hard way with its picture-in-picture button.
+  //
+  // `visualViewport` is the part that is genuinely visible, and it is the only
+  // thing that tracks a collapsing browser toolbar.
+  const fitHeight = () => {
+    const h = window.visualViewport?.height ?? window.innerHeight
+    app.style.height = `${Math.round(h)}px`
+  }
+  fitHeight()
+  window.visualViewport?.addEventListener('resize', fitHeight)
+  window.visualViewport?.addEventListener('scroll', fitHeight)
+
   // Rotating a phone, or dragging a window, changes the answer.
   const onResize = () => {
+    fitHeight()
     const narrow = narrowNow()
     if (narrow === app.classList.contains('narrow')) return
     app.classList.toggle('narrow', narrow)
@@ -342,6 +357,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const offTick = engine.onTick(drawTick)
 
   applyTheme()
+  drawUtils()
   drawSide()
   drawBar()
   drawTick()
@@ -354,6 +370,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   return {
     ctx,
     destroy() {
+      window.visualViewport?.removeEventListener('resize', fitHeight)
+      window.visualViewport?.removeEventListener('scroll', fitHeight)
       window.removeEventListener('resize', onResize)
       offRemote()
       offChange()

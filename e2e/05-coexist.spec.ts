@@ -25,7 +25,13 @@ test('the ad blocker and this extension share a page', async () => {
   try {
     const page = context.pages()[0] ?? (await context.newPage())
     await page.addInitScript(() => {
-      try { localStorage.setItem('oc-easy-mode:on', '1') } catch {}
+      try {
+        // Only if nothing has been decided. Setting it on every navigation
+        // switches the mode straight back on after a test turns it off.
+        if (localStorage.getItem('oc-easy-mode:on') === null) {
+          localStorage.setItem('oc-easy-mode:on', '1')
+        }
+      } catch {}
     })
     await page.goto('https://www.youtube.com/watch?v=BzYnNdJhZQw', {
       waitUntil: 'domcontentloaded',

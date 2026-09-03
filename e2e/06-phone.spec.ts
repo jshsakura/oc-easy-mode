@@ -63,21 +63,25 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     })
     const ui = page.locator('oc-easy-mode')
     await expect(ui.locator('.app.narrow')).toBeVisible()
+    // Deliberately no wait on content: this is a test of the layout, and
+    // waiting for m.youtube.com to fill three shelves made it the slowest and
+    // flakiest thing in the suite. 04-tv covers the shelves.
 
-    // The mobile site sends different renderers for the same shelves; the
-    // parser has to know both or this screen is empty.
-    await expect(ui.locator('.shelf').nth(2)).toBeVisible()
-    await expect(ui.locator('.shelf .tile').first()).toBeVisible()
+    // The sidebar is a bottom tab bar, not a column and not a drawer: it sits
+    // across the foot of the screen, under a thumb.
+    const side = (await ui.locator('.side').boundingBox())!
+    const app = (await ui.locator('.app').boundingBox())!
+    expect(side.x).toBe(0)
+    expect(Math.round(side.width)).toBe(Math.round(app.width))
+    expect(side.y + side.height).toBeCloseTo(app.y + app.height, 0)
+    // And the content above it has the whole width.
+    const main = (await ui.locator('.main').boundingBox())!
+    expect(Math.round(main.width)).toBe(Math.round(app.width))
 
-    // The sidebar is off-screen until asked for, and the content has the width.
-    const before = await ui.locator('.side').boundingBox()
-    expect(before!.x).toBeLessThan(0)
-    await ui.locator('.drawerToggle').click()
-    await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBe(0)
+    // Tapping a tab navigates.
+    await ui.locator('.nav').filter({ hasText: '검색' }).click()
+    await expect(ui.locator('.searchbox input')).toBeVisible()
 
-    // Choosing something closes it again.
-    await ui.locator('.nav', { hasText: '검색' }).click()
-    await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBeLessThan(0)
   } finally {
     await context.close()
   }

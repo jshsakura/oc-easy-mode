@@ -67,6 +67,29 @@ export const STYLES = `
 }
 * { box-sizing: border-box; }
 
+/* Light, for when YouTube is light or the reader asks for it. The sibling
+   extension's light palette, so the two match in either mode. */
+.app.light {
+  --ground: #dfe1e6;
+  --side-panel: #f2f3f5;
+  --panel: #ffffff;
+  --background: #ffffff;
+  --foreground: #16181c;
+  --muted-foreground: #63676f;
+  --secondary: #eceef2;
+  --secondary-hover: #e2e4e9;
+  --border: #dcdfe5;
+  --popover: #ffffff;
+  --popover-foreground: #16181c;
+  --primary: #7e4dc5;
+  --primary-hover: #8f61d0;
+  --primary-foreground: #ffffff;
+  --destructive: #d63b5e;
+  --ring: #7e4dc5;
+  --hover: rgba(0, 0, 0, .05);
+  --shadow: 0 16px 40px rgba(0, 0, 0, .16);
+}
+
 .app {
   --bar: 84px;
   --side: 244px;
@@ -75,11 +98,10 @@ export const STYLES = `
   /* Two panels floating on a darker ground, with the player bar across the
      bottom. This is what separates an application from a web page: the chrome
      is a frame the content sits inside, not a strip of the document. */
-  position: fixed; inset: 0; z-index: 2147482000;
-  /* The layout answers to the app's own width, not the window's. One
-     breakpoint at 900px meant everything between 900 and 1300 was the desktop
-     layout squeezed rather than a layout for that width. */
-  container-type: inline-size; container-name: app;
+  /* Height is set from the visual viewport in app.ts; see the note there.
+     bottom is deliberately not set, so nothing fights that measurement.
+     No backticks anywhere in this file: it is one template literal. */
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2147482000;
   display: grid;
   grid-template-columns: var(--side) 1fr; grid-template-rows: 1fr var(--bar);
   gap: var(--gap); padding: var(--gap);
@@ -306,6 +328,20 @@ input { font: inherit; color: inherit; }
 .app.has-stage .main { padding-top: calc(min(34vh, 340px) + 20px); }
 .app.has-corner .main { padding-bottom: 220px; }
 
+/* ── The utility cluster, top right over the content ─────────────────────── */
+.utils {
+  position: absolute; z-index: 6;
+  top: calc(var(--gap) + 18px); right: calc(var(--gap) + 20px);
+  display: flex; gap: 2px;
+}
+.utils button {
+  width: 34px; height: 34px; border-radius: var(--radius-md);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted-foreground);
+  transition: background var(--ease), color var(--ease);
+}
+.utils button:hover { background: var(--hover); color: var(--foreground); }
+
 /* ── Player bar ──────────────────────────────────────────────────────────── */
 .bar {
   grid-column: 1 / -1; background: transparent;
@@ -404,19 +440,29 @@ input[type=range]::-webkit-slider-thumb {
 .toast.bad { color: var(--destructive); }
 
 /* ── Responsive ──────────────────────────────────────────────────────────
-   Three steps, measured against the app rather than the window. Between them
-   nothing is squeezed: each step gives something up instead of making
-   everything narrower. */
+   Three steps. Between them nothing is squeezed: each step gives something up
+   instead of making everything narrower.
+   
+   Plain media queries, deliberately. The app is position:fixed with inset 0,
+   so its width IS the viewport's — a container query measures the same number
+   by a longer route. It also cost an hour: a container cannot style itself,
+   and moving the container to the shadow host does not work either, because
+   all:initial makes the host inline and an inline element cannot be a size
+   container. Every phone rule was being ignored in silence.
+   
+   The earlier objection to media queries was about detecting the *device* from
+   the viewport, which is a different question and still a bad idea. Asking
+   whether there is room for a sidebar is exactly what a width query is for. */
 .drawerScrim, .drawerToggle { display: none; }
 
 /* The volume slider is the first thing that can go; the button stays. */
-@container app (max-width: 1240px) {
+@media (max-width: 1240px) {
   .right .vol { display: none; }
 }
 
 /* Then the sidebar gives up width, and the shelf cards get smaller so three
    still fit rather than two and a sliver. */
-@container app (max-width: 1080px) {
+@media (max-width: 1080px) {
   .app { --side: 208px; }
   .main { padding: 24px 22px 44px; }
   .tile { width: 158px; }
@@ -426,7 +472,7 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 /* Below this the sidebar cannot be a column at all, and becomes a drawer. */
-@container app (max-width: 860px) {
+@media (max-width: 860px) {
   /* ── The phone is not a narrow desktop ──────────────────────────────────
      A drawer is a desktop idea. A phone music app puts its destinations on a
      bottom tab bar under the thumb, gives the list the whole width, and keeps
@@ -473,26 +519,38 @@ input[type=range]::-webkit-slider-thumb {
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     gap: 0;
   }
-  .side .brand, .side h4, .side .pl, .side .spacer { display: none; }
-  .nav {
+  /* Seven things fit across a phone; ten do not. The destinations and the way
+     out stay; theme and language are desktop conveniences and follow YouTube
+     on their own here. */
+  .side .brand, .side h4, .side .pl, .side .spacer, .side .util { display: none; }
+  /* Eight destinations across a phone leaves no room for eight labels, and a
+     truncated label is worse than none. Icons carry it; the one you are on
+     says its name. */
+  .nav, .exit {
     flex: 1 1 0; min-width: 0;
-    flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    padding: 6px 2px; border-radius: var(--radius-md);
-    font-size: 10.5px; font-weight: 500; text-align: center;
+    flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    padding: 7px 2px; border-radius: var(--radius-md);
+    font-size: 10px; font-weight: 500; text-align: center;
   }
-  .nav svg { width: 21px; height: 21px; }
-  .nav span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .nav svg, .exit svg { width: 22px; height: 22px; }
+  .nav span, .exit span { display: none; }
+  .nav.on span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .nav.on { background: transparent; color: var(--primary); }
-  .nav:hover { background: transparent; }
+  .nav:hover, .exit:hover { background: transparent; }
 
   /* The two that are not destinations sit apart: the mode switch floats over
      the top-right of the list, and leaving is the last tab. */
+  /* Not a destination, so it does not belong in the tab bar. It rides at the
+     top of the list instead, where the eye already is. */
+  .utils { top: calc(12px + env(safe-area-inset-top)); right: 12px; }
   .modes {
-    position: fixed; top: calc(14px + env(safe-area-inset-top)); right: 14px;
-    z-index: 5; margin: 0; width: 116px;
+    position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 88px;
+    z-index: 5; margin: 0; width: auto; min-width: 124px;
     background: var(--side-panel); border-color: var(--border);
   }
-  .mode { font-size: 12px; padding: 5px 0; }
+  .mode { font-size: 12px; padding: 5px 12px; }
+  .main { position: relative; }
+  .main h2 { padding-right: 224px; }
   .exit {
     flex: 1 1 0; min-width: 0;
     flex-direction: column; align-items: center; justify-content: center; gap: 3px;

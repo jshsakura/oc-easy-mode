@@ -56,6 +56,13 @@ export async function open(url: string, on = true): Promise<Harness> {
         if (localStorage.getItem('oc-easy-mode:on') === null) {
           localStorage.setItem('oc-easy-mode:on', '1')
         }
+        // Pin the language. The UI follows YouTube's own `hl`, which is not
+        // ours to decide in a test browser — and a suite that asserts on
+        // Korean labels fails on a machine where YouTube answers in English,
+        // for a reason that has nothing to do with the product.
+        if (localStorage.getItem('oc-easy-mode:state') === null) {
+          localStorage.setItem('oc-easy-mode:state', JSON.stringify({ lang: 'ko' }))
+        }
       } catch {
         /* first-run about:blank has no storage; the real page will */
       }
