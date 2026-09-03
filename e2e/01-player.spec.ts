@@ -67,10 +67,10 @@ test('the player is placed over the slot, and the slot moves with the layout', a
       .toBe(true)
 
     const corner = (await rects()).slot
-    // Switch to the big layout and the player follows.
-    // The menu lives in the second host, above the video rather than under it.
-    await ui.locator('.right button[title="화면 위치"]').click()
-    await h.page.locator('oc-easy-mode-overlay').locator('.menu button', { hasText: '크게 보기' }).click()
+    // Cycle the bar's own button to the big layout; the player follows.
+    // Desktop order is hidden, corner, stage.
+    await ui.locator('.bar .vid').click()
+    await expect(ui.locator('.slot')).toHaveClass(/stage/)
     await expect
       .poll(async () => {
         const r = await rects()
@@ -116,8 +116,8 @@ test('the picture is on top of the app, and out of the way when it is not wanted
     // over it, and the stage came out a black rectangle with the video playing
     // underneath. Geometry alone never caught it — the rects matched exactly
     // the whole time — so this asks the page who is actually on top.
-    await ui.locator('.right button[title="화면 위치"]').click()
-    await h.page.locator('oc-easy-mode-overlay').locator('.menu button', { hasText: '크게 보기' }).click()
+    await ui.locator('.bar .vid').click()
+    await expect(ui.locator('.slot')).toHaveClass(/stage/)
 
     const topOfStage = async () =>
       h.page.evaluate(() => {
@@ -130,8 +130,7 @@ test('the picture is on top of the app, and out of the way when it is not wanted
 
     // And with no picture asked for, nothing of the player may show: it is
     // parked behind the app, which only works while the app is above it.
-    await ui.locator('.right button[title="화면 위치"]').click()
-    await h.page.locator('oc-easy-mode-overlay').locator('.menu button', { hasText: '소리만 듣기' }).click()
+    await ui.locator('.bar .vid').click()
     await expect(ui.locator('.slot')).toHaveClass(/hidden/)
     await expect
       .poll(async () =>

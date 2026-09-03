@@ -210,29 +210,6 @@ input { font: inherit; color: inherit; }
   display: flex; align-items: center; gap: 12px;
   padding: 6px 10px 18px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
 }
-/* One switch, not two buttons. There are two states and one of them is on;
-   a segmented pair made that binary look like a choice between two places. */
-.modeToggle {
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  padding: 5px 10px; margin: 0 0 10px; border-radius: var(--radius-md);
-  font-size: 13px; font-weight: 500; color: var(--muted-foreground);
-  transition: color var(--ease), background var(--ease);
-}
-.modeToggle .lbl { flex: 1; text-align: left; }
-.modeToggle .sw {
-  position: relative; flex: none; width: 30px; height: 17px;
-  border-radius: 999px; background: var(--secondary);
-  transition: background var(--ease);
-}
-.modeToggle .knob {
-  position: absolute; top: 2px; left: 2px; width: 13px; height: 13px;
-  border-radius: 999px; background: var(--muted-foreground);
-  transition: left var(--ease), background var(--ease);
-}
-.modeToggle:hover { color: var(--foreground); background: var(--hover); }
-.modeToggle.on { color: var(--foreground); }
-.modeToggle.on .sw { background: var(--primary); }
-.modeToggle.on .knob { left: 15px; background: var(--primary-foreground); }
 .nav {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 8px 10px; border-radius: var(--radius-md);
@@ -759,8 +736,12 @@ input[type=range]::-moz-range-thumb {
 /* Shuffle and repeat put away, which is where they already were. Previous,
    play and next stay exactly where they have always been. */
 .app.narrow:not(.sheet-open) .ctl .sh,
-.app.narrow:not(.sheet-open) .ctl .rp,
-.app.narrow:not(.sheet-open) .right { display: none; }
+.app.narrow:not(.sheet-open) .ctl .rp { display: none; }
+/* The picture's own button stays out here: the moment you want it is the
+   moment a music video starts, and opening the player first to reach it is one
+   press too many. The rest of the row waits inside. */
+.app.narrow:not(.sheet-open) .right { display: flex; gap: 0; }
+.app.narrow:not(.sheet-open) .right > *:not(.vid) { display: none; }
 /* The elapsed line goes along the *bottom* edge, under everything — asked for
    twice. Above the controls it was a second horizontal rule in a bar that
    already has one. */

@@ -12,7 +12,7 @@ import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { youtubeIsDark } from '../store.ts'
+import { youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
@@ -188,36 +188,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     { view: { kind: 'queue' }, label: t('대기열'), icon: 'queue' },
   ]
 
-  /**
-   * 영상 모드, and it is the only thing that decides.
-   *
-   * The screen used to set it on the way in — 홈 and 구독 turned it on — and
-   * that meant walking to 홈 claimed the top of the screen for a picture
-   * whatever the switch said. The switch has to be the authority or it is not
-   * a switch: it says whether there is a picture and whether lists are drawn
-   * as rows or as thumbnails, it is remembered, and nothing else touches it.
-   */
-  function modeToggle(): HTMLElement {
-    const on = engine.state.mode === 'video'
-    return h(
-      'button',
-      {
-        class: on ? 'modeToggle on' : 'modeToggle',
-        'data-nav': '',
-        role: 'switch',
-        'aria-checked': on ? 'true' : 'false',
-        onclick: () => {
-          engine.setMode(on ? 'music' : 'video')
-          setLayout(pictureNow())
-          drawSide()
-        },
-      },
-      icon(on ? 'video' : 'note', 16),
-      h('span', { class: 'lbl' }, t('영상 모드')),
-      h('span', { class: 'sw' }, h('span', { class: 'knob' })),
-    )
-  }
-
   // The header carries the way into the drawer and the name of the screen.
   //
   // It said "Easy Mode" before, which the drawer says too — the same words
@@ -252,7 +222,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           icon('close', 18),
         ),
       ),
-      modeToggle(),
       NAV.map((item) => [
         item.section && h('h4', null, item.section),
         h(
@@ -377,18 +346,30 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     drawBar()
   })
 
-  const videoButton = h('button', { 'data-nav': '', title: t('화면 위치') }, icon('video', 18))
-  videoButton.addEventListener('click', () =>
-    showMenu(shell.overlay, videoButton, [
-      { label: t('크게 보기'), icon: 'expand', onSelect: () => setLayout('stage') },
-      // 구석에 두기 is a desktop answer. On a phone there is nowhere to float
-      // — the corner window is 280px on a 390px screen, so it is display:none
-      // there — and offering it meant offering a button that did nothing but
-      // put the layout into a state the phone then had to ignore.
-      !narrowNow() && { label: t('구석에 두기'), icon: 'video', onSelect: () => setLayout('corner') },
-      { label: t('소리만 듣기'), icon: 'videoOff', onSelect: () => setLayout('hidden') },
-    ].filter(Boolean) as Parameters<typeof showMenu>[2]),
-  )
+  /**
+   * The picture, turned on and off where you are watching.
+   *
+   * It was a switch in the sidebar, which is the wrong place for it: the
+   * moment you want the picture is the moment a music video starts, and by
+   * then you are looking at the player, not the menu. One button in the bar,
+   * pressed as often as you like.
+   *
+   * A phone has two states, because there is nowhere for a corner window to
+   * float on 390 pixels. A desktop has three, so the picture can sit in the
+   * corner while you read a list — the placement menu used to offer that and
+   * this is where it went.
+   *
+   * The list's shape follows the big one: watching is 영상, and 영상 draws
+   * thumbnails.
+   */
+  const videoOrder = (): Placement[] => (narrowNow() ? ['hidden', 'stage'] : ['hidden', 'corner', 'stage'])
+  const videoButton = h('button', { class: 'vid', 'data-nav': '', title: t('화면 보기') }, icon('video', 18))
+  videoButton.addEventListener('click', () => {
+    const order = videoOrder()
+    const next = order[(order.indexOf(engine.state.video) + 1) % order.length]!
+    engine.setMode(next === 'stage' ? 'video' : 'music')
+    setLayout(next)
+  })
 
   const queueButton = h('button', { 'data-nav': '', title: t('대기열') }, icon('queue', 18))
   queueButton.addEventListener('click', () => ctx.go({ kind: 'queue' }))
@@ -515,8 +496,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     repeatButton.title = { off: t('반복 안 함'), all: t('전체 반복'), one: t('한 곡 반복') }[engine.state.repeat]
     replace(muteButton, icon(engine.state.volume === 0 ? 'mute' : 'volume', 18))
     fill(volume, engine.state.volume / 100)
-    replace(videoButton, icon(engine.state.video === 'hidden' ? 'videoOff' : 'video', 18))
-    videoButton.classList.toggle('on', engine.state.video === 'stage')
+    const where = engine.state.video
+    replace(videoButton, icon(where === 'hidden' ? 'videoOff' : where === 'stage' ? 'expand' : 'video', 18))
+    videoButton.className = where === 'hidden' ? 'vid' : 'vid on'
+    videoButton.title = where === 'hidden' ? t('화면 보기') : where === 'stage' ? t('크게 보기') : t('구석에 두기')
     prevButton.disabled = engine.state.queue.length === 0
     nextButton.disabled = engine.state.queue.length === 0
   }

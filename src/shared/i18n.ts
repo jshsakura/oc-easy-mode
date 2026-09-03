@@ -46,6 +46,7 @@ const EN: Record<string, string> = {
   '한 곡 반복': 'Repeat one',
   '음소거': 'Mute',
   '화면 위치': 'Video position',
+  '화면 보기': 'Show video',
   '가사': 'Lyrics',
   '가사를 찾지 못했습니다.': 'No lyrics for this one.',
   '크게 보기': 'Large',
