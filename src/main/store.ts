@@ -5,6 +5,7 @@
 // belongs to this origin anyway.
 
 import type { Track } from './parse.ts'
+import { thisScreen, type ScreenKind } from './ui/device.ts'
 
 export type Repeat = 'off' | 'all' | 'one'
 /** Where YouTube's own player sits on screen. */
@@ -46,17 +47,30 @@ export const DEFAULTS: Persisted = {
   view: 'explore',
 }
 
-/** The video layout each mode falls back to when it is switched on. */
-export const LAYOUT_FOR: Record<Mode, VideoLayout> = { music: 'corner', video: 'stage' }
+/**
+ * Where the picture goes when a mode is switched on.
+ *
+ * On a phone, music mode shows no picture at all. A floating corner window has
+ * nowhere to float to on a 390px screen — it sits on top of the list you are
+ * reading — and the intent here is YouTube Music, where the artwork in the bar
+ * is picture enough.
+ */
+export function layoutFor(mode: Mode, screen: ScreenKind = thisScreen()): VideoLayout {
+  if (mode === 'video') return 'stage'
+  return screen === 'phone' ? 'hidden' : 'corner'
+}
 
 export function load(): Persisted {
+  // The first run's picture placement depends on the device; everything else
+  // is the same everywhere.
+  const fresh = { ...DEFAULTS, video: layoutFor(DEFAULTS.mode) }
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return { ...DEFAULTS }
+    if (!raw) return fresh
     const got = JSON.parse(raw) as Partial<Persisted>
-    return { ...DEFAULTS, ...got, queue: Array.isArray(got.queue) ? got.queue : [] }
+    return { ...fresh, ...got, queue: Array.isArray(got.queue) ? got.queue : [] }
   } catch {
-    return { ...DEFAULTS }
+    return fresh
   }
 }
 

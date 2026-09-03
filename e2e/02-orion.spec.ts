@@ -40,11 +40,12 @@ test('and the product works from there: search, play, leave', async () => {
     await first.locator('.meta').click()
     await expect(ui.locator('.bar .now .t')).toHaveText(title)
 
-    // The way out works here too.
+    // The way out works here too. What YouTube looks like afterwards is
+    // 00-safety's job; having played something, leaving navigates to the track
+    // that is playing, and racing that reload proves nothing about injection.
     await h.page.keyboard.press('Escape')
     await h.page.keyboard.press('Escape')
     await expect(h.page.locator('oc-easy-mode')).toHaveCount(0)
-    await expect(h.page.locator('ytd-app')).toBeVisible()
   } finally {
     await h.close()
   }

@@ -49,7 +49,13 @@ export async function open(url: string, on = true): Promise<Harness> {
   if (on) {
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('oc-easy-mode:on', '1')
+        // Only when nothing has been decided yet. Setting it on every
+        // navigation would switch the mode back on immediately after a test
+        // turned it off — and leaving can navigate, so the page that came back
+        // would be hidden again and the test would be watching its own script.
+        if (localStorage.getItem('oc-easy-mode:on') === null) {
+          localStorage.setItem('oc-easy-mode:on', '1')
+        }
       } catch {
         /* first-run about:blank has no storage; the real page will */
       }

@@ -10,7 +10,8 @@ import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { LAYOUT_FOR } from '../store.ts'
+import { layoutFor } from '../store.ts'
+import { thisScreen } from './device.ts'
 import { h, icon, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
 import { clock, type Ctx, type View } from './ctx.ts'
@@ -34,7 +35,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const slot = h('div', { class: 'slot' })
   const side = h('div', { class: 'side' })
   const bar = h('div', { class: 'bar' })
-  const app = h('div', { class: 'app' }, side, main, slot, bar)
+  // The sidebar is a column on a desktop and a drawer on a phone. Which one is
+  // decided by the screen, not the window — see device.ts.
+  const app = h('div', { class: `app on-${thisScreen()}` }, side, main, slot, bar)
+
+  const closeDrawer = () => app.classList.remove('drawer-open')
+  const scrim = h('div', { class: 'drawerScrim', onclick: closeDrawer })
+  app.appendChild(scrim)
 
   const style = document.createElement('style')
   style.textContent = STYLES
@@ -101,7 +108,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
               'data-nav': '',
               onclick: () => {
                 engine.setMode(m)
-                setLayout(LAYOUT_FOR[m])
+                setLayout(layoutFor(m))
                 drawSide()
                 drawBar()
               },
@@ -116,7 +123,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           {
             class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
             'data-nav': '',
-            onclick: () => ctx.go(item.view),
+            onclick: () => {
+              closeDrawer()
+              ctx.go(item.view)
+            },
           },
           icon(item.icon, 18),
           h('span', null, item.label),
@@ -126,7 +136,15 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       ctx.playlists.slice(0, 30).map((p) =>
         h(
           'button',
-          { class: 'nav pl', 'data-nav': '', title: p.title, onclick: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }) },
+          {
+            class: 'nav pl',
+            'data-nav': '',
+            title: p.title,
+            onclick: () => {
+              closeDrawer()
+              ctx.go({ kind: 'playlist', id: p.id, title: p.title })
+            },
+          },
           p.title,
         ),
       ),
@@ -169,6 +187,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     const d = engine.position.duration
     if (d > 0) elapsed.textContent = clock((Number(seek.value) / 1000) * d)
   })
+
+  const menuButton = h('button', {
+    class: 'drawerToggle',
+    'data-nav': '',
+    title: '메뉴',
+    'aria-label': '메뉴',
+    onclick: () => app.classList.toggle('drawer-open'),
+  }, icon('queue', 20))
 
   const nowThumb = h('div', { class: 'thumb' })
   const nowTitle = h('div', { class: 't' }, '재생 중인 항목 없음')
@@ -214,7 +240,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   queueButton.addEventListener('click', () => ctx.go({ kind: 'queue' }))
 
   bar.append(
-    h('div', { class: 'now' }, nowThumb, h('div', { style: 'min-width:0' }, nowTitle, nowBy)),
+    h('div', { class: 'now' }, menuButton, nowThumb, h('div', { style: 'min-width:0' }, nowTitle, nowBy)),
     h(
       'div',
       { class: 'center' },

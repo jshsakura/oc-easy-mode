@@ -86,6 +86,26 @@ export interface Shelf {
   playlists: Playlist[]
 }
 
+/**
+ * A middling thumbnail out of one of YouTube's image lists.
+ *
+ * Biggest that is still under 700px: the covers are drawn at ~200px and the
+ * 1200px variant is a megabyte nobody sees.
+ */
+function pickThumb(node: unknown): string | undefined {
+  let best: { url: string; width: number } | undefined
+  for (const list of collect(node, 'thumbnails')) {
+    if (!Array.isArray(list)) continue
+    for (const t of list) {
+      if (!isObject(t) || typeof t.url !== 'string') continue
+      const width = typeof t.width === 'number' ? t.width : 0
+      if (width > 700) continue
+      if (!best || width > best.width) best = { url: t.url, width }
+    }
+  }
+  return best?.url
+}
+
 /** The medium thumbnail for any video, without asking the API for it. */
 export function thumbnail(videoId: string): string {
   return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
@@ -227,6 +247,8 @@ export function tracks(root: unknown): Track[] {
   return dedupe([
     ...tracksFromVideoRenderers(root, 'videoRenderer'),
     ...tracksFromVideoRenderers(root, 'playlistVideoRenderer'),
+    // What m.youtube.com sends instead. Same fields, different name.
+    ...tracksFromVideoRenderers(root, 'compactVideoRenderer'),
     ...tracksFromQueue(root),
     ...tracksFromLockups(root),
   ])
@@ -252,6 +274,21 @@ export function playlists(root: unknown): Playlist[] {
       title: lockupTitle(item),
       subtitle: [lockupBadge(item), ...lockupRows(item)].filter(Boolean).join(' · '),
       cover: typeof cover === 'string' ? cover : undefined,
+    })
+  }
+  // m.youtube.com's shelves are made of these, and they carry the playlist id
+  // only inside their browse target, prefixed with the VL that `browse` wants
+  // and a caller here does not.
+  for (const item of collect(root, 'compactStationRenderer')) {
+    if (!isObject(item)) continue
+    const browseId = findFirst(item.navigationEndpoint, 'browseId')
+    const id = typeof browseId === 'string' && browseId.startsWith('VL') ? browseId.slice(2) : undefined
+    if (!id) continue
+    out.push({
+      id,
+      title: text(item.title),
+      subtitle: text(item.videoCountText),
+      cover: pickThumb(item.thumbnail),
     })
   }
   for (const key of ['gridPlaylistRenderer', 'playlistRenderer', 'compactPlaylistRenderer']) {

@@ -371,13 +371,83 @@ input[type=range]:hover::-webkit-slider-thumb { border-color: var(--foreground);
 }
 .toast.bad { border-color: var(--destructive); color: var(--destructive); }
 
+/* ── Phone ───────────────────────────────────────────────────────────────
+   A phone is not a narrow desktop. The sidebar becomes a drawer rather than a
+   64px rail of unlabelled icons stuck to the edge, the bar gives the seek its
+   own row, and the lists lose the columns there is no width for. Which layout
+   applies is decided in device.ts, from the hostname and the screen — never
+   from a media query alone, because a desktop window dragged narrow is still a
+   desktop and Orion on iPhone claims to be one. */
+.drawerScrim, .drawerToggle { display: none; }
+
+.app.on-phone {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+  --bar: auto;
+}
+.on-phone .side {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 284px; z-index: 20;
+  transform: translateX(-100%); transition: transform .22s ease;
+  padding: 16px 10px;
+}
+.app.on-phone.drawer-open .side { transform: none; }
+.on-phone .drawerScrim {
+  display: block; position: fixed; inset: 0; z-index: 15;
+  background: oklch(0 0 0 / 60%); opacity: 0; pointer-events: none;
+  transition: opacity .22s ease;
+}
+.on-phone.drawer-open .drawerScrim { opacity: 1; pointer-events: auto; }
+.on-phone .drawerToggle {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 38px; height: 38px; border-radius: var(--radius-md);
+  color: var(--muted-foreground);
+}
+.on-phone .drawerToggle:hover { background: var(--accent); color: var(--foreground); }
+
+.on-phone .main { grid-column: 1; padding: 20px 16px 28px; }
+.on-phone .main h2 { font-size: 21px; margin-bottom: 14px; }
+.on-phone .shelf { margin-bottom: 24px; }
+.on-phone .shelf h3 { font-size: 15px; }
+.on-phone .tile { width: 168px; }
+.on-phone .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 12px; }
+.on-phone .cards { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
+.on-phone .searchbox { margin-bottom: 16px; }
+
+/* No room for an index or a duration; the title and who made it are the row. */
+.on-phone .row { grid-template-columns: 56px 1fr 32px; gap: 10px; min-height: 60px; }
+.on-phone .row .idx, .on-phone .row .dur { display: none; }
+.on-phone .row .thumb { width: 56px; height: 32px; }
+.on-phone .row .more { opacity: 1; }
+
+.on-phone .bar {
+  grid-template-columns: 1fr auto; grid-template-rows: auto auto;
+  padding: 8px 12px 6px; gap: 2px 12px;
+}
+.on-phone .now { grid-row: 1; grid-column: 1; gap: 8px; }
+.on-phone .now .thumb { width: 42px; height: 42px; }
+.on-phone .center { grid-row: 1; grid-column: 2; }
+.on-phone .seek { grid-row: 2; grid-column: 1 / -1; max-width: none; }
+.on-phone .right { display: none; }
+/* Shuffle and repeat live in the drawer's reach, not in forty pixels of bar. */
+.on-phone .ctl > button:first-child, .on-phone .ctl > button:last-child { display: none; }
+
+.on-phone .slot.corner { right: 12px; bottom: 116px; width: 156px; }
+.app.on-phone.has-corner .main { padding-bottom: 128px; }
+.on-phone .slot.stage { left: 0; height: 34vh; }
+.app.on-phone.has-stage .main { padding-top: calc(34vh + 16px); }
+
+.on-phone .menu { min-width: 176px; }
+.on-phone .modal { width: calc(100vw - 32px); }
+
+/* A desktop window dragged narrow — not a phone, so the rail is fine here. */
 @media (max-width: 900px) {
-  .app { --side: 64px; }
-  .side { padding: 12px 8px; }
-  .side .brand span, .side .nav span, .side h4, .side .pl, .exit span { display: none; }
-  .nav, .exit { justify-content: center; }
-  .modes { flex-direction: column; }
-  .bar { grid-template-columns: 1fr 2fr auto; }
-  .right .vol { display: none; }
+  .app.on-desktop { --side: 64px; }
+  .on-desktop .side { padding: 12px 8px; }
+  .on-desktop .side .brand span, .on-desktop .side .nav span,
+  .on-desktop .side h4, .on-desktop .side .pl, .on-desktop .exit span { display: none; }
+  .on-desktop .nav, .on-desktop .exit { justify-content: center; }
+  .on-desktop .modes { flex-direction: column; }
+  .on-desktop .bar { grid-template-columns: 1fr 2fr auto; }
+  .on-desktop .right .vol { display: none; }
 }
 `

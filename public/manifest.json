@@ -13,29 +13,35 @@
     "storage"
   ],
   "host_permissions": [
-    "https://www.youtube.com/*"
+    "https://*.youtube.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://www.youtube.com/*"
+        "https://*.youtube.com/*"
       ],
       "js": [
         "isolated.js"
       ],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": false,
+      "exclude_matches": [
+        "https://music.youtube.com/*"
+      ]
     },
     {
       "matches": [
-        "https://www.youtube.com/*"
+        "https://*.youtube.com/*"
       ],
       "js": [
         "main.js"
       ],
       "run_at": "document_start",
       "world": "MAIN",
-      "all_frames": false
+      "all_frames": false,
+      "exclude_matches": [
+        "https://music.youtube.com/*"
+      ]
     }
   ],
   "action": {
@@ -48,7 +54,7 @@
         "main.js"
       ],
       "matches": [
-        "https://www.youtube.com/*"
+        "https://*.youtube.com/*"
       ]
     }
   ]
