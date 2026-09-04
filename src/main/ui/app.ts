@@ -628,6 +628,13 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   function drawRating(): void {
     upButton.classList.toggle('on', rating === 'like')
     downButton.classList.toggle('on', rating === 'dislike')
+    // An opinion, once given, is one button and not two. YouTube keeps a
+    // single rating per video, so the other thumb is not a choice you still
+    // have — it is a second press that would take this one back and give the
+    // opposite, which is not what a lit pair says. The one that is lit stays,
+    // and pressing it again clears the rating and brings its neighbour back.
+    upButton.style.display = rating === 'dislike' ? 'none' : ''
+    downButton.style.display = rating === 'like' ? 'none' : ''
     upButton.title = rating === 'like' ? t('좋아요 취소') : t('좋아요')
     downButton.title = rating === 'dislike' ? t('관심 없음 취소') : t('관심 없음')
     upButton.disabled = !engine.current
