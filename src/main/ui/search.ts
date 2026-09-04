@@ -111,7 +111,7 @@ export function openSearch(ctx: Ctx, query = ''): void {
     if (q === shown) return
     shown = q
     const token = ++generation
-    if (!q) return replace(body, nothing(t('무엇을 들을까요?'), 'search'))
+    if (!q) return replace(body, nothing(t('무엇을 찾을까요?'), 'search'))
     replace(body, skRows(6))
     try {
       const page = await api.search(ctx.cfg, q)

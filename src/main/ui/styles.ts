@@ -66,8 +66,8 @@ export const STYLES = `
   /* The accent is a dusty stamp, not a neon pen — Notion-quiet. It keeps the
      product's violet hue at a fraction of the saturation, so on paper it
      reads as ink that happens to be purple. */
-  --primary: #8578a6;
-  --primary-hover: #9286b4;
+  --primary: #ece7df;
+  --primary-hover: #ffffff;
   /* Ink on the dusty violet, not white: white on #8578a6 measures 4.01:1,
      a hair under AA for 14px text; ink measures 4.66 and reads as stamping. */
   --primary-foreground: #141210;
@@ -114,15 +114,15 @@ export const STYLES = `
      four things in this UI that sit *over* the app, and they are the four
      the reader asked to be glass: translucent, blurred, with the light
      hairline that tells an edge from a shadow. */
-  --pop: rgba(30, 27, 23, .72);
-  --pop-line: rgba(236, 231, 223, .12);
-  --pop-blur: saturate(180%) blur(20px);
+  --pop: rgba(30, 27, 23, .58);
+  --pop-line: rgba(236, 231, 223, .16);
+  --pop-blur: saturate(180%) blur(28px);
   /* The panes themselves, one step less glassy than a popover: these carry the
      reading, and text on a heavy blur is text you squint at. Over the ground
      they mostly read as depth; over content — the drawer on a phone, the
      player opened over a list — they read as glass, which is where it counts. */
-  --pane: rgba(27, 24, 21, .84);
-  --pane-blur: saturate(160%) blur(16px);
+  --pane: rgba(27, 24, 21, .64);
+  --pane-blur: saturate(160%) blur(24px);
 
   --hover: rgba(236, 231, 223, .06);
   --shadow: 0 2px 6px rgba(20, 12, 4, .28);
@@ -174,8 +174,8 @@ export const STYLES = `
   --border: #ddd8cd;
   --popover: #fbfaf6;
   --popover-foreground: #232019;
-  --primary: #776aa6;
-  --primary-hover: #8579b2;
+  --primary: #232019;
+  --primary-hover: #3a352c;
   --primary-foreground: #ffffff;
   --destructive: #d63b5e;
   --ring: #776aa6;
@@ -191,10 +191,10 @@ export const STYLES = `
   --glass: #fbfaf6;
   --glass-strong: #fbfaf6;
   --glass-line: #ddd8cd;
-  --pop: rgba(251, 250, 246, .74);
-  --pop-line: rgba(35, 32, 25, .12);
-  --pop-blur: saturate(180%) blur(20px);
-  --pane: rgba(251, 250, 246, .86);
+  --pop: rgba(251, 250, 246, .62);
+  --pop-line: rgba(35, 32, 25, .14);
+  --pop-blur: saturate(180%) blur(28px);
+  --pane: rgba(251, 250, 246, .7);
   --pane-blur: saturate(160%) blur(16px);
   --hover: rgba(0, 0, 0, .05);
   --shadow: 0 2px 6px rgba(70, 60, 40, .1);
@@ -462,6 +462,9 @@ input { font: inherit; color: inherit; }
 .searchbox svg { color: var(--muted-foreground); flex: none; }
 
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 24px; }
+/* A menu at the end of a toolbar goes to the far end: the actions are one
+   group and the overflow is another, and pressed together they read as one. */
+.toolbar > .btn.ghost:last-child { margin-left: auto; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 36px; padding: 0 16px; border-radius: var(--radius-md);
@@ -488,7 +491,7 @@ input { font: inherit; color: inherit; }
   /* Content, and a strip of actions after it. The content used to be the row
      itself; it is its own box now so a swipe can move it without moving the
      actions with it. */
-  display: grid; grid-template-columns: 1fr auto;
+  display: grid; grid-template-columns: 1fr auto auto;
   align-items: center; padding: 8px;
   border-radius: var(--radius-md); cursor: pointer;
   transition: background var(--ease);
@@ -497,7 +500,9 @@ input { font: inherit; color: inherit; }
   display: grid; grid-template-columns: 24px 44px 1fr auto;
   align-items: center; gap: 16px; min-width: 0;
 }
-.rowActions { display: flex; align-items: center; gap: 16px; margin-left: 16px; }
+.rowActions { display: flex; align-items: center; gap: 16px; margin-left: 12px; }
+/* The menu, in its own column after the content, on every device. */
+.row > .more { margin-left: 12px; }
 /* A quiet fill, like any list's chosen row. The bars say which row it is;
    the fill says it is the one you are on. Nothing lifts, nothing glows. */
 .row.now { background: var(--secondary); }
@@ -531,8 +536,9 @@ input { font: inherit; color: inherit; }
 .row.plrow .thumb { width: 44px; height: 44px; border-radius: var(--radius-md); }
 .row.plrow > svg { color: var(--muted-foreground); transform: rotate(180deg); justify-self: end; }
 .row .meta { min-width: 0; }
-.row .title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .by { color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Title and artist close together: two lines of one thing, not two things. */
+.row .title { font-size: 14px; font-weight: 500; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .by { color: var(--muted-foreground); font-size: 13px; line-height: 1.25; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .dur { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
 .row .more, .row .quick {
   width: 32px; height: 32px; border-radius: var(--radius-md);
@@ -687,6 +693,8 @@ input { font: inherit; color: inherit; }
 .tile { width: 176px; flex: none; scroll-snap-align: start; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: 28px 16px; }
 .grid .tile { width: auto; }
+/* 더 보기 under a grid takes a row of its own, not a cell in the wall. */
+.grid > .btn.ghost { grid-column: 1 / -1; justify-self: center; }
 
 .head { display: flex; gap: 28px; align-items: flex-end; margin-bottom: 28px; }
 .head .cover {
@@ -1412,8 +1420,10 @@ input[type=range]::-moz-range-thumb {
 /* The panel hangs from the top of the screen rather than floating in the
    middle: its answers grow downward as they arrive, and a list growing from a
    centre point would move its own field about. */
-.searchScrim { align-items: flex-start; }
-.modal.search { width: min(680px, calc(100dvw - 32px)); margin-top: 8dvh; max-height: 80dvh; }
+/* Nothing dims: the panel floats over the screen with a shadow, and the
+   screen stays readable behind it. Pressing outside still closes it. */
+.searchScrim { align-items: flex-start; background: transparent; }
+.modal.search { width: min(680px, calc(100dvw - 32px)); margin-top: 8dvh; max-height: 80dvh; box-shadow: 0 24px 64px oklch(0 0 0 / 45%), var(--shadow); }
 /* The field is the heading. Nothing above it says 검색, because the field
    already does, and the close button beside it is the one every dialog has. */
 .searchHead { display: flex; align-items: center; gap: 6px; padding: 14px 12px 0 16px; flex: none; }
@@ -1439,9 +1449,12 @@ input[type=range]::-moz-range-thumb {
 /* The phone form is the whole screen, hung from the top, not a sheet along the
    bottom like every other dialog: a sheet puts the field where the keyboard
    is about to be. Padded for the notch, since there is no header above it. */
+/* A sheet hung from the top, as tall as its answers and no taller, so the
+   screen it was opened over is still there underneath. */
 .modal.search.full {
-  align-self: flex-start; width: 100dvw; height: 100dvh; max-height: none; margin: 0;
-  border: 0; border-radius: 0; padding: env(safe-area-inset-top) 0 0;
+  align-self: flex-start; width: 100dvw; height: auto; max-height: 78dvh; margin: 0;
+  border: 0; border-bottom: 1px solid var(--pop-line);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl); padding: env(safe-area-inset-top) 0 0;
 }
 .modal.search.full .searchHead { padding: 10px 6px 0 12px; }
 .modal.search.full .searchBody { padding: 14px 12px calc(14px + env(safe-area-inset-bottom)); }
@@ -1456,7 +1469,7 @@ input[type=range]::-moz-range-thumb {
 .chanCount {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px; margin-left: 2px;
-  border-radius: 999px; background: var(--primary); color: #fff;
+  border-radius: 999px; background: var(--primary); color: var(--primary-foreground);
   font-size: 11px; font-weight: 600; line-height: 1;
 }
 
@@ -1482,7 +1495,7 @@ input[type=range]::-moz-range-thumb {
   border: 1.5px solid var(--muted-foreground); color: transparent;
   transition: background var(--ease), border-color var(--ease), color var(--ease);
 }
-.channelRow.on .channelTick { border-color: var(--primary); background: var(--primary); color: #fff; }
+.channelRow.on .channelTick { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
 
 .channelActions {
   display: flex; gap: 8px; align-items: center;
@@ -1519,4 +1532,36 @@ input[type=range]::-moz-range-thumb {
 /* A bar that sits in a line of text rather than replacing it, so the line
    keeps the height the font gives it. */
 .skLine { display: inline-block; vertical-align: middle; }
+
+/* ── Lists as cards ──────────────────────────────────────────────────────── */
+/* A track list on a screen is one card, not rows floating on the pane: asked
+   for on 2026-09-04, "목록마다 카드처럼 좀 묶어두지". The panel inside the
+   search dialog stays bare, since that panel is already the card. The playing
+   row steps one tone further than it did, because the card has taken the tone
+   it used to stand on. */
+.main .rows {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 6px;
+}
+.main .rows .row.now { background: var(--secondary-hover); }
+.main .rows > .queueMark { padding: 0 8px; }
+.main .rows > .queueMark:first-child { margin-top: 10px; }
+.main .rows > .btn.ghost { margin-bottom: 8px; }
+.main .rows > .empty { padding: 40px 0; }
+.app.narrow .main .rows { padding: 4px; }
+
+/* ── Glass, with something behind it ─────────────────────────────────────── */
+/* Translucency is invisible over a flat ground. What the panes are glass over
+   is the artwork of what is playing, blurred past recognition into colour:
+   asked for on 2026-09-04, "글래스 모피즘 더 적극적으로". The layer sits under
+   every pane inside the app's own stacking context, and paints nothing while
+   nothing plays. One small picture, blurred, costs the phone almost nothing. */
+.app::before {
+  content: ''; position: absolute; inset: -80px; z-index: -1; pointer-events: none;
+  background: var(--art, none) center / cover no-repeat;
+  filter: blur(56px) saturate(150%); opacity: .42;
+  transition: opacity .6s ease;
+}
+.app.light::before { opacity: .3; }
+@media (prefers-reduced-transparency: reduce) { .app::before { display: none; } }
 `

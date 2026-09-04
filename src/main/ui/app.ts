@@ -564,6 +564,12 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       { label: `${t('재생 속도')} · ${rateLabel(engine.state.rate)}`, icon: 'next', onSelect: showSpeedMenu },
       { label: `${t('수면 예약')}${sleepSub}`, icon: 'moon', onSelect: showSleepMenu },
       { label: `${t('이퀄라이저')} · ${engine.audio.on ? t('켜짐') : t('꺼짐')}`, icon: 'eq', onSelect: () => openEqualizer(ctx) },
+      '-',
+      {
+        label: rating === 'dislike' ? t('관심 없음 취소') : t('관심 없음'),
+        icon: 'thumbDown',
+        onSelect: () => setRating(new Event('menu'), 'dislike'),
+      },
     ])
   })
 
@@ -732,27 +738,21 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
    * about *this song*, not about playback, and that row is already full on a
    * phone.
    */
-  const upButton = h('button', { class: 'rate up', 'data-nav': '', title: t('좋아요') }, icon('thumbUp', 18))
-  const downButton = h('button', { class: 'rate down', 'data-nav': '', title: t('관심 없음') }, icon('thumbDown', 18))
-  const rateBox = h('div', { class: 'rate-box' }, upButton, downButton)
-  /** The track the two buttons describe, and what YouTube said about it. */
+  // One heart, by the user's word (2026-09-04): "좋아요는 하트 한 칸으로".
+  // The pair of thumbs is gone from the bar; 관심 없음 lives in the ⋯ menu,
+  // where a decision about the track that also skips it belongs.
+  const upButton = h('button', { class: 'rate up', 'data-nav': '', title: t('좋아요') }, icon('heart', 18))
+  const rateBox = h('div', { class: 'rate-box' }, upButton)
+  /** The track the heart describes, and what YouTube said about it. */
   let ratedOf = ''
   let rating: api.LikeStatus = 'none'
 
   function drawRating(): void {
-    upButton.classList.toggle('on', rating === 'like')
-    downButton.classList.toggle('on', rating === 'dislike')
-    // An opinion, once given, is one button and not two. YouTube keeps a
-    // single rating per video, so the other thumb is not a choice you still
-    // have — it is a second press that would take this one back and give the
-    // opposite, which is not what a lit pair says. The one that is lit stays,
-    // and pressing it again clears the rating and brings its neighbour back.
-    upButton.style.display = rating === 'dislike' ? 'none' : ''
-    downButton.style.display = rating === 'like' ? 'none' : ''
-    upButton.title = rating === 'like' ? t('좋아요 취소') : t('좋아요')
-    downButton.title = rating === 'dislike' ? t('관심 없음 취소') : t('관심 없음')
+    const liked = rating === 'like'
+    upButton.classList.toggle('on', liked)
+    replace(upButton, icon(liked ? 'heartFill' : 'heart', 18))
+    upButton.title = liked ? t('좋아요 취소') : t('좋아요')
     upButton.disabled = !engine.current
-    downButton.disabled = !engine.current
   }
 
   /**
@@ -867,10 +867,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   }
 
   upButton.addEventListener('click', (ev) => setRating(ev, 'like'))
-  downButton.addEventListener('click', (ev) => setRating(ev, 'dislike'))
 
   const ctl = h('div', { class: 'ctl' }, shuffleButton, prevButton, playButton, nextButton, repeatButton)
-  const rightRow = h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, speedButton, sleepButton, eqButton, moreButton, muteButton, volume)
+  // 대기열 first and the picture last, on every screen alike: the user's
+  // word on 2026-09-04, "재생목록이 가장 왼쪽, 영상 모드는 항상 우측 끝".
+  const rightRow = h('div', { class: 'right' }, queueButton, lyricsButton, speedButton, sleepButton, eqButton, moreButton, muteButton, volume, videoButton)
   const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy), rateBox)
   // The track itself is the handle: a phone opens the player by tapping what
   // is playing, which is what every music app has taught. It is a button on a
@@ -927,6 +928,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     nowTitle.textContent = track ? track.title : t('재생 중인 항목 없음')
     nowBy.textContent = track ? track.byline : ''
     nowThumb.style.backgroundImage = track ? `url(${thumbnail(track.videoId)})` : ''
+    app.style.setProperty('--art', track ? `url(${thumbnail(track.videoId)})` : 'none')
     shuffleButton.classList.toggle('on', engine.state.shuffle)
     repeatButton.classList.toggle('on', engine.state.repeat !== 'off')
     replace(repeatButton, icon(engine.state.repeat === 'one' ? 'repeatOne' : 'repeat', 18))

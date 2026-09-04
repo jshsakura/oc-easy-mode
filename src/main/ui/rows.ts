@@ -100,14 +100,16 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
     ),
     h('div', { class: 'dur' }, track.duration),
   )
-  // Where a pointer hovers, this sits at the end of the row as it always has.
-  // Where there is no pointer, it waits just off the right-hand edge and a
-  // swipe brings it in.
-  const actions = h('div', { class: 'rowActions' }, quickButton, menuButton)
+  // The menu is always at the right-hand edge of the row, on every device:
+  // asked for on 2026-09-04, "...은 항상 우측에 보이게". Only the quick action
+  // waits in the swipe strip, just past the edge where there is no pointer,
+  // and a leftward drag brings it in; with a pointer it simply sits inline.
+  const actions = h('div', { class: 'rowActions' }, quickButton)
   const el = h(
     'div',
     { class: classes, 'data-nav': '', 'data-id': track.videoId, tabindex: '0', role: 'button', onclick: open },
     inner,
+    menuButton,
     actions,
   )
   menuButton.addEventListener('click', (ev) => openMenu(ev, el))

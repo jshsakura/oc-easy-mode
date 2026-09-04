@@ -134,4 +134,5 @@ export const PT_BR: Record<string, string> = {
   "이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.": "O equalizador não funciona neste navegador.",
   "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "Ligado, o som passa por esta extensão. Em um navegador que fica mudo, ele se desliga sozinho.",
   "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "Não saiu som, então o equalizador foi desligado. Recarregando.",
+  "무엇을 찾을까요?": "O que você procura?",
 }
