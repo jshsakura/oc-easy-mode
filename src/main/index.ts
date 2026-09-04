@@ -21,6 +21,7 @@ import { DEFAULT_CONFIG, NS, isOurs, type Config, type ToIsolated, type ToMain }
 import { mountApp } from './ui/app.ts'
 import { explain, type Ctx } from './ui/ctx.ts'
 import { pick, toast } from './ui/overlay.ts'
+import { isYouTubeSettings } from './ytsettings.ts'
 import { waitForYtCfg } from './ytcfg.ts'
 
 // ── Which world is this? ───────────────────────────────────────────────────
@@ -98,8 +99,40 @@ interface Runtime {
 
 let starting = false
 
+// ── Standing aside for YouTube's own settings ──────────────────────────────
+//
+// **The mode declines to mount on /account and /view_all_settings; it does not
+// switch itself off for them.**
+//
+// The two are not the same thing and the difference is the whole point. Those
+// pages are YouTube's own, and there is no version of them for this UI to
+// draw: mounting there hid the page and put up an app with nothing in it, a
+// white screen that the watchdog then had to rescue. So we do not mount. But
+// leaving is a separate act with a separate cost. `leave(true)` writes the
+// switch off, so a reader who pressed 계정 would come home to plain YouTube
+// and have to turn the mode on again by hand. That is not what pressing 계정
+// asked for.
+//
+// So the switch is left exactly as it was, and the only thing that changes is
+// whether this particular document mounts. Coming back is then not a
+// restoration of anything: it is an ordinary page load that reads the flag,
+// finds it still on, and starts. Nothing has to be remembered and nothing can
+// be forgotten.
+//
+// The one case that needs more than that is YouTube navigating away from a
+// settings page without a reload, which it does from its own header. The
+// document that declined to mount is still the document, so `heldBack` marks
+// that this is why nothing is up, and the navigation handler below starts the
+// mode the moment the address is somewhere we belong. It is set only here, so
+// a watchdog rescue or a panic exit can never be undone by it.
+let heldBack = false
+
 async function start(): Promise<void> {
   if (running || starting || alreadyMounted()) return
+  if (isYouTubeSettings(location.pathname)) {
+    heldBack = true
+    return
+  }
   starting = true
   let shell: Shell | undefined
   try {
@@ -261,8 +294,16 @@ function leave(persist: boolean): void {
 // stale, so pick the new one up. `yt-navigate-finish` is the page's own signal
 // and has been stable for years; the interval is the belt to its braces.
 
-window.addEventListener('yt-navigate-finish', () => void reattach())
-setInterval(() => void reattach(), 4000)
+window.addEventListener('yt-navigate-finish', () => settle())
+setInterval(() => settle(), 4000)
+
+/** Picks the new player up, and comes back if we were only standing aside. */
+function settle(): void {
+  void reattach()
+  if (!heldBack || !config.musicMode || isYouTubeSettings(location.pathname)) return
+  heldBack = false
+  void start()
+}
 
 async function reattach(): Promise<void> {
   if (!running) return

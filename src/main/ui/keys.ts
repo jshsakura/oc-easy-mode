@@ -27,6 +27,30 @@ function typing(ev: KeyboardEvent): boolean {
   return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable === true
 }
 
+/**
+ * The keys, written down once so the settings sheet cannot drift from the
+ * handler below it.
+ *
+ * `label` is a Korean key rather than a rendered string: this list is built
+ * when the module loads, and the language is not settled until the app starts.
+ * The sheet passes each label through `t()` as it draws.
+ *
+ * Escape is in the list and not in the switch below. Twice within a second is
+ * the shell's own way out, and somebody reading a list of keys wants to be
+ * told about the one that leaves.
+ */
+export const SHORTCUTS: ReadonlyArray<{ keys: string; label: string }> = [
+  { keys: 'Space, K', label: '재생 / 일시정지' },
+  { keys: 'J', label: '10초 뒤로' },
+  { keys: 'L', label: '10초 앞으로' },
+  { keys: 'S', label: '셔플' },
+  { keys: 'R', label: '반복' },
+  { keys: 'V', label: '화면 보기' },
+  { keys: 'M', label: '음소거' },
+  { keys: '/', label: '검색' },
+  { keys: 'Esc, Esc', label: 'RenewTube 종료' },
+]
+
 export interface KeyActions {
   /** Cycles the picture, which is the player bar's own button. */
   toggleVideo(): void

@@ -1638,4 +1638,61 @@ input[type=range]::-moz-range-thumb {
   background: var(--primary); border-radius: 2px;
   pointer-events: none;
 }
+
+/* ── The settings sheet ───────────────────────────────────────────────────
+   Kept at the end with the other late blocks, so two branches editing this
+   stylesheet meet in as few places as possible. Its shape is the equalizer's:
+   a scrolling body inside the same dialog, full screen on a phone. */
+.modal.settings { width: min(460px, calc(100dvw - 28px)); }
+.setBody { padding: 4px 22px 20px; overflow-y: auto; }
+/* A group name, not a heading in a document: small, quiet, and with air above
+   it rather than below, so it reads as belonging to what follows. */
+.setGroup {
+  margin: 18px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  color: var(--muted-foreground); text-transform: none;
+}
+.setBody > .setGroup:first-child { margin-top: 4px; }
+.setNote { margin: 0 0 10px; font-size: 12.5px; line-height: 1.6; color: var(--muted-foreground); }
+/* A destination, and the mark that says it leaves this page. */
+.setLink {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 11px 12px; margin-bottom: 6px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500; color: var(--foreground);
+  background: var(--secondary);
+  transition: background var(--ease);
+}
+.setLink > span { flex: 1; min-width: 0; }
+.setLink > svg { flex: none; color: var(--muted-foreground); }
+.setLink:hover { background: var(--hover); }
+.setRow { display: flex; align-items: center; gap: 16px; padding: 9px 0; font-size: 14px; }
+.setRow .lbl { flex: 1; min-width: 0; font-weight: 500; }
+/* Two or three answers in one track, the chosen one filled. Flat colour, no
+   blend: the track is the panel's own secondary and the answer is the accent. */
+.seg {
+  display: flex; flex: none; gap: 2px; padding: 2px;
+  background: var(--secondary); border-radius: var(--radius-md);
+}
+.seg button {
+  padding: 6px 12px; border-radius: calc(var(--radius-md) - 3px);
+  font-size: 13px; font-weight: 500; color: var(--muted-foreground);
+  transition: color var(--ease), background var(--ease);
+}
+.seg button:hover { color: var(--foreground); }
+.seg button.segOn { color: var(--primary-foreground); background: var(--primary); }
+/* The keys, printed. A two-column list rather than a table, because every row
+   is one name and one key and nothing ever spans. */
+.keyList {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: 8px 16px; margin: 0; font-size: 13.5px;
+}
+.keyList dt { min-width: 0; color: var(--muted-foreground); }
+.keyList dd { margin: 0; text-align: right; }
+.keyList kbd {
+  display: inline-block; padding: 3px 7px; border-radius: 5px;
+  border: 1px solid var(--border); background: var(--secondary);
+  font-family: var(--font-mono); font-size: 12px; color: var(--foreground);
+}
+.modal.full .setBody { padding: 4px 20px calc(20px + env(safe-area-inset-bottom)); }
+.modal.full .setLink { padding: 14px 12px; font-size: 15px; }
+.modal.full .setRow { font-size: 15px; }
 `

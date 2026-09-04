@@ -58,6 +58,19 @@ export function setStoredTheme(theme: 'light' | 'dark'): void {
 }
 
 /**
+ * Forgets the explicit choice, so the side follows YouTube again.
+ *
+ * This key is what makes a choice stick, so 자동 cannot be expressed by
+ * writing something here. It has to be the absence of a value, which is also
+ * the state a browser that has never seen the settings sheet is already in.
+ */
+export function clearStoredTheme(): void {
+  try {
+    localStorage.removeItem(THEME_KEY)
+  } catch {}
+}
+
+/**
  * Whether the sidebar's playlists are folded away.
  *
  * Its own key rather than a field of the state above, because it is a fact
