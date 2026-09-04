@@ -104,7 +104,6 @@ export const VI: Record<string, string> = {
   "삭제했습니다.": "Đã xóa.",
   "유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.": "Chưa có trình phát YouTube. Chọn một mục để mở.",
   "이 곡으로는 라디오를 만들 수 없습니다.": "Không thể tạo radio từ bài này.",
-  "최근 감상": "Nghe gần đây",
   "아직 들은 것이 없습니다.": "Bạn chưa nghe gì cả.",
   "기록 지우기": "Xóa nhật ký",
   "최근 감상 기록을 지울까요?": "Xóa danh sách nghe gần đây?",

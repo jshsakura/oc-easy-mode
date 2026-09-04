@@ -104,7 +104,6 @@ export const ID: Record<string, string> = {
   "삭제했습니다.": "Dihapus.",
   "유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.": "Belum ada pemutar YouTube di sini. Pilih sesuatu untuk membukanya.",
   "이 곡으로는 라디오를 만들 수 없습니다.": "Radio tidak bisa dibuat dari lagu ini.",
-  "최근 감상": "Baru diputar",
   "아직 들은 것이 없습니다.": "Belum ada yang didengarkan.",
   "기록 지우기": "Hapus histori",
   "최근 감상 기록을 지울까요?": "Hapus daftar yang baru diputar?",

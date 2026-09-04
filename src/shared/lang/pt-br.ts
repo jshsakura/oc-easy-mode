@@ -104,7 +104,6 @@ export const PT_BR: Record<string, string> = {
   "삭제했습니다.": "Excluído.",
   "유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.": "Ainda não há player do YouTube. Escolha algo e ele abrirá.",
   "이 곡으로는 라디오를 만들 수 없습니다.": "Não dá para criar uma rádio com esta faixa.",
-  "최근 감상": "Ouvidas recentemente",
   "아직 들은 것이 없습니다.": "Você ainda não ouviu nada.",
   "기록 지우기": "Limpar histórico",
   "최근 감상 기록을 지울까요?": "Limpar a lista de ouvidas recentemente?",

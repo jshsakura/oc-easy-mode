@@ -6,7 +6,7 @@ import { app, open, overlay } from './fixture.ts'
 
 const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
 
-test('what was played comes back under 최근 감상, signed out', async () => {
+test('what was played comes back under 시청 기록, signed out', async () => {
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
@@ -28,8 +28,10 @@ test('what was played comes back under 최근 감상, signed out', async () => {
       .poll(() => h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').queue?.length ?? 0))
       .toBeGreaterThan(1)
 
-    await ui.locator('.nav', { hasText: '최근 감상' }).click()
-    // The row it was played from, now on a screen YouTube would leave empty.
+    await ui.locator('.nav', { hasText: '시청 기록' }).click()
+    // The row it was played from, at the top of a screen YouTube would leave
+    // empty: signed out its own feed answers with nothing, and what is left is
+    // the half this browser remembered.
     await expect(ui.locator('.rows .row:not([aria-hidden]) .title').first()).toHaveText(title)
 
     // Written down where a reload will find it. Asserted at the storage rather
@@ -234,7 +236,7 @@ test('nothing reaches the player through a menu or a dialog', async () => {
 
     // A dialog is the same, and it can be dismissed with Escape at all, which
     // it could not before.
-    await ui.locator('.nav', { hasText: '최근 감상' }).click()
+    await ui.locator('.nav', { hasText: '시청 기록' }).click()
     await ui.locator('.toolbar button', { hasText: '기록 지우기' }).click()
     await expect(over.locator('.modal')).toBeVisible()
     await h.page.keyboard.press('s')
