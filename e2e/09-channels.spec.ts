@@ -161,7 +161,9 @@ test('a menu over the screen closes alone', async () => {
     // A row's menu is a second layer over the screen. Escaping it must not
     // also take the layer underneath, which is the rule the checklist follows
     // by only closing when it is the last one in the overlay.
-    await ui.locator('.row:not([aria-hidden])').first().locator('button[data-nav]').last().click()
+    // The menu by name: the row's last tagged button is the quick action now
+    // that the menu has its own column before the swipe strip.
+    await ui.locator('.row:not([aria-hidden])').first().locator('.more').click()
     await expect(overlay.locator('.menu')).toBeVisible()
     await h.page.keyboard.press('Escape')
     await expect(overlay.locator('.menu')).toHaveCount(0)
