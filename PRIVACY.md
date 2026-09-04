@@ -49,7 +49,9 @@ RenewTube는 오픈소스 소프트웨어(MIT 라이선스)로 투명하게 공�
 👉 [https://github.com/jshsakura/renewtube](https://github.com/jshsakura/renewtube)
 
 ### 8. 문의처
-개인정보 처리방침에 관한 질문이나 의견이 있으신 경우, GitHub 저장소의 Issues 또는 Discussions를 통해 문의해 주시기 바랍니다.
+개인정보 처리방침에 관한 질문이나 의견이 있으신 경우:
+- 이메일: [support@opencourse.kr](mailto:support@opencourse.kr)
+- GitHub 저장소: [Issues 및 Discussions](https://github.com/jshsakura/renewtube/issues)
 
 ---
 
@@ -98,5 +100,6 @@ RenewTube is open-source software licensed under the MIT License. Anyone can ind
 👉 [https://github.com/jshsakura/renewtube](https://github.com/jshsakura/renewtube)
 
 ### 8. Contact
-If you have any questions or feedback regarding this policy, please submit an issue or discussion on our GitHub repository:  
-[https://github.com/jshsakura/renewtube](https://github.com/jshsakura/renewtube)
+If you have any questions or feedback regarding this policy:
+- Email: [support@opencourse.kr](mailto:support@opencourse.kr)
+- GitHub: [Issues & Discussions](https://github.com/jshsakura/renewtube/issues)
