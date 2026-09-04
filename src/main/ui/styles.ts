@@ -608,7 +608,18 @@ input { font: inherit; color: inherit; }
   object-fit: cover; border-radius: inherit;
   transition: opacity var(--ease);
 }
-.thumb.loading, .cover.loading { background: var(--muted); animation: sk 1.2s ease-in-out infinite; }
+/* A place for a picture has to look like one.
+   --muted is the same value as --card in both palettes, so artwork waiting on a
+   card was drawn in the card's own colour: no box, no edge, nothing to see —
+   reported as 경계가 안 보인다. It gets a tone of its own, mixed from the text
+   colour so it holds in either palette, and a hairline so the shape is legible
+   even where the mix is not supported. The same goes for the outline tiles, so
+   a skeleton card and a card whose picture has not landed look alike. */
+.thumb.loading, .cover.loading, .thumb.sk, .cover.sk {
+  background: color-mix(in oklab, var(--foreground) 8%, var(--card));
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.thumb.loading, .cover.loading { animation: sk 1.2s ease-in-out infinite; }
 .thumb.loading > img, .cover.loading > img { opacity: 0; }
 
 /* The running time, where every video player puts it. */

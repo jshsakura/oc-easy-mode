@@ -36,6 +36,7 @@ export const EN: Record<string, string> = {
   "재생 중인 항목 없음": "Nothing playing",
   "재생 / 일시정지": "Play / pause",
   "불러오는 중…": "Loading…",
+  "관심 없음으로 표시하고 건너뜁니다.": "Marked not interested and skipped.",
   "셔플을 켰습니다.": "Shuffle on.",
   "셔플을 껐습니다.": "Shuffle off.",
   "반복을 껐습니다.": "Repeat off.",

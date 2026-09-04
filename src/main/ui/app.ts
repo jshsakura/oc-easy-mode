@@ -697,6 +697,19 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         : next === 'dislike'
           ? api.dislike(ctx.cfg, track.videoId)
           : api.unlike(ctx.cfg, track.videoId)
+    // 관심 없음 is a decision about what to listen to, not a note for later.
+    // Pressing it takes the track out of the queue and moves on, which is what
+    // the word means when it is said about something that is playing: the
+    // engine loads whatever now stands at that index, so the next song starts
+    // by itself. Only on the way in — pressing a lit thumb clears the rating
+    // and must not skip anything.
+    if (next === 'dislike') {
+      const at = engine.state.index
+      if (at >= 0 && engine.state.queue[at]?.videoId === track.videoId) {
+        engine.removeAt(at)
+        toast(shell.overlay, t('관심 없음으로 표시하고 건너뜁니다.'))
+      }
+    }
     void done.catch((err: unknown) => {
       if (ratedOf === track.videoId) {
         rating = was
@@ -713,6 +726,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   downButton.addEventListener('click', (ev) => setRating(ev, 'dislike'))
 
   const ctl = h('div', { class: 'ctl' }, shuffleButton, prevButton, playButton, nextButton, repeatButton)
+  const rightRow = h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, speedButton, sleepButton, moreButton, muteButton, volume)
   const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy), rateBox)
   // The track itself is the handle: a phone opens the player by tapping what
   // is playing, which is what every music app has taught. It is a button on a
@@ -732,7 +746,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       h('div', { class: 'seek' }, elapsed, seek, total),
     ),
     lyricsPane,
-    h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, speedButton, sleepButton, moreButton, muteButton, volume),
+    rightRow,
   )
 
   function setSheet(open: boolean): void {
@@ -748,10 +762,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     // where a heart goes. Opened, `.now` becomes a column — artwork, title,
     // artist — and a third child in that stack is a heart floating on its own
     // in the middle of the screen with a band of nothing under it. Reported
-    // exactly that way. The one row of buttons the opened player shows is the
-    // transport, so that is where it belongs, at the left where nothing else
-    // is competing for the thumb.
-    if (open) ctl.prepend(rateBox)
+    // exactly that way.
+    //
+    // It joined the transport, which was right while the transport was the only
+    // row of buttons the opened player had. It is not any more: there is a row
+    // of actions under it now — 가사, 영상, 대기열, 속도, 수면, 음소거 — and an
+    // opinion about the track belongs among those rather than among play, skip
+    // and repeat, which had grown to seven round buttons on a 390px screen.
+    if (open) rightRow.prepend(rateBox)
     else now.append(rateBox)
     if (!open) {
       app.classList.remove('lyrics-open')

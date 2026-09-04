@@ -45,6 +45,9 @@ export class Engine {
   private loading: string | undefined
   /** When the current continuous wait began; undefined while not waiting. */
   private bufferingSince: number | undefined
+  /** YouTube's own volume and mute, as they were before we wrote ours over them. */
+  private pageVolume: number | undefined
+  private pageMuted: boolean | undefined
   /**
    * Whether this device lets script set the volume at all.
    *
@@ -83,6 +86,17 @@ export class Engine {
   attach(player: YtPlayer): void {
     if (this.player === player) return
     this.player = player
+    // What the page was set to before we touched it. We are about to write our
+    // own volume into YouTube's player, and it is YouTube's player: leaving
+    // without putting this back means the page carries our number afterwards,
+    // which is heard as the sound jumping the moment the app goes away.
+    try {
+      this.pageVolume = player.getVolume()
+      this.pageMuted = player.isMuted()
+    } catch {
+      this.pageVolume = undefined
+      this.pageMuted = undefined
+    }
     player.addEventListener('onStateChange', this.onStateChange)
     disableAutonav()
     setTimeout(disableAutonav, 2000)
@@ -97,6 +111,18 @@ export class Engine {
 
   detach(): void {
     if (this.player) this.player.removeEventListener('onStateChange', this.onStateChange)
+    // Handed back exactly as it was found, volume and mute both. Wrapped
+    // because a player being torn down is allowed to have stopped answering,
+    // and a throw here would take the rest of the exit with it.
+    try {
+      if (this.pageVolume !== undefined) this.player?.setVolume(this.pageVolume)
+      if (this.pageMuted === true) this.player?.mute()
+      else if (this.pageMuted === false) this.player?.unMute()
+    } catch {
+      // The page keeps whatever it has; nothing else here depends on this.
+    }
+    this.pageVolume = undefined
+    this.pageMuted = undefined
     this.boundVideo?.removeEventListener('ended', this.onElementEnded)
     this.boundVideo = null
     this.player = null

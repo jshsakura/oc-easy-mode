@@ -264,6 +264,23 @@ function skRows(n: number): HTMLElement {
   return h('div', { class: 'rows' }, Array.from({ length: n }, () => skRow()))
 }
 
+/** The two buttons every feed and playlist screen carries above its list. */
+function skToolbar(): HTMLElement {
+  return h(
+    'div',
+    { class: 'toolbar', 'aria-hidden': 'true' },
+    h('div', { class: 'sk', style: 'height: 36px; width: 104px' }),
+    h('div', { class: 'sk', style: 'height: 36px; width: 124px' }),
+  )
+}
+
+/** A feed, in whichever of the two shapes the mode is asking for. */
+function skFeed(ctx: Ctx): HTMLElement {
+  return ctx.engine.state.mode === 'video'
+    ? h('div', { class: 'grid' }, Array.from({ length: 6 }, () => skTile()))
+    : skRows(6)
+}
+
 function tile(opts: {
   cover?: string
   title: string
@@ -455,7 +472,15 @@ async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void>
 
 async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.FeedId): Promise<void> {
   const token = generation
-  replace(main, h('h2', null, title), skShelf(), skShelf())
+  // The shape this screen actually lands in, which is not the shape it used to.
+  //
+  // A feed leads with its own items now — the flat grid that is your
+  // subscriptions — and keeps YouTube's injected shelves underneath. The
+  // skeleton was still promising two horizontal shelves, so the screen changed
+  // shape when the data arrived instead of filling in, which is the one thing
+  // these outlines exist to prevent. The toolbar is drawn too: it is what
+  // pushes everything below it down.
+  replace(main, h('h2', null, title), skToolbar(), skFeed(ctx))
   try {
     const page = await api.feed(ctx.cfg, id)
     if (!current(token)) return
