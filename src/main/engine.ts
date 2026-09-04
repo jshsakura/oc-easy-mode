@@ -350,6 +350,7 @@ export class Engine {
     this.audio.follow(this.videoEl())
     this.probeVolume()
     if (this.holding && this.sounding()) this.putDown()
+    if (this.sounding()) this.syncMute()
     const s = p.getPlayerState()
     // A load is pending until the player is actually underway on the track we
     // asked for; `loading` is dropped the moment it is, so it means "this load
@@ -526,6 +527,24 @@ export class Engine {
     if (!p) return
     p.setVolume(this.state.volume)
     if (this.state.volume > 0 && p.isMuted()) p.unMute()
+    this.syncMute()
+  }
+
+  /**
+   * The element's mute follows ours.
+   *
+   * On an iPhone the page's own autoplay is allowed only muted, and it mutes
+   * the *element* while the player's API goes on answering "not muted". So
+   * the bar said playing, the mute glyph said sound, and nothing came out
+   * (2026-09-04, "재생중이라고 나오는데 소리가 안 나는"). Set on every press
+   * that starts sound and on every tick, since a press is where the platform
+   * lets script change it and a tick is where a later mute would be noticed.
+   */
+  private syncMute(): void {
+    const el = this.videoEl()
+    if (!el) return
+    const want = this.state.volume === 0 || this.player?.isMuted() === true
+    if (el.muted !== want) el.muted = want
   }
 
   // ── Speed ─────────────────────────────────────────────────────────────────
@@ -725,6 +744,7 @@ export class Engine {
       this.wantPaused = false
       this.unlockPlayback()
       p.playVideo()
+      this.syncMute()
     }
   }
 
