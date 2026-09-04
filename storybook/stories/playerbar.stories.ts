@@ -1,13 +1,17 @@
-// The player bar in all its layouts — one set of controls, arranged by CSS.
-// Desktop .bar with a filled seek (style="--p: 42%") and .vid.on in .right;
-// the phone's compact bar with the seek along the bottom edge; the opened
-// full player; and the words pane. Markup mirrors app.ts's bar assembly.
+// The player bar in all its layouts: the desktop bar, the phone's compact bar,
+// the opened full player, and the words pane.
+//
+// **Every one of these is the product's bar.** The story builds an engine,
+// says what is true of its player, and mounts the real app; drawBar and
+// drawTick do the rest. The bar used to be rebuilt here from a copy in
+// shellbits.ts, and on 2026-09-04 that copy was found to be missing the heart,
+// which meant the design was being judged against a bar the product does not
+// ship. Nothing is rebuilt now.
 import type { Meta, StoryObj } from '@storybook/html'
 import { t } from '../../src/shared/i18n.ts'
-import { render } from '../../src/main/ui/views.ts'
-import { fillBar, fillSide, fillTop, type BarOptions } from '../lib/shellbits.ts'
+import type { Repeat, VideoLayout } from '../../src/main/store.ts'
 import { frame } from '../lib/frame.ts'
-import { makeCtx, makeTrack, makeTracks, StubEngine } from '../lib/stub.ts'
+import { makeTrack, makeTracks, SAMPLE_PLAYLISTS, StubEngine } from '../lib/stub.ts'
 
 const meta = {
   title: 'PlayerBar',
@@ -28,25 +32,56 @@ interface BarArgs {
   hasStage: boolean
 }
 
-const LYRICS = [
-  '가로등 아래서 너를 처음 봤지',
-  '그날 밤바람은 아직도 기억나',
-  '한강이 보이는 이 길에서',
-  '우리 다시 만날 수 있을까',
-  '밤은 길고 노래는 끝나가는데',
-  '다시 겨울이 오면',
-]
+const DURATION = 224
 
-/** A believable screen behind the bar: the queue view, drawn by the real render(). */
-function fillScreen(f: ReturnType<typeof frame>, index = 3): void {
-  const tracks = makeTracks(8)
-  const ctx = makeCtx({ engine: new StubEngine({ queue: tracks, index }) })
-  ctx.reload = () => {
-    void render(ctx, f.main)
+interface Scene {
+  args: BarArgs
+  /** The track under the needle. The rest of the queue is filler behind it. */
+  track?: ReturnType<typeof makeTrack>
+  video?: VideoLayout
+  repeat?: Repeat
+  queue?: number
+  /** Opens the words the way a person does, by pressing the button. */
+  lyrics?: boolean
+}
+
+/**
+ * One posed screen, drawn by the product.
+ *
+ * The engine carries what is remembered (volume, shuffle, repeat, where the
+ * picture goes) and the pose carries what the player is doing. Neither writes
+ * `position`: the shipped tick() works that out, which is the only reason the
+ * bar here can be taken as evidence about the bar there.
+ */
+function scene(s: Scene): HTMLElement {
+  const f = frame()
+  const filler = makeTracks(Math.max(1, s.queue ?? 8))
+  const index = Math.min(3, filler.length - 1)
+  if (s.track) filler[index] = s.track
+  const engine = new StubEngine({
+    queue: filler,
+    index,
+    volume: s.args.volume,
+    shuffle: s.args.shuffle,
+    repeat: s.repeat ?? 'off',
+    video: s.video ?? 'corner',
+  })
+  engine.pose({
+    duration: DURATION,
+    at: s.args.ratio * DURATION,
+    playing: s.args.playing,
+    buffering: s.args.buffering,
+    ...(s.args.stalled ? { stalled: true } : {}),
+  })
+  f.mount({ engine, view: { kind: 'queue' }, playlists: SAMPLE_PLAYLISTS })
+
+  if (s.lyrics) {
+    // Pressed rather than posed. The pane's contents come from the product's
+    // own lyrics pipeline, which the workbench answers for in net.ts, so what
+    // shows up is a real LRC parsed by the real parser.
+    f.bar.querySelector<HTMLElement>(`button[title="${t('가사')}"]`)?.click()
   }
-  fillSide(f.side, { active: 'queue', dark: !f.app.classList.contains('light') })
-  fillTop(f.top, t('대기열'))
-  void render(ctx, f.main)
+  return f.main
 }
 
 const ARGS: BarArgs = {
@@ -61,108 +96,51 @@ const ARGS: BarArgs = {
   hasStage: false,
 }
 
-const FULLSCREEN = {
-  layout: 'fullscreen',
-  frame: { mode: 'fullscreen' },
-  viewport: { defaultViewport: 'pc' },
-} as const
+const PC = { layout: 'fullscreen', frame: { mode: 'fullscreen' }, viewport: { defaultViewport: 'pc' } } as const
+const PHONE = { layout: 'fullscreen', frame: { mode: 'fullscreen' }, viewport: { defaultViewport: 'phone' } } as const
 
 const desktop: StoryObj<BarArgs> = {
   name: 'PC — 탐색 막대 찬 채로',
   args: { ...ARGS },
-  parameters: FULLSCREEN,
-  render: (args) => {
-    const f = frame()
-    fillScreen(f)
-    const track = makeTrack({ title: '여름의 끝에서', byline: '파도 소리' })
-    fillBar(f.bar, {
-      current: track,
-      playing: args.playing,
-      buffering: args.buffering,
-      ratio: args.ratio,
-      volume: args.volume,
-      shuffle: args.shuffle,
-      repeat: 'all',
-      video: 'corner',
-    })
-    return f.main
-  },
+  parameters: PC,
+  render: (args) =>
+    scene({ args, track: makeTrack({ title: '여름의 끝에서', byline: '파도 소리' }), repeat: 'all', video: 'corner' }),
 }
 
 const desktopPaused: StoryObj<BarArgs> = {
   name: 'PC — 멈춤 · 음소거 · 화면 끔',
   args: { ...ARGS, playing: false, volume: 0 },
-  parameters: FULLSCREEN,
-  render: (args) => {
-    const f = frame()
-    fillScreen(f)
-    fillBar(f.bar, {
-      playing: args.playing,
-      ratio: args.ratio,
-      volume: args.volume,
-      video: 'hidden',
-      repeat: 'off',
-    })
-    return f.main
-  },
+  parameters: PC,
+  render: (args) => scene({ args, video: 'hidden', repeat: 'off' }),
 }
 
 const buffering: StoryObj<BarArgs> = {
   name: 'PC — 가져오는 중 (일시정지 모양)',
-  args: { ...ARGS, buffering: true },
-  parameters: FULLSCREEN,
-  render: (args) => {
-    const f = frame()
-    fillScreen(f)
-    fillBar(f.bar, { current: makeTrack(), buffering: args.buffering, ratio: 0.1, volume: args.volume, video: 'hidden' })
-    return f.main
-  },
+  args: { ...ARGS, buffering: true, ratio: 0.1 },
+  parameters: PC,
+  render: (args) => scene({ args, video: 'hidden' }),
 }
 
 const stalled: StoryObj<BarArgs> = {
   name: 'PC — 오래 걸림 (정지)',
-  args: { ...ARGS, buffering: true, stalled: true },
-  parameters: FULLSCREEN,
-  render: (args) => {
-    const f = frame()
-    fillScreen(f)
-    fillBar(f.bar, { current: makeTrack(), buffering: args.buffering, stalled: args.stalled, ratio: 0.1, volume: args.volume, video: 'hidden' })
-    return f.main
-  },
+  args: { ...ARGS, buffering: true, stalled: true, ratio: 0.1 },
+  parameters: PC,
+  render: (args) => scene({ args, video: 'hidden' }),
 }
 
 const light: StoryObj<BarArgs> = {
   name: '밝은 테마',
   args: { ...ARGS },
-  parameters: { ...FULLSCREEN, frame: { mode: 'fullscreen', light: true } },
-  render: (args) => {
-    const f = frame()
-    fillScreen(f)
-    fillBar(f.bar, { current: makeTrack(), playing: args.playing, ratio: args.ratio, volume: args.volume, video: 'corner' })
-    return f.main
-  },
+  parameters: { ...PC, frame: { mode: 'fullscreen', light: true } },
+  render: (args) => scene({ args, video: 'corner' }),
 }
 
 const phone: StoryObj<BarArgs> = {
   name: '폰 — 컴팩트 바',
   args: { ...ARGS, ratio: 0.68 },
-  parameters: {
-    layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true },
-    viewport: { defaultViewport: 'phone' },
-  },
-  render: (args) => {
-    const f = frame()
-    fillScreen(f, 5)
-    fillBar(f.bar, {
-      current: makeTrack({ title: '밤은 길고', byline: '달빛 피아노' }),
-      playing: args.playing,
-      ratio: args.ratio,
-      volume: args.volume,
-      video: 'hidden',
-    })
-    return f.main
-  },
+  parameters: PHONE,
+  render: (args) =>
+    scene({ args, track: makeTrack({ title: '밤은 길고', byline: '달빛 피아노' }), video: 'hidden', queue: 5 }),
 }
 
 const phoneLandscape: StoryObj<BarArgs> = {
@@ -170,85 +148,40 @@ const phoneLandscape: StoryObj<BarArgs> = {
   args: { ...ARGS, ratio: 0.3 },
   parameters: {
     layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true },
+    frame: { mode: 'fullscreen' },
     viewport: { defaultViewport: 'phoneLandscape' },
   },
-  render: (args) => {
-    const f = frame()
-    fillScreen(f, 5)
-    fillBar(f.bar, { current: makeTrack(), playing: args.playing, ratio: args.ratio, volume: args.volume, video: 'stage' })
-    return f.main
-  },
+  render: (args) => scene({ args, video: 'stage', queue: 5 }),
 }
 
 const sheet: StoryObj<BarArgs> = {
   name: '풀 플레이어 — sheet-open',
-  args: { ...ARGS, sheetOpen: true, ratio: 0.55 },
-  parameters: {
-    layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true },
-    viewport: { defaultViewport: 'phone' },
-  },
-  render: (args) => {
-    const f = frame()
-    fillScreen(f, 5)
-    fillBar(f.bar, {
-      current: makeTrack({ title: '별 헤는 밤', byline: '은하수' }),
-      playing: args.playing,
-      ratio: args.ratio,
-      volume: args.volume,
-      shuffle: true,
-      repeat: 'one',
-      video: 'hidden',
-    })
-    return f.main
-  },
+  args: { ...ARGS, sheetOpen: true, ratio: 0.55, shuffle: true },
+  parameters: PHONE,
+  render: (args) =>
+    scene({ args, track: makeTrack({ title: '별 헤는 밤', byline: '은하수' }), repeat: 'one', video: 'hidden', queue: 5 }),
 }
 
 const sheetLyrics: StoryObj<BarArgs> = {
   name: '풀 플레이어 — 가사 열림',
   args: { ...ARGS, sheetOpen: true, lyricsOpen: true, ratio: 0.55 },
-  parameters: {
-    layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true },
-    viewport: { defaultViewport: 'phone' },
-  },
-  render: (args) => {
-    const f = frame()
-    fillScreen(f, 5)
-    fillBar(f.bar, {
-      current: makeTrack({ title: '별 헤는 밤', byline: '은하수' }),
-      playing: args.playing,
-      ratio: args.ratio,
-      volume: args.volume,
-      lyrics: LYRICS,
-      lyricsOpen: args.lyricsOpen,
+  parameters: PHONE,
+  render: (args) =>
+    scene({
+      args,
+      track: makeTrack({ title: '별 헤는 밤', byline: '은하수' }),
       video: 'hidden',
-    })
-    return f.main
-  },
+      queue: 5,
+      lyrics: true,
+    }),
 }
 
 const sheetStage: StoryObj<BarArgs> = {
   name: '풀 플레이어 — 영상 아래 (has-stage)',
   args: { ...ARGS, sheetOpen: true, hasStage: true, ratio: 0.55 },
-  parameters: {
-    layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true },
-    viewport: { defaultViewport: 'phone' },
-  },
-  render: (args) => {
-    const f = frame()
-    fillScreen(f, 5)
-    fillBar(f.bar, {
-      current: makeTrack({ title: '별 헤는 밤', byline: '은하수' }),
-      playing: args.playing,
-      ratio: args.ratio,
-      volume: args.volume,
-      video: 'stage',
-    })
-    return f.main
-  },
+  parameters: PHONE,
+  render: (args) =>
+    scene({ args, track: makeTrack({ title: '별 헤는 밤', byline: '은하수' }), video: 'stage', queue: 5 }),
 }
 
 export const Desktop = desktop

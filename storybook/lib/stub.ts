@@ -39,7 +39,27 @@ export interface Pose {
   loading?: boolean
   /** The element reached the end. The queue advances on the next tick. */
   ended?: boolean
+  /**
+   * A wait that has already outlasted the transport's patience.
+   *
+   * The product measures this itself: it remembers when a wait began and calls
+   * it a stall six seconds later. A story cannot sit for six seconds, and the
+   * clock it measures against is the engine's own private field, so this
+   * back-dates the start rather than working the rule out a second time. The
+   * result is checked on the way out, so if that field is ever renamed the
+   * story fails loudly instead of quietly showing the wrong glyph.
+   */
+  stalled?: boolean
 }
+
+/**
+ * How far back a posed stall is dated.
+ *
+ * Only has to be longer than the product's own threshold, which is why no
+ * exact number is copied from it: the assertion in pose() is what keeps the
+ * two in step, not this constant.
+ */
+const STALL_BACKDATE_MS = 30_000
 
 /**
  * The player the workbench poses, and the video underneath it.
@@ -246,11 +266,20 @@ export class StubEngine extends Engine {
    * simply does not ask for it.
    */
   pose(pose: Pose): this {
-    this.posed.set(pose)
+    this.posed.set(pose.stalled === undefined ? pose : { ...pose, buffering: pose.buffering ?? pose.stalled })
+    if (pose.stalled !== undefined) {
+      // tick() keeps a start it already has (`bufferingSince ?? Date.now()`),
+      // so a back-dated one survives and the stall reads as long over.
+      const clock = this as unknown as { bufferingSince: number | undefined }
+      clock.bufferingSince = pose.stalled ? Date.now() - STALL_BACKDATE_MS : undefined
+    }
     // seek() is the product's own "and look again": it moves the player and
     // ticks. Posing a position is a seek, so this needs no way into the
     // private clock.
     this.seek(this.posed.at)
+    if (pose.stalled !== undefined && this.position.stalled !== pose.stalled) {
+      throw new Error('pose({ stalled }) no longer reaches the engine, so the workbench would show the wrong glyph')
+    }
     return this
   }
 

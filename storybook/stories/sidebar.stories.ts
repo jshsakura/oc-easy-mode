@@ -1,12 +1,13 @@
 // The navigation column: desktop .side with its two groups, the playlists
 // under their heading, the theme line and the exit line; and the same column
 // as a phone drawer, out over its scrim.
+//
+// Drawn by the product. The column, the screen behind it and the bar below it
+// all come from one mountApp, so what the sidebar is judged against is the
+// real thing beside it rather than a picture of it.
 import type { Meta, StoryObj } from '@storybook/html'
-import { t } from '../../src/shared/i18n.ts'
-import { render } from '../../src/main/ui/views.ts'
-import { fillBar, fillSide, fillTop } from '../lib/shellbits.ts'
 import { frame } from '../lib/frame.ts'
-import { makeCtx, makeTrack, makeTracks, SAMPLE_PLAYLISTS, StubEngine } from '../lib/stub.ts'
+import { makeTracks, SAMPLE_PLAYLISTS, StubEngine } from '../lib/stub.ts'
 
 const meta = {
   title: 'Sidebar',
@@ -19,14 +20,14 @@ interface SideArgs {
   drawerOpen: boolean
 }
 
-/** The queue screen behind the column, so the sidebar is judged in context. */
-function fillScreen(f: ReturnType<typeof frame>): void {
-  const ctx = makeCtx({ engine: new StubEngine({ queue: makeTracks(8), index: 3 }) })
-  ctx.reload = () => {
-    void render(ctx, f.main)
-  }
-  fillTop(f.top, t('대기열'))
-  void render(ctx, f.main)
+/** The whole screen, so the sidebar is judged in context. */
+function screen(video: 'corner' | 'hidden', ratio: number): HTMLElement {
+  const f = frame()
+  const engine = new StubEngine({ queue: makeTracks(8), index: 3, volume: 70, video })
+  const duration = 224
+  engine.pose({ duration, at: ratio * duration, playing: true })
+  f.mount({ engine, view: { kind: 'queue' }, playlists: SAMPLE_PLAYLISTS })
+  return f.main
 }
 
 const desktop: StoryObj<SideArgs> = {
@@ -37,13 +38,7 @@ const desktop: StoryObj<SideArgs> = {
     frame: { mode: 'fullscreen' },
     viewport: { defaultViewport: 'pc' },
   },
-  render: () => {
-    const f = frame()
-    fillSide(f.side, { active: 'queue', playlists: SAMPLE_PLAYLISTS, dark: true })
-    fillScreen(f)
-    fillBar(f.bar, { current: makeTrack(), playing: true, ratio: 0.42, volume: 70, video: 'corner' })
-    return f.main
-  },
+  render: () => screen('corner', 0.42),
 }
 
 const light: StoryObj<SideArgs> = {
@@ -54,13 +49,7 @@ const light: StoryObj<SideArgs> = {
     frame: { mode: 'fullscreen', light: true },
     viewport: { defaultViewport: 'pc' },
   },
-  render: () => {
-    const f = frame()
-    fillSide(f.side, { active: 'queue', playlists: SAMPLE_PLAYLISTS, dark: false })
-    fillScreen(f)
-    fillBar(f.bar, { current: makeTrack(), playing: true, ratio: 0.42, volume: 70, video: 'corner' })
-    return f.main
-  },
+  render: () => screen('corner', 0.42),
 }
 
 const drawer: StoryObj<SideArgs> = {
@@ -68,16 +57,10 @@ const drawer: StoryObj<SideArgs> = {
   args: { drawerOpen: true },
   parameters: {
     layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true },
+    frame: { mode: 'fullscreen' },
     viewport: { defaultViewport: 'phone' },
   },
-  render: () => {
-    const f = frame()
-    fillSide(f.side, { active: 'queue', playlists: SAMPLE_PLAYLISTS, dark: true })
-    fillScreen(f)
-    fillBar(f.bar, { current: makeTrack(), playing: true, ratio: 0.68, volume: 70, video: 'hidden' })
-    return f.main
-  },
+  render: () => screen('hidden', 0.68),
 }
 
 const drawerLight: StoryObj<SideArgs> = {
@@ -85,16 +68,10 @@ const drawerLight: StoryObj<SideArgs> = {
   args: { drawerOpen: true },
   parameters: {
     layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true, light: true },
+    frame: { mode: 'fullscreen', light: true },
     viewport: { defaultViewport: 'phone' },
   },
-  render: () => {
-    const f = frame()
-    fillSide(f.side, { active: 'queue', playlists: SAMPLE_PLAYLISTS, dark: false })
-    fillScreen(f)
-    fillBar(f.bar, { current: makeTrack(), playing: true, ratio: 0.68, volume: 70, video: 'hidden' })
-    return f.main
-  },
+  render: () => screen('hidden', 0.68),
 }
 
 export const Desktop = desktop

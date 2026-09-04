@@ -1,16 +1,15 @@
-// The queue screen, drawn by the real render() with the stub ctx's view set
-// to { kind: 'queue' } — queue() itself is not exported, and that is the
-// product's own way in. Eight tracks with the fourth playing, so both
-// headings (지금 재생 중 / 다음 재생) show. Interactive: jumping with a row and
-// removing through the ⋯ menu mutate the stub and re-render, like app.ts's
-// subscription does.
+// The queue screen, drawn by the product itself.
+//
+// The story builds an engine, poses its player and hands both to
+// frame().mount(), which runs the real mountApp. Everything visible after
+// that — the sidebar, the header, the bar, the rows and which row is marked
+// as playing — is the shipped code reading the shipped state. Interactive:
+// jumping with a row and removing through the ⋯ menu go through the real
+// transport, and the screen follows because app.ts subscribes to the engine.
 import type { Meta, StoryObj } from '@storybook/html'
-import { t } from '../../src/shared/i18n.ts'
 import type { Track } from '../../src/main/parse.ts'
-import { render } from '../../src/main/ui/views.ts'
-import { fillBar, fillSide, fillTop } from '../lib/shellbits.ts'
 import { frame } from '../lib/frame.ts'
-import { makeCtx, makeTracks, StubEngine } from '../lib/stub.ts'
+import { makeTracks, SAMPLE_PLAYLISTS, StubEngine } from '../lib/stub.ts'
 
 const meta = {
   title: 'Queue',
@@ -23,45 +22,48 @@ interface QueueArgs {
   index: number
 }
 
-function play(args: QueueArgs): HTMLElement {
-  const f = frame()
-  const engine = new StubEngine({ queue: tracksFor(args), index: args.index })
-  const ctx = makeCtx({ engine })
-  const draw = () => {
-    void render(ctx, f.main)
-  }
-  ctx.reload = draw
-  engine.subscribe(draw)
-  fillSide(f.side, { active: 'queue', dark: !f.app.classList.contains('light') })
-  fillTop(f.top, t('대기열'))
-  fillBar(f.bar, { current: engine.current, playing: true, ratio: 0.42, volume: 70, video: 'hidden' })
-  draw()
-  return f.main
-}
-
 function tracksFor(args: QueueArgs): Track[] {
   return makeTracks(Math.max(0, args.count))
 }
 
+function play(args: QueueArgs): HTMLElement {
+  const f = frame()
+  const engine = new StubEngine({
+    queue: tracksFor(args),
+    index: args.index,
+    volume: 70,
+    video: 'hidden',
+  })
+  // A track a third of the way through, playing. The bar reads this off the
+  // player through the product's own drawTick, so the elapsed time, the fill
+  // and the pause glyph all come from one posed fact.
+  //
+  // Nothing is posed for an empty queue: a player that is 1:34 into a track
+  // the queue does not have is not a state the product can be in, and the bar
+  // would show a length for a song nobody is playing.
+  if (args.index >= 0) engine.pose({ duration: 224, at: 94, playing: true })
+  f.mount({ engine, view: { kind: 'queue' }, playlists: SAMPLE_PLAYLISTS })
+  return f.main
+}
+
+const FULLSCREEN = { layout: 'fullscreen', frame: { mode: 'fullscreen' } } as const
+const ARGS: QueueArgs = { count: 8, index: 3 }
+
 const filled: StoryObj<QueueArgs> = {
   name: 'PC — 8곡, 4번째 재생 중',
-  args: { count: 8, index: 3 },
-  parameters: {
-    layout: 'fullscreen',
-    frame: { mode: 'fullscreen' },
-    viewport: { defaultViewport: 'pc' },
-  },
+  args: { ...ARGS },
+  parameters: { ...FULLSCREEN, viewport: { defaultViewport: 'pc' } },
   render: play,
 }
 
 const tablet: StoryObj<QueueArgs> = {
   name: '태블릿 — 서랍 배치',
-  args: { count: 8, index: 3 },
+  args: { ...ARGS },
   parameters: {
-    layout: 'fullscreen',
-    // 834 < NARROW_MAX(900): on a real tablet device.ts stamps the narrow
-    // class, so the tablet story forces it too.
-    frame: { mode: 'fullscreen', narrow: true },
+    ...FULLSCREEN,
+    // 834 is under NARROW_MAX(900), so narrowNow() calls this narrow on its
+    // own. The story no longer forces the class: if the product would not
+    // have gone narrow here, the workbench must not pretend it did.
     viewport: { defaultViewport: 'tablet' },
   },
   render: play,
@@ -69,18 +71,14 @@ const tablet: StoryObj<QueueArgs> = {
 
 const phone: StoryObj<QueueArgs> = {
   name: '폰 — 컴팩트 바',
-  args: { count: 8, index: 3 },
-  parameters: {
-    layout: 'fullscreen',
-    frame: { mode: 'fullscreen', narrow: true },
-    viewport: { defaultViewport: 'phone' },
-  },
+  args: { ...ARGS },
+  parameters: { ...FULLSCREEN, viewport: { defaultViewport: 'phone' } },
   render: play,
 }
 
 const light: StoryObj<QueueArgs> = {
   name: '밝은 테마',
-  args: { count: 8, index: 3 },
+  args: { ...ARGS },
   parameters: {
     layout: 'fullscreen',
     frame: { mode: 'fullscreen', light: true },
@@ -92,11 +90,7 @@ const light: StoryObj<QueueArgs> = {
 const empty: StoryObj<QueueArgs> = {
   name: '빈 대기열',
   args: { count: 0, index: -1 },
-  parameters: {
-    layout: 'fullscreen',
-    frame: { mode: 'fullscreen' },
-    viewport: { defaultViewport: 'pc' },
-  },
+  parameters: { ...FULLSCREEN, viewport: { defaultViewport: 'pc' } },
   render: play,
 }
 
