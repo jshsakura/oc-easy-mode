@@ -112,12 +112,14 @@ export const STYLES = `
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
   /* One number decides every corner in the product, and the scale is derived
-     from it the way shadcn derives theirs. The value is 0 on purpose — 직각,
-     right angles all the way down, the look of a program rather than a page —
-     but it is now *one* place to change rather than two, and the scale means a
-     future radius keeps its proportions across sizes instead of being typed
-     out again per component. */
-  --radius: 0px;
+     from it the way shadcn derives theirs.
+     It was 0 for a while — 직각, the look of a program rather than a page — and
+     rendered, the room read as harder than the thing is. This is a player for
+     listening in, not a console. Ten is the radius that reads as *soft* at the
+     sizes we use without becoming a pill: a 32px button keeps a visible flat
+     edge, and a 56px cover still looks like a cover. Every other corner in the
+     product follows from this line. */
+  --radius: 10px;
   --radius-sm: calc(var(--radius) * .6);
   --radius-md: calc(var(--radius) * .8);
   --radius-lg: var(--radius);
@@ -227,7 +229,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 button:disabled { opacity: .5; pointer-events: none; }
 input { font: inherit; color: inherit; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 0; border: 3px solid var(--background); }
+::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 999px; border: 3px solid var(--background); }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 
 /* Pressed, not passed over: the background appears for the instant of the
@@ -398,7 +400,7 @@ input { font: inherit; color: inherit; }
 /* The playing mark. Sized to read as motion, not texture — at 3px it vanished
    into the row and the animation was there but invisible. */
 .eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
-.eq i { width: 4px; border-radius: 0; background: var(--foreground); animation: eq .9s ease-in-out infinite; }
+.eq i { width: 4px; border-radius: 999px; background: var(--foreground); animation: eq .9s ease-in-out infinite; }
 .eq i:nth-child(1) { height: 40%; animation-delay: -.2s; }
 .eq i:nth-child(2) { height: 100%; animation-delay: -.5s; }
 .eq i:nth-child(3) { height: 65%; }
@@ -451,7 +453,7 @@ input { font: inherit; color: inherit; }
 }
 .card:active, .tile:active, .card:focus-visible, .tile:focus-visible { background: var(--secondary-hover); }
 .card .cover, .tile .cover {
-  position: relative; aspect-ratio: 1; border-radius: 0;
+  position: relative; aspect-ratio: 1; border-radius: var(--radius-md);
   background: var(--secondary) center/cover;
   display: flex; align-items: center; justify-content: center; color: var(--muted-foreground);
 }
@@ -631,19 +633,19 @@ input[type=range] {
   height: 16px; margin: 0; background: transparent; outline: 0; cursor: pointer;
 }
 input[type=range]::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 0;
+  height: 4px; border-radius: 999px;
   background: linear-gradient(to right, var(--foreground) var(--p, 0%), var(--secondary) var(--p, 0%));
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none; margin-top: -4px;
-  width: 12px; height: 12px; border-radius: 0; background: var(--foreground);
+  width: 12px; height: 12px; border-radius: 999px; background: var(--foreground);
 }
 input[type=range]::-moz-range-track {
-  height: 4px; border-radius: 0;
+  height: 4px; border-radius: 999px;
   background: linear-gradient(to right, var(--foreground) var(--p, 0%), var(--secondary) var(--p, 0%));
 }
 input[type=range]::-moz-range-thumb {
-  width: 12px; height: 12px; border: 0; border-radius: 0; background: var(--foreground);
+  width: 12px; height: 12px; border: 0; border-radius: 999px; background: var(--foreground);
 }
 
 /* ── The words ───────────────────────────────────────────────────────────── */
@@ -690,6 +692,14 @@ input[type=range]::-moz-range-thumb {
 .menu.sheetMenu {
   left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
   top: auto; min-width: 0; padding: 8px; border-radius: var(--radius-lg);
+  /* Never more than half the screen, and scrolls if the list is longer. A
+     sheet that grows with its contents eventually stops being a menu over the
+     page and becomes the page. */
+  max-height: 50dvh; overflow-y: auto; overscroll-behavior: contain;
+  /* The dimming, without a second element to manage. A menu with nothing
+     behind it reads as the screen having changed rather than as something
+     opening on top of it — which is exactly how it was read. */
+  box-shadow: var(--shadow), 0 0 0 100vmax oklch(0 0 0 / 45%);
 }
 .menu.sheetMenu button { padding: 13px 14px; font-size: 15px; }
 /* A thumb aims at the sheet, so the glyph gives it something to aim at. */
@@ -996,8 +1006,26 @@ input[type=range]::-moz-range-thumb {
    Still width queries: these are about how much room a row of cards has, and
    nothing here depends on knowing what kind of screen it is. */
 @media (max-width: 860px) {
-  .row { grid-template-columns: 44px 1fr 32px; gap: 12px; padding: 8px 4px; }
+  /* Four visible children on a phone — artwork, text, the one-press action,
+     the menu — so four tracks. Declaring three left the menu with no column of
+     its own and the grid gave it an implicit row: the ⋯ dropped onto a line of
+     its own under the title. */
+  .row { grid-template-columns: 44px 1fr 32px 32px; gap: 10px; padding: 8px 4px; }
   .row .idx, .row .dur { display: none; }
+  /* The bars come back, over the artwork.
+     The number column is dropped on a phone and the bars lived inside it, so
+     the one thing that says "this row is the one playing" vanished on the only
+     screen where the row number was already gone. Putting the cell back would
+     indent the playing row past its neighbours; over the thumbnail is where
+     every music app puts this, and it costs the grid nothing. */
+  .row { position: relative; }
+  .row.now .idx {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; z-index: 1;
+    background: oklch(0 0 0 / 45%); border-radius: var(--radius-md);
+  }
+  .row.now .eq i { background: #fff; }
   .row .thumb { width: 44px; height: 44px; }
   .shelf { margin-bottom: 26px; }
   .shelf h3 { font-size: 15px; margin-bottom: 10px; }

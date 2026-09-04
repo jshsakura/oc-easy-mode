@@ -103,6 +103,7 @@ function layout(
 ): void {
   const asGrid = ctx.engine.state.mode === 'video'
   into.className = asGrid ? 'grid' : 'rows'
+  followNowPlaying(ctx, into)
   replace(
     into,
     asGrid
@@ -120,6 +121,48 @@ function layout(
           }),
         ),
   )
+}
+
+/** Containers already watching the queue, so a redraw does not stack listeners. */
+const following = new WeakSet<HTMLElement>()
+
+/**
+ * Keeps the playing mark on the row that is actually playing.
+ *
+ * It used to be decided once, while the list was being built, and never again:
+ * press a second track and the bar changed while the list went on pointing at
+ * the first. On a search for one artist — where every row is a plausible
+ * answer — that is the screen telling you it is playing something it is not.
+ *
+ * Repainted rather than redrawn, because a list is a place someone is reading
+ * and scrolling; rebuilding it under them to move three bars would be a
+ * heavier answer than the question deserves.
+ */
+function followNowPlaying(ctx: Ctx, into: HTMLElement): void {
+  if (following.has(into)) return
+  following.add(into)
+  let marked: string | undefined | null = null
+  const paint = (): void => {
+    const id = ctx.engine.current?.videoId
+    if (id === marked) return
+    marked = id
+    let n = 0
+    for (const el of Array.from(into.children)) {
+      if (!el.classList.contains('row')) continue
+      n += 1
+      const rowEl = el as HTMLElement
+      const playing = rowEl.dataset.id !== undefined && rowEl.dataset.id === id
+      rowEl.classList.toggle('now', playing)
+      const idx = rowEl.querySelector<HTMLElement>('.idx')
+      // The number gives way to the bars, and comes back when it is over.
+      if (idx) replace(idx, playing ? h('span', { class: 'eq' }, h('i'), h('i'), h('i')) : String(n))
+    }
+  }
+  paint()
+  const off = ctx.engine.subscribe(() => {
+    if (!into.isConnected) return off()
+    paint()
+  })
 }
 
 /**

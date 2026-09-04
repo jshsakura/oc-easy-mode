@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Easy Mode",
-  "version": "0.7.6",
-  "description": "유튜브 화면을 내 UI로 바꿉니다. 음악과 영상을 함께 다루고, 언제든 원래 화면으로 돌아갑니다.",
+  "name": "RenewTube",
+  "version": "0.8.0",
+  "author": "OpenCourse",
+  "description": "유튜브 화면을 심플하고 쉬운 재생기로 바꿉니다. 음악과 영상을 한자리에서 다루며, 언제든 원래 화면으로 돌아갑니다.",
   "minimum_chrome_version": "120",
   "icons": {
     "16": "icons/icon16.png",
@@ -46,7 +47,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Easy Mode"
+    "default_title": "RenewTube"
   },
   "web_accessible_resources": [
     {

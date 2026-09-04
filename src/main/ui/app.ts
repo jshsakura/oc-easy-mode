@@ -222,7 +222,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         'div',
         { class: 'brand' },
         mark(20),
-        h('span', null, 'Easy Mode'),
+        h('span', null, 'RenewTube'),
         h('div', { class: 'spacer' }),
         // Only ever visible in the drawer. Reaching the scrim means reaching
         // across the screen, and a drawer with no close button reads as stuck.
@@ -274,7 +274,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         'button',
         { class: 'nav exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
         icon('leave', 18),
-        h('span', null, t('이지 모드 종료')),
+        h('span', null, t('RenewTube 종료')),
       ),
     )
   }

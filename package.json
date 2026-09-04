@@ -1,10 +1,11 @@
 {
-  "name": "이지모드",
+  "name": "renewtube",
   "private": true,
-  "version": "0.7.6",
+  "version": "0.8.0",
   "type": "module",
-  "description": "Flips youtube.com into a UI of your own for both music and video: search, feeds, queue and playlist management over YouTube's own player. One switch back.",
-  "license": "GPL-3.0-or-later",
+  "description": "Flips youtube.com into a clean, simple player for both music and video: search, feeds, queue and playlist management over YouTube's own player.",
+  "author": "OpenCourse",
+  "license": "MIT",
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs --watch",
