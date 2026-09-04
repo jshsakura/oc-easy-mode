@@ -44,6 +44,17 @@ export class Engine {
   private loading: string | undefined
   /** When the current continuous wait began; undefined while not waiting. */
   private bufferingSince: number | undefined
+  /**
+   * Whether this device lets script set the volume at all.
+   *
+   * iOS does not: WebKit makes `volume` read-only on a media element there,
+   * on the grounds that the hardware buttons are the volume control, and it
+   * fails **silently** — the assignment is accepted and the value does not
+   * move. A slider that cannot do anything is worse than no slider, so this
+   * is measured rather than assumed, once, and the bar hides the control
+   * where the answer is no. `undefined` means not measured yet.
+   */
+  volumeSettable: boolean | undefined
 
   /** Subscribe to queue and settings changes. Returns the unsubscribe. */
   subscribe(fn: Listener): () => void {
@@ -225,6 +236,7 @@ export class Engine {
     const p = this.player
     if (!p) return
     this.watchElement()
+    this.probeVolume()
     const s = p.getPlayerState()
     // A load is pending until the player is actually underway on the track we
     // asked for; `loading` is dropped the moment it is, so it means "this load
@@ -335,6 +347,30 @@ export class Engine {
       stalled,
     }
     for (const fn of this.tickListeners) fn()
+  }
+
+  /**
+   * Asks the element, because only the element knows.
+   *
+   * Done on a real element and put straight back, which is inaudible at this
+   * length; there is no capability flag to read instead. Skipped while
+   * something is genuinely muted or mid-fade would be over-thinking it — the
+   * value is restored either way.
+   */
+  private probeVolume(): void {
+    if (this.volumeSettable !== undefined) return
+    const el = this.videoEl()
+    if (!el) return
+    const was = el.volume
+    const target = was > 0.5 ? 0.25 : 0.75
+    try {
+      el.volume = target
+      this.volumeSettable = Math.abs(el.volume - target) < 0.01
+      el.volume = was
+    } catch {
+      // A throw is an answer too.
+      this.volumeSettable = false
+    }
   }
 
   private applyVolume(): void {

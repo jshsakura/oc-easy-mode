@@ -127,6 +127,12 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // drawer is open. Without this the video covered the top of the drawer in
   // 영상 mode and the first two rows could not be pressed.
   const setDrawer = (open: boolean) => {
+    // One full-screen thing at a time. The drawer and the opened player are
+    // both the whole screen on a phone, and with both out they fought: the
+    // player sits above the drawer, and above the stage it starts below, so
+    // the drawer showed as a strip at the top with its own list cut off in the
+    // middle of a word. Neither was wrong on its own; having both was.
+    if (open) setSheet(false)
     app.classList.toggle('drawer-open', open)
     shell.cover(open)
   }
@@ -691,6 +697,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   )
 
   function setSheet(open: boolean): void {
+    // The other half of the rule above.
+    if (open) {
+      app.classList.remove('drawer-open')
+      shell.cover(false)
+    }
     app.classList.toggle('sheet-open', open)
     // The heart moves rather than being restyled where it stands.
     //
@@ -747,8 +758,20 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       : t('더보기')
   }
 
+  /** What the volume control was last told to do, so the bar is not restyled twice a second. */
+  let volumeShown: boolean | undefined
+
   function drawTick(): void {
     const p = engine.position
+    // A device that ignores the volume gets no volume slider. On iOS the
+    // hardware buttons are the only control there has ever been, and drawing
+    // a slider that cannot move is the product telling a lie about itself.
+    // Mute stays: that one the platform does honour.
+    const canVolume = engine.volumeSettable !== false
+    if (canVolume !== volumeShown) {
+      volumeShown = canVolume
+      volume.style.display = canVolume ? '' : 'none'
+    }
     // Nothing loaded yet: the slot is a skeleton rather than a black hole.
     slot.classList.toggle('warming', p.duration <= 0)
     // YouTube-core: a load is playing-in-waiting and wears the pause glyph,

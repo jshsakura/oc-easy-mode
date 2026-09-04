@@ -647,6 +647,9 @@ input { font: inherit; color: inherit; }
   border: 2px solid currentColor; border-top-color: transparent;
   animation: spin .8s linear infinite;
 }
+/* The opened player draws the same button at 48px, and an 18px ring inside it
+   reads as a speck rather than as a wait. */
+.app.narrow.sheet-open .ctl .big .spin { width: 24px; height: 24px; border-width: 2.5px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
 
@@ -710,7 +713,11 @@ input { font: inherit; color: inherit; }
 /* Squared, every one of them — the asked-for 사각사각. Pills and circles are
    the default shape of generated interfaces; a tight radius is the shape of
    a tool. The chip and hover are backgrounds on the button itself, so one
-   radius settles all three. Dense on purpose: a toolbar, not a toy. */
+   radius settles all three. Dense on purpose: a toolbar, not a toy.
+   **One exception, and it is below: the transport.** Everything else in the
+   product keeps the square base; the play, skip and shuffle buttons in the
+   player bar are round, because that is the one row of controls a person has
+   never seen square anywhere else and it would not settle. */
 .ctl button, .right button, .drawerToggle {
   width: 28px; height: 28px; border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
@@ -731,7 +738,8 @@ input { font: inherit; color: inherit; }
    and a colour used that often stops pointing at anything. It is the highest
    contrast shape instead, which is what a play button wants to be; --primary
    is left to the elapsed line and the one primary button a screen has. */
-.ctl .big { width: 30px; height: 30px; background: var(--foreground); color: var(--background); border-radius: var(--radius-md); }
+.ctl button, .ctl .rate { border-radius: 999px; }
+.ctl .big { width: 30px; height: 30px; background: var(--foreground); color: var(--background); border-radius: 999px; }
 .ctl .big svg { width: 18px; height: 18px; }
 /* The generic press rule would repaint this button var(--hover), and a
    paper glyph on a 6% wash is a glyph you cannot see for the length of the
@@ -999,7 +1007,9 @@ input[type=range]::-moz-range-thumb {
    the whole class of problem. (No backticks in this file: it is one template
    literal.) */
 .app.narrow .side {
-  position: fixed; left: -302px; top: 0; height: 100dvh; width: 302px; z-index: 20;
+  /* Above the opened player, not under it. Script keeps the two from being
+     out at once; this makes the losing case visible rather than clipped. */
+  position: fixed; left: -302px; top: 0; height: 100dvh; width: 302px; z-index: 40;
   overflow: hidden;
   background: var(--glass-strong);
   border: 0; border-right: 1px solid var(--glass-line); border-radius: 0;
@@ -1029,7 +1039,7 @@ input[type=range]::-moz-range-thumb {
    page overflow. On a phone that is not a cosmetic problem — the browser zooms
    out to fit, so tapping the menu button shrank the whole UI. */
 .app.narrow .drawerScrim {
-  display: block; position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 15;
+  display: block; position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 35;
   background: rgba(0, 0, 0, .6); opacity: 0; pointer-events: none;
   transition: opacity .22s ease;
 }
