@@ -29,6 +29,18 @@ export const STYLES = `
    dialogs and toasts are drawn in a second root with no .app around them, and
    a popover that inherits no --popover is a transparent popover. */
 :host {
+  /* Layout, in both roots.
+     These used to be declared on .app, and the product mounts a SECOND shadow
+     host for the floating layers that has no .app in it. A custom property
+     that is not declared makes every calc() using it invalid at computed-value
+     time, and the whole declaration is thrown away. So the toast bar's
+     bottom: calc(var(--bar) + var(--gap) + 12px) simply did not apply: measured
+     at 1440x900, the toast computed bottom: 848px and drew itself at the TOP of
+     the screen. Only the phone looked right, and only because a media query
+     further down sets a plain 108px. */
+  --bar: 72px;
+  --side: 244px;
+  --gap: 8px;
   all: initial;
   /* Taken from the sibling extension (oc-ad-bye-pass, src/ui/styles.css) so
      the two read as one author's work rather than two products that happen to
@@ -181,9 +193,6 @@ export const STYLES = `
 }
 
 .app {
-  --bar: 72px;
-  --side: 244px;
-  --gap: 8px;
   /* The stage is as tall as a 16:9 video in the width it has, and no taller.
      A fraction of the screen height was the wrong measure: it took the room a
      video needed plus whatever was left over, and the list got half a screen
@@ -281,9 +290,16 @@ input { font: inherit; color: inherit; }
   overflow: hidden; min-height: 0;
 }
 /* Stays put. Never shrinks, whatever is underneath it. */
+/* Stays put, and reads as the pane's own band rather than as the first entry
+   in the list below it: the name and the two controls sit above a full-bleed
+   rule, with the air of a heading on both sides of it. The hairline is the
+   panel's border rather than the glass edge, which against the drawer's
+   stronger backdrop was very nearly invisible. */
 .sideHead {
   flex: none; display: flex; flex-direction: column; gap: 2px;
-  padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--glass-line);
+  padding-bottom: 14px; margin-bottom: 14px;
+  margin-inline: -12px; padding-inline: 12px;
+  border-bottom: 1px solid var(--border);
 }
 /* Everything else. min-height so a column of buttons that will not shrink can
    overflow rather than push the box open, and overscroll-behavior so a flick
@@ -780,7 +796,14 @@ input { font: inherit; color: inherit; }
    glyph: on a phone, at arm's length, a shuffle that was on looked like a
    shuffle that was off, and the press read as lost. The chip is the panel's
    own secondary, not the accent, so the bar still has no colour in it. */
-.ctl button.on, .right button.on { color: var(--foreground); background: var(--secondary); }
+/* **The transport keeps the brightness and loses the chip.**
+   Its buttons are circles, so a filled on-state is a grey disc sitting under a
+   glyph, and at a glance that reads as a button still held down rather than a
+   setting that is on. The toast already says which way the press went. The
+   rectangular controls on the right keep theirs: there the fill reads as a
+   panel that is open, which is what it means. */
+.ctl button.on { color: var(--foreground); }
+.right button.on { color: var(--foreground); background: var(--secondary); }
 .ctl button.on:hover, .right button.on:hover { color: var(--foreground); }
 /* The transport's play button is not the accent. It was the largest purple
    thing on the screen, next to purple sliders and purple badges on every card,
