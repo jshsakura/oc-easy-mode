@@ -1,7 +1,7 @@
 // The television shape: shelves, a grid, and arrow keys that move between them.
 
 import { expect, test } from '@playwright/test'
-import { app, open, overlay } from './fixture.ts'
+import { app, open, overlay, searchFor } from './fixture.ts'
 
 const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
 
@@ -89,6 +89,52 @@ test('choosing a result plays it, and the panel closes over the screen it left',
     await expect(ui.locator('.bar .now .t')).toHaveText(title)
     // The screen underneath was never left.
     await expect(ui.locator('.nav.on')).toHaveText('대기열')
+  } finally {
+    await h.close()
+  }
+})
+
+test('a result chosen from the queue screen becomes the row the queue sits on', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    const over = overlay(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '대기열' }).click()
+    await expect(ui.locator('.nav.on')).toHaveText('대기열')
+
+    // The third answer, not the first. Choosing the top one would land on
+    // index 0 whether the jump carried the index across or dropped it, and
+    // this is the half of the panel that a queue screen makes visible: the
+    // answers become the queue, and it is already sat on the one chosen.
+    await searchFor(h.page, 'lofi')
+    const third = over.locator('.rows .row:not([aria-hidden])').nth(2)
+    await expect(third).toBeVisible()
+    const id = await third.getAttribute('data-id')
+    const title = (await third.locator('.title').textContent())?.trim() ?? ''
+    expect(id).toBeTruthy()
+    await third.locator('.meta').click()
+    await expect(over.locator('.modal.search')).toHaveCount(0)
+
+    // Still the queue screen, and it redrew itself around what was chosen:
+    // third row, marked as playing, with 지금 재생 중 written above it.
+    await expect(ui.locator('.nav.on')).toHaveText('대기열')
+    const rows = ui.locator('.rows .row:not([aria-hidden])')
+    await expect(rows.nth(2)).toHaveAttribute('data-id', id!)
+    await expect(rows.nth(2)).toHaveClass(/now/)
+    await expect(ui.locator('.queueMark').first()).toHaveText('지금 재생 중')
+    await expect(ui.locator('.bar .now .t')).toHaveText(title)
+
+    // And YouTube's own player was moved to that video, which is the half our
+    // own state cannot vouch for: a queue can say anything.
+    await expect
+      .poll(() =>
+        h.page.evaluate(() => {
+          const p = document.getElementById('movie_player') as { getVideoData?: () => { video_id?: string } } | null
+          return p?.getVideoData?.().video_id ?? ''
+        }),
+      )
+      .toBe(id)
   } finally {
     await h.close()
   }
