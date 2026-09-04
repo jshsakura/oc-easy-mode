@@ -544,6 +544,18 @@ input { font: inherit; color: inherit; }
 }
 .bar .now { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: hidden; }
 .bar .now .nowText { min-width: 0; }
+/* Never squeezed by a long title: the text is what gives way, the heart is a
+   fixed target. Filled, it takes the accent — the one place in the bar that
+   says something about the song rather than about playback. */
+.bar .now .heart {
+  flex: none; width: 34px; height: 34px; border-radius: var(--radius-md);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted-foreground);
+  transition: background var(--ease), color var(--ease);
+}
+.bar .now .heart:hover { background: var(--hover); color: var(--foreground); }
+.bar .now .heart.on { color: var(--primary); }
+.bar .now .heart:disabled { opacity: .35; pointer-events: none; }
 .bar .now .thumb {
   width: 56px; height: 56px; flex: none; border-radius: var(--radius-md);
   background: var(--secondary) center/cover;

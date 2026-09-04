@@ -31,6 +31,9 @@ const EN: Record<string, string> = {
   '닫기': 'Close',
   '내리기': 'Collapse',
   '이지 모드 종료': 'Exit Easy Mode',
+  '좋아요': 'Like',
+  '좋아요 취소': 'Remove like',
+  '좋아요는 유튜브에 로그인해야 누를 수 있습니다.': 'Signing in to YouTube is what lets you like a track.',
   '메뉴': 'Menu',
   '테마': 'Theme',
   '밝게': 'Light',
@@ -56,7 +59,6 @@ const EN: Record<string, string> = {
   '소리만 듣기': 'Audio only',
 
   // Lists and actions
-  '가져오는 중…': 'Loading…',
   '노래, 영상, 채널 검색': 'Search songs, videos, channels',
   '무엇을 들을까요?': 'What would you like to hear?',
   '결과가 없습니다.': 'No results.',

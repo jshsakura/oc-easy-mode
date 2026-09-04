@@ -7,7 +7,9 @@
 import { call, hasSession, InnertubeError, type Client } from './innertube.ts'
 import type { Json } from './parse.ts'
 import {
+  collect,
   continuationToken,
+  isObject,
   playlists as parsePlaylists,
   shelves as parseShelves,
   tracks as parseTracks,
@@ -306,6 +308,128 @@ export async function removeFromPlaylist(cfg: YtCfg, playlistId: string, track: 
     ? { action: 'ACTION_REMOVE_VIDEO', setVideoId: track.setVideoId }
     : { action: 'ACTION_REMOVE_VIDEO_BY_VIDEO_ID', removedVideoId: track.videoId }
   await call(cfg, 'browse/edit_playlist', { playlistId, actions: [action] })
+}
+
+/** Where the heart stands for one video. */
+export type LikeStatus = 'like' | 'dislike' | 'none'
+
+/** YouTube's three words for it, in every shape below. `INDIFFERENT` is "not rated". */
+const LIKE_STATUS: Record<string, LikeStatus> = { LIKE: 'like', DISLIKE: 'dislike', INDIFFERENT: 'none' }
+
+/**
+ * Whether a like entity belongs to the video we asked about.
+ *
+ * The entity key is base64url over a small protobuf that carries the video id
+ * in the clear (`EgtCelluTmRKaFpRdyA-KAE%3D` → `\x12\x0bBzYnNdJhZQw >(\x01`), so
+ * the id can be read back out without knowing the schema.
+ *
+ * Today a `next` for one video carries exactly one video's entities, so this
+ * changes nothing — it is here so that the day a response starts carrying the
+ * autoplay video's heart as well, the wrong one is not read. Undecodable is
+ * "not mine", and the caller falls back to document order.
+ */
+function entityIsFor(key: unknown, videoId: string): boolean {
+  if (typeof key !== 'string') return false
+  try {
+    return atob(decodeURIComponent(key).replace(/-/g, '+').replace(/_/g, '/')).includes(videoId)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Finds the like state in a `next` response.
+ *
+ * Searched by renderer name rather than by path, per parse.ts: the button sits
+ * six levels inside `videoPrimaryInfoRenderer.videoActions` on the desktop
+ * client and somewhere else entirely on the mobile one, and both of those move.
+ *
+ * **Measured 2026-09-04** against live www.youtube.com (client 1) and
+ * m.youtube.com (client 2), signed out. `likeStatusEntity` is what is actually
+ * there, three times per response and always in agreement: on the button, on
+ * the fullscreen quick-actions bar, and as a `frameworkUpdates` mutation.
+ *
+ * `likeButtonRenderer` is the older shape and was in neither response. It is
+ * still read as a fallback because it is unambiguous — it spells the status out
+ * in the same three words — and because the walk only happens when the entity
+ * search found nothing.
+ *
+ * The view models' `isToggled` flag is deliberately **not** read. The only ones
+ * in either response belong to `slimMetadataToggleButtonRenderer`, the mobile
+ * fullscreen bar, where like and dislike are two indistinguishable buttons in a
+ * list; a bare boolean there cannot tell a dislike from an untouched video, and
+ * guessing would light the wrong heart.
+ */
+function readLikeStatus(res: Json, videoId: string): LikeStatus {
+  const entities = collect(res, 'likeStatusEntity').filter(isObject)
+  const mine = entities.filter((entity) => entityIsFor(entity.key, videoId))
+  for (const entity of mine.length > 0 ? mine : entities) {
+    const status = LIKE_STATUS[String(entity.likeStatus)]
+    if (status) return status
+  }
+
+  for (const button of collect(res, 'likeButtonRenderer').filter(isObject)) {
+    const status = LIKE_STATUS[String(button.likeStatus)]
+    if (status) return status
+  }
+
+  return 'none'
+}
+
+/**
+ * Whether this account has liked a video.
+ *
+ * The session is asked about only **after** the call fails, the same way
+ * `feed()` does it and for the same reason: a browser that will not hand
+ * `document.cookie` to script still has a perfectly good session, and checking
+ * first would draw an empty heart for someone who has liked the song. Signed
+ * out the call itself succeeds and answers `INDIFFERENT`, so that path never
+ * reaches the catch at all.
+ *
+ * Anything that is not a missing session is a real breakage and is thrown, so
+ * that a shape change shows up rather than turning every heart grey.
+ */
+export async function likeStatus(cfg: YtCfg, videoId: string): Promise<LikeStatus> {
+  try {
+    return readLikeStatus(await call(cfg, 'next', { videoId }), videoId)
+  } catch (err) {
+    if (!hasSession()) return 'none'
+    throw err
+  }
+}
+
+/**
+ * The two writes behind the heart.
+ *
+ * `target` is the shape the page's own button sends — read back out of the
+ * `likeEndpoint` in a live `next` response, which carries
+ * `{status, target: {videoId}, likeParams}`. The `likeParams` blob is not
+ * repeated here: it is a signed echo of the button the user pressed, and the
+ * endpoint has never required it from a caller that names the target. Signed
+ * out both endpoints answer **401** to this body rather than 400 (measured
+ * 2026-09-04, both clients), so it is the session that is missing and not the
+ * shape — which is as far as a signed-out browser can verify a write.
+ *
+ * Failures are thrown, never swallowed. This changes something on the account,
+ * and a heart that silently did nothing is worse than an error.
+ */
+async function rate(cfg: YtCfg, endpoint: 'like/like' | 'like/removelike', videoId: string): Promise<void> {
+  try {
+    await call(cfg, endpoint, { target: { videoId } })
+  } catch (err) {
+    // Same order as above: only once the write has actually been refused is it
+    // worth asking whether there was ever an account to write to.
+    if (!hasSession()) throw new InnertubeError('signed out', 'auth', 401)
+    throw err
+  }
+}
+
+export async function like(cfg: YtCfg, videoId: string): Promise<void> {
+  await rate(cfg, 'like/like', videoId)
+}
+
+export async function unlike(cfg: YtCfg, videoId: string): Promise<void> {
+  await rate(cfg, 'like/removelike', videoId)
 }
 
 /** The feeds the page itself shows: home, subscriptions, history. Signed-in only for the last two. */

@@ -16,7 +16,7 @@ import { getStoredTheme, setStoredTheme, youtubeIsDark, type VideoLayout as Plac
 import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
-import { clock, type Ctx, type View } from './ctx.ts'
+import { clock, explain, type Ctx, type View } from './ctx.ts'
 import { showMenu, toast, type MenuItem } from './overlay.ts'
 import { installRemote } from './remote.ts'
 import { installKeys } from './keys.ts'
@@ -551,7 +551,86 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     { class: 'sheetClose', 'data-nav': '', title: t('내리기'), 'aria-label': t('내리기'), onclick: () => setSheet(false) },
     icon('down', 22),
   )
-  const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy))
+  /**
+   * The heart, which is YouTube's own Like.
+   *
+   * Not a favourite of ours: a mark that lives only in this extension would be
+   * a second, private opinion about a song that the account already has a word
+   * for, and it would not be there tomorrow on the phone. Pressing this is the
+   * same as pressing Like on the page.
+   *
+   * Beside the track rather than in the row of controls on the right: it is
+   * about *this song*, not about playback, and that row is already full on a
+   * phone.
+   */
+  const heartButton = h('button', { class: 'heart', 'data-nav': '', title: t('좋아요') }, icon('heart', 18))
+  /** The track the heart currently describes, and what it found. */
+  let heartOf = ''
+  let liked = false
+
+  function drawHeart(): void {
+    replace(heartButton, icon(liked ? 'heartFill' : 'heart', 18))
+    heartButton.classList.toggle('on', liked)
+    heartButton.title = liked ? t('좋아요 취소') : t('좋아요')
+    heartButton.disabled = !engine.current
+  }
+
+  /**
+   * Asks YouTube whether this track is liked, once per track.
+   *
+   * A failure leaves the heart empty and says nothing. Signed out, the answer
+   * is a truthful "not liked" rather than an error, and someone who is only
+   * listening should not be told about it.
+   */
+  function loadHeart(): void {
+    const track = engine.current
+    if (!track) {
+      heartOf = ''
+      liked = false
+      return drawHeart()
+    }
+    if (heartOf === track.videoId) return
+    heartOf = track.videoId
+    liked = false
+    drawHeart()
+    void api
+      .likeStatus(ctx.cfg, track.videoId)
+      .then((status) => {
+        // The track may have moved on while we were asking.
+        if (heartOf !== engine.current?.videoId) return
+        liked = status === 'like'
+        drawHeart()
+      })
+      .catch(() => {
+        /* an empty heart is the honest default */
+      })
+  }
+
+  heartButton.addEventListener('click', (ev) => {
+    // The bar's track is a button of its own on a phone — it opens the player.
+    ev.stopPropagation()
+    const track = engine.current
+    if (!track) return
+    // Filled before YouTube answers, because a heart that waits for the
+    // network reads as a heart that did not take the press. Put back if the
+    // write is refused.
+    const wanted = !liked
+    liked = wanted
+    drawHeart()
+    const done = wanted ? api.like(ctx.cfg, track.videoId) : api.unlike(ctx.cfg, track.videoId)
+    void done.catch((err: unknown) => {
+      if (heartOf === track.videoId) {
+        liked = !wanted
+        drawHeart()
+      }
+      // explain()'s auth line is written for a screen you cannot see. This is
+      // a thing you cannot *do*, which wants different words.
+      const kind = (err as { kind?: string } | null)?.kind
+      toast(shell.overlay, kind === 'auth' ? t('좋아요는 유튜브에 로그인해야 누를 수 있습니다.') : explain(err), true)
+    })
+  })
+
+  const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy), heartButton)
   // The track itself is the handle: a phone opens the player by tapping what
   // is playing, which is what every music app has taught. It is a button on a
   // narrow screen only — on a desktop the bar is already showing everything,
@@ -607,6 +686,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     videoButton.title = where === 'hidden' ? t('화면 보기') : where === 'stage' ? t('크게 보기') : t('구석에 두기')
     prevButton.disabled = engine.state.queue.length === 0
     nextButton.disabled = engine.state.queue.length === 0
+    loadHeart()
     // Lit while either of the things behind it is doing something, because a
     // player running at 1.5x with a timer armed should say so somewhere.
     const armed = engine.state.rate !== 1 || engine.sleep !== undefined
