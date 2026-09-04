@@ -440,7 +440,9 @@ export class Engine {
     // glyph the way YouTube's own does. Past STALL_AFTER_MS of one unbroken
     // wait the story changes — nothing is coming — and the transport switches
     // to stop. Any break in the wait resets the clock.
-    const buffering = s === State.Buffering || pending
+    // A held arrival is not a wait: the transport shows play, which is the
+    // press it is waiting for, not a spinner for a load that is not coming.
+    const buffering = (s === State.Buffering || pending) && !this.holding
     this.bufferingSince = buffering ? this.bufferingSince ?? Date.now() : undefined
     const stalled = this.bufferingSince !== undefined && Date.now() - this.bufferingSince > STALL_AFTER_MS
     // An advert does not move the song's progress. Whatever the player reports
