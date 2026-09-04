@@ -4,11 +4,11 @@
 import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
-import { forgetHistory, history } from '../store.ts'
+import { forgetHistory, history, lastPlaylist } from '../store.ts'
 import { h, icon, replace } from './dom.ts'
 import { explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
-import { removeFromPlaylistItem, row, startRadio } from './rows.ts'
+import { removeFromPlaylistItem, removeFromPlaylistNow, row, startRadio } from './rows.ts'
 
 /** Draws `view` into `main`. Returns once the first paint is done. */
 export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
@@ -82,7 +82,7 @@ function listOf(ctx: Ctx, first: api.Page): HTMLElement {
   })
 
   function draw(): void {
-    layout(ctx, rows, all, () => ({}))
+    layout(ctx, rows, all, (track) => ({ quick: addQuick(ctx, track) }))
     if (page.continuation) rows.appendChild(more)
   }
 
@@ -99,7 +99,7 @@ function layout(
   ctx: Ctx,
   into: HTMLElement,
   list: Track[],
-  extraFor: (t: Track) => { extra?: Parameters<typeof row>[2]['extra'] },
+  extraFor: (t: Track) => Pick<Parameters<typeof row>[2], 'extra' | 'quick'>,
 ): void {
   const asGrid = ctx.engine.state.mode === 'video'
   into.className = asGrid ? 'grid' : 'rows'
@@ -155,12 +155,12 @@ export function skRow(): HTMLElement {
   return h(
     'div',
     { class: 'row', 'aria-hidden': 'true' },
-    h('div', { class: 'sk', style: 'width: 14px; height: 8px; justify-self: end' }),
+    h('div', { class: 'idx sk', style: 'width: 14px; height: 8px; justify-self: end' }),
     h('div', { class: 'thumb sk' }),
     h('div', { class: 'meta' },
       h('div', { class: 'sk', style: 'height: 10px; width: 62%; margin-bottom: 6px' }),
       h('div', { class: 'sk', style: 'height: 8px; width: 38%' })),
-    h('div', { class: 'sk', style: 'width: 34px; height: 8px' }),
+    h('div', { class: 'dur sk', style: 'width: 34px; height: 8px' }),
   )
 }
 
@@ -257,6 +257,30 @@ function shelfRow(ctx: Ctx, shelf: Shelf): HTMLElement {
       shelf.tracks.map((_, i) => trackTile(ctx, shelf.tracks, i)),
     ),
   )
+}
+
+/**
+ * The button every ordinary row carries: put this track somewhere.
+ *
+ * It files into the last playlist chosen, and only asks when there is no last
+ * one — which makes the first add two presses and every one after it a single
+ * press. The title names the destination, so a button that files silently
+ * still says where.
+ */
+function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['quick'] {
+  const last = lastPlaylist()
+  return {
+    icon: 'plus',
+    title: last ? `'${last.title}'에 넣기` : t('재생목록에 넣기'),
+    run: () => {
+      const to = lastPlaylist()
+      if (!to) return void ctx.addToPlaylist([track])
+      void api
+        .addToPlaylist(ctx.cfg, to.id, [track.videoId])
+        .then(() => ctx.say(`'${to.title}'에 넣었습니다.`))
+        .catch((err: unknown) => ctx.say(explain(err), true))
+    },
+  }
 }
 
 // ── Explore ────────────────────────────────────────────────────────────────
@@ -426,7 +450,14 @@ function card(ctx: Ctx, p: Playlist): HTMLElement {
 }
 
 async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string): Promise<void> {
-  replace(main, skHead(), skRows(8))
+  replace(
+    main,
+    skHead(),
+    h('div', { class: 'toolbar' },
+      h('div', { class: 'sk', style: 'height: 30px; width: 88px' }),
+      h('div', { class: 'sk', style: 'height: 30px; width: 88px' })),
+    skRows(8),
+  )
   try {
     const tracks = await api.playlistTracks(ctx.cfg, id)
     const cover = tracks[0]?.videoId
@@ -503,17 +534,23 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
         body.className = ''
         return replace(body, nothing(t('비어 있는 재생목록입니다.'), 'library'))
       }
+      // One function, two ways in: the row's button and the menu's item both
+      // put the house in order the same way afterwards.
+      const gone = (track: Track) => () => {
+        const at = tracks.indexOf(track)
+        if (at >= 0) tracks.splice(at, 1)
+        count.textContent = tn('곡', tracks.length)
+        if (tracks.length === 0) draw()
+        else renumber()
+      }
       layout(ctx, body, tracks, (track) => ({
-        extra: (rowEl) => [
-          '-',
-          removeFromPlaylistItem(ctx, id, track, rowEl, () => {
-            const at = tracks.indexOf(track)
-            if (at >= 0) tracks.splice(at, 1)
-            count.textContent = tn('곡', tracks.length)
-            if (tracks.length === 0) draw()
-            else renumber()
-          }),
-        ],
+        // In a playlist, the thing done most often to a row is taking it out.
+        quick: {
+          icon: 'close',
+          title: t('이 재생목록에서 빼기'),
+          run: (rowEl) => void removeFromPlaylistNow(ctx, id, track, rowEl, gone(track)),
+        },
+        extra: (rowEl) => ['-', removeFromPlaylistItem(ctx, id, track, rowEl, gone(track))],
       }))
     }
 
@@ -568,7 +605,7 @@ function recent(ctx: Ctx, main: HTMLElement): void {
         ],
   )
   if (list.length === 0) return
-  const draw = () => layout(ctx, body, list, () => ({}))
+  const draw = () => layout(ctx, body, list, (track) => ({ quick: addQuick(ctx, track) }))
   draw()
   relayoutOnModeChange(ctx, body, draw)
 }
@@ -601,6 +638,15 @@ function queue(ctx: Ctx, main: HTMLElement): void {
             row(ctx, track, {
               index: i + 1,
               onPlay: () => ctx.engine.jumpTo(i),
+              // Same idea as a playlist: what a queue row is for is leaving.
+              quick: {
+                icon: 'close',
+                title: t('대기열에서 빼기'),
+                run: () => {
+                  ctx.engine.removeAt(i)
+                  ctx.reload()
+                },
+              },
               extra: () => [
                 '-',
                 {

@@ -4,7 +4,7 @@
 import { t } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Track } from '../parse.ts'
-import { h, icon } from './dom.ts'
+import { h, icon, type IconName } from './dom.ts'
 import { clock, explain, type Ctx } from './ctx.ts'
 import { confirm, showMenu, type MenuItem } from './overlay.ts'
 
@@ -21,6 +21,15 @@ export interface RowOptions {
    * take that row off the screen, not re-fetch the screen.
    */
   extra?: (row: HTMLElement) => Array<MenuItem | '-'>
+  /**
+   * The one-press action, shown beside the menu.
+   *
+   * Putting a track into a playlist, or taking it out, was two presses and a
+   * submenu — open ⋯, find the item, and for a removal answer a dialog as
+   * well. Those are the two things done most often to a row, so they get a
+   * button. The menu keeps its versions for everything else.
+   */
+  quick?: { icon: IconName; title: string; run(row: HTMLElement): void }
 }
 
 export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
@@ -46,6 +55,20 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
   const open = () => {
     if (track.unavailable) return ctx.say(t('재생할 수 없는 항목입니다.'), true)
     opts.onPlay()
+  }
+
+  // An empty cell when there is no quick action, so every row in a list keeps
+  // the same columns and the menus stay in one vertical line.
+  // Its own class, not the menu's. Sharing `.more` put two of them in a row
+  // and every locator that meant "the menu" then meant "either button".
+  const quickButton = opts.quick
+    ? h('button', { class: 'quick', 'data-nav': '', title: opts.quick.title, 'aria-label': opts.quick.title }, icon(opts.quick.icon, 18))
+    : h('span')
+  if (opts.quick) {
+    quickButton.addEventListener('click', (ev) => {
+      ev.stopPropagation()
+      opts.quick!.run(el)
+    })
   }
 
   // One handler on the row rather than one per part: the whole row is the
@@ -75,6 +98,7 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
       h('div', { class: 'by' }, track.unavailable ? t('재생할 수 없음') : track.byline),
     ),
     h('div', { class: 'dur' }, track.duration),
+    quickButton,
     menuButton,
   )
   menuButton.addEventListener('click', (ev) => openMenu(ev, el))
@@ -143,6 +167,30 @@ function collapse(row: HTMLElement, done: () => void): void {
  * playlist took to fetch again, which is a strange thing to show someone who
  * just deleted one row of it.
  */
+/**
+ * Takes the track out and takes the row with it. No question asked.
+ *
+ * The menu's version asks first, because a menu is a considered place. The row
+ * button is the opposite: it exists to be one press, and a dialog would make
+ * it two. Putting the track back is one press as well, which is what makes
+ * that safe.
+ */
+export async function removeFromPlaylistNow(
+  ctx: Ctx,
+  playlistId: string,
+  track: Track,
+  row: HTMLElement,
+  onRemoved: () => void,
+): Promise<void> {
+  try {
+    await api.removeFromPlaylist(ctx.cfg, playlistId, track)
+    ctx.say(t('재생목록에서 뺐습니다.'))
+    collapse(row, onRemoved)
+  } catch (err) {
+    ctx.say(explain(err), true)
+  }
+}
+
 export function removeFromPlaylistItem(
   ctx: Ctx,
   playlistId: string,

@@ -56,7 +56,9 @@ export const STYLES = `
      reads as ink that happens to be purple. */
   --primary: #8578a6;
   --primary-hover: #9286b4;
-  --primary-foreground: #ffffff;
+  /* Ink on the dusty violet, not white: white on #8578a6 measures 4.01:1,
+     a hair under AA for 14px text; ink measures 4.66 and reads as stamping. */
+  --primary-foreground: #141210;
   --destructive: #f38ba8;
   --ring: #8578a6;
 
@@ -233,7 +235,7 @@ input { font: inherit; color: inherit; }
    grey flashing under a moving hand reads as flicker, not feedback. */
 .nav:active, .row:active,
 .menu button:active, .modal .list button:active, .ctl button:active,
-.right button:active, .row .more:active, .drawerToggle:active, .btn.ghost:active {
+.right button:active, .row .more:active, .row .quick:active, .drawerToggle:active, .btn.ghost:active {
   background: var(--hover);
 }
 
@@ -333,6 +335,9 @@ input { font: inherit; color: inherit; }
 .sk { background: var(--muted); border-radius: var(--radius-md); animation: sk 1.2s ease-in-out infinite; }
 @keyframes sk { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: .6; } }
+/* Light skeletons need a darker grey than --secondary: on warm paper the
+   secondary is one breath from the panel and a static skeleton disappears. */
+.app.light .sk { background: var(--border); }
 .err { color: var(--destructive); font-size: 14px; padding: 16px 0 20px; }
 
 .searchbox {
@@ -381,7 +386,7 @@ input { font: inherit; color: inherit; }
 }
 .rows > .queueMark:first-child { margin-top: 4px; }
 .row {
-  display: grid; grid-template-columns: 24px 44px 1fr auto 32px;
+  display: grid; grid-template-columns: 24px 44px 1fr auto 32px 32px;
   align-items: center; gap: 16px; padding: 8px;
   border-radius: var(--radius-md); cursor: pointer;
   transition: background var(--ease);
@@ -420,14 +425,15 @@ input { font: inherit; color: inherit; }
 .row .title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .by { color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .dur { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
-.row .more {
+.row .more, .row .quick {
   width: 32px; height: 32px; border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--muted-foreground); opacity: .5;
   transition: background var(--ease), color var(--ease), opacity var(--ease);
 }
-.row:hover .more, .row.now .more, .row .more:focus-visible { opacity: 1; }
-.row .more:hover { color: var(--foreground); }
+.row:hover .more, .row.now .more, .row .more:focus-visible,
+.row:hover .quick, .row.now .quick, .row .quick:focus-visible { opacity: 1; }
+.row .more:hover, .row .quick:hover { color: var(--foreground); }
 
 /* ── Artwork ───────────────────────────────────────────────────────────────
    One card, not a picture with a caption floating under it. The artwork is
@@ -465,6 +471,10 @@ input { font: inherit; color: inherit; }
 /* A finger cannot hover. On a touch screen the button is simply there. */
 @media (hover: none) {
   .cover .play { opacity: 1; transform: none; width: 34px; height: 34px; }
+  /* A row's buttons wait for a hover that a finger never gives. Half-visible
+     is fine for a menu nobody has asked for; it is not fine for the button
+     that puts a track in a playlist, which is meant to be pressed. */
+  .row .more, .row .quick { opacity: 1; }
 }
 
 /* The running time, where every video player puts it. */
@@ -574,6 +584,10 @@ input { font: inherit; color: inherit; }
    is left to the elapsed line and the one primary button a screen has. */
 .ctl .big { width: 30px; height: 30px; background: var(--foreground); color: var(--background); border-radius: var(--radius-md); }
 .ctl .big svg { width: 18px; height: 18px; }
+/* The generic press rule would repaint this button var(--hover), and a
+   paper glyph on a 6% wash is a glyph you cannot see for the length of the
+   press. The press keeps the fill and dims instead. */
+.ctl .big:active { background: var(--foreground); color: var(--background); opacity: .8; }
 .ctl .big:hover { background: var(--foreground); color: var(--background); opacity: .88; }
 .seek {
   display: flex; align-items: center; gap: 12px; width: 100%; max-width: 620px;
@@ -744,7 +758,7 @@ input[type=range]::-moz-range-thumb {
   .tile { width: 158px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 22px 14px; }
   .head .cover { width: 168px; }
-  .row { grid-template-columns: 24px 44px 1fr auto 32px; gap: 12px; }
+  .row { grid-template-columns: 24px 44px 1fr auto 32px 32px; gap: 8px; }
 }
 
 /* ── Narrow ───────────────────────────────────────────────────────────────
@@ -922,7 +936,7 @@ input[type=range]::-moz-range-thumb {
 }
 /* The picture is already on screen above; a cover under it would be a second
    answer to the same question. */
-.app.narrow.sheet-open.has-stage .now .thumb { display: none; }
+.app.narrow.sheet-open.has-stage .bar .now .thumb { display: none; }
 
 /* With the words open they are what the pane is for: the artwork steps aside
    and the list takes the room the transport is not using. */
