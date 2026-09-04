@@ -367,23 +367,30 @@ svg {
 .showcase-card {
   border: 1px solid var(--border);
   background-color: var(--surface);
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
-  padding: 12px;
+  padding: 10px;
+  box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.08), 0 0 1px 1px var(--border);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+:root[data-theme='dark'] .showcase-card {
+  background: #171722;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.06);
 }
 
 .showcase-card:hover {
   transform: translateY(-6px);
   border-color: var(--accent);
-  box-shadow: 0 20px 40px -15px rgba(126, 77, 197, 0.16), 0 0 1px 1px var(--border);
+  box-shadow: 0 24px 50px -12px rgba(126, 77, 197, 0.22), 0 0 0 1px var(--accent);
 }
 
 .showcase-card img {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 10px;
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -392,12 +399,13 @@ svg {
 }
 
 .showcase-caption {
-  margin: 12px -12px -12px;
-  padding: 13px 18px;
+  margin: 10px -10px -10px;
+  padding: 14px 20px;
   border-top: 1px solid var(--border);
   font-size: 14px;
   color: var(--text-muted);
   text-align: center;
+  background: var(--surface);
   transition: color 0.2s ease;
 }
 
@@ -455,25 +463,40 @@ section + section {
 }
 
 .feature-item {
+  position: relative;
   border: 1px solid var(--border);
-  background-color: var(--surface);
-  border-radius: 10px;
-  padding: 24px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+:root[data-theme='dark'] .feature-item {
+  background: linear-gradient(180deg, #181824 0%, #13131b 100%);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
 }
 
 .feature-item:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
   border-color: var(--accent);
-  box-shadow: 0 12px 28px -6px rgba(126, 77, 197, 0.14);
+  box-shadow: 0 16px 36px -10px rgba(126, 77, 197, 0.18), 0 0 0 1px var(--accent);
+}
+
+:root[data-theme='dark'] .feature-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 16px 40px -10px rgba(157, 110, 224, 0.25), 0 0 0 1px var(--accent);
 }
 
 .feature-item h3 {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.35;
-  min-height: calc(17px * 1.35 * 2);
-  margin-bottom: 8px;
+  letter-spacing: -0.015em;
+  margin-bottom: 10px;
   color: var(--text);
   transition: color 0.2s ease;
 }
@@ -483,10 +506,11 @@ section + section {
 }
 
 .feature-item p {
-  font-size: 15px;
+  font-size: 14.5px;
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: 1.65;
   word-break: keep-all;
+  margin: 0;
 }
 
 /* 설치 방법 */
@@ -498,28 +522,36 @@ section + section {
 
 .install-card {
   border: 1px solid var(--border);
-  background-color: var(--surface);
-  border-radius: 10px;
-  padding: 28px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 32px 26px;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+:root[data-theme='dark'] .install-card {
+  background: linear-gradient(180deg, #181824 0%, #13131b 100%);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+}
+
 .install-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   border-color: var(--accent);
-  box-shadow: 0 12px 26px -6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--accent);
 }
 
 :root[data-theme='dark'] .install-card:hover {
-  box-shadow: 0 12px 26px -6px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 16px 40px -10px rgba(157, 110, 224, 0.2), 0 0 0 1px var(--accent);
 }
 
 .install-card h3 {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
-  margin-bottom: 18px;
-  padding-bottom: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
+  letter-spacing: -0.015em;
 }
 
 .step-list {
@@ -596,20 +628,27 @@ code {
 
 .notice-item {
   border: 1px solid var(--border);
-  background-color: var(--surface);
-  border-radius: 10px;
-  padding: 24px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 26px 24px;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+:root[data-theme='dark'] .notice-item {
+  background: linear-gradient(180deg, #181824 0%, #13131b 100%);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+}
+
 .notice-item:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   border-color: var(--accent);
-  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 14px 32px -8px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--accent);
 }
 
 :root[data-theme='dark'] .notice-item:hover {
-  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 14px 36px -8px rgba(157, 110, 224, 0.2), 0 0 0 1px var(--accent);
 }
 
 .notice-item dt {
@@ -647,23 +686,31 @@ kbd {
 }
 
 .icon-badge {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  border: 1px solid var(--border);
-  background-color: var(--bg);
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, rgba(126, 77, 197, 0.12) 0%, rgba(157, 110, 224, 0.04) 100%);
+  border: 1px solid rgba(126, 77, 197, 0.2);
   color: var(--accent);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, background-color 0.2s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+:root[data-theme='dark'] .icon-badge {
+  background: linear-gradient(135deg, rgba(157, 110, 224, 0.2) 0%, rgba(126, 77, 197, 0.06) 100%);
+  border-color: rgba(157, 110, 224, 0.3);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
 .feature-item:hover .icon-badge {
-  transform: scale(1.12) rotate(-5deg);
+  transform: scale(1.1) rotate(-4deg);
+  background-color: var(--accent);
+  color: var(--accent-contrast);
   border-color: var(--accent);
-  background-color: var(--surface-subtle);
 }
 
 .card-heading {
@@ -718,30 +765,6 @@ kbd {
   text-underline-offset: 3px;
 }
 
-/* 스크롤 등장 애니메이션 */
-.reveal-init {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-}
-
-.reveal-init.revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.showcase-grid .reveal-init:nth-child(2) { transition-delay: 0.12s; }
-.feature-grid .reveal-init:nth-child(2) { transition-delay: 0.07s; }
-.feature-grid .reveal-init:nth-child(3) { transition-delay: 0.14s; }
-.feature-grid .reveal-init:nth-child(4) { transition-delay: 0.21s; }
-.feature-grid .reveal-init:nth-child(5) { transition-delay: 0.28s; }
-.feature-grid .reveal-init:nth-child(6) { transition-delay: 0.35s; }
-.install-grid .reveal-init:nth-child(2) { transition-delay: 0.12s; }
-.notice-grid .reveal-init:nth-child(2) { transition-delay: 0.08s; }
-.notice-grid .reveal-init:nth-child(3) { transition-delay: 0.16s; }
-.notice-grid .reveal-init:nth-child(4) { transition-delay: 0.24s; }
-
 /* 키프레임 정의 */
 @keyframes badgeDrop {
   from { opacity: 0; transform: translateY(-12px) scale(0.96); }
@@ -765,10 +788,6 @@ kbd {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-  .reveal-init {
-    opacity: 1 !important;
-    transform: none !important;
   }
 }
 
@@ -995,24 +1014,6 @@ kbd {
       }
     })
     .catch(() => {});
-
-  // 스크롤 등장 애니메이션 (Scroll Reveal)
-  if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const revealElements = document.querySelectorAll('.showcase-card, .feature-item, .install-card, .notice-item, .section-title, .section-description');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('revealed');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-
-    revealElements.forEach((el) => {
-      el.classList.add('reveal-init');
-      observer.observe(el);
-    });
-  }
 </script>
 </body>
 </html>
