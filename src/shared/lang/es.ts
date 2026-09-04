@@ -135,4 +135,7 @@ export const ES: Record<string, string> = {
   "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "Al activarlo, el sonido pasa por esta extensión. En un navegador que se queda en silencio, se desactiva solo.",
   "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "No salía sonido, así que el ecualizador se desactivó. Recargando.",
   "무엇을 찾을까요?": "¿Qué buscas?",
+  "위로": "Subir",
+  "아래로": "Bajar",
+  "순서를 바꾸지 못했습니다.": "No se pudo reordenar.",
 }

@@ -21,6 +21,26 @@ const AD_SETTLE_MS = 1500
 
 export type Listener = () => void
 
+/**
+ * Where an index lands when the row at `from` is moved to `to`.
+ *
+ * Lift out, then drop in, and the index follows each step: a row taken from
+ * before it pulls it back one, and a row dropped at or before it pushes it on
+ * one. The row that *is* the index simply arrives where it was dropped.
+ *
+ * Separate from the engine because it is the whole of the thinking here and it
+ * is worth checking on its own. A queue may hold the same video twice, so this
+ * cannot be recovered afterwards by looking for the track.
+ */
+export function movedIndex(current: number, from: number, to: number): number {
+  if (current < 0) return current
+  if (from === current) return to
+  let at = current
+  if (from < at) at -= 1
+  if (to <= at) at += 1
+  return at
+}
+
 /** How long one continuous wait may last before the transport calls it a stall. */
 const STALL_AFTER_MS = 6000
 
@@ -841,6 +861,30 @@ export class Engine {
   enqueue(tracks: Track[]): void {
     if (tracks.length === 0) return
     this.state.queue.push(...tracks)
+    this.changed()
+  }
+
+  /**
+   * Moves one row, and says where the playing track ended up.
+   *
+   * Reordering a list must never interrupt what is coming out of the
+   * speakers, so nothing here touches the player: the array is rearranged and
+   * the index is corrected to point at the same track it pointed at before.
+   * Working it out afterwards by searching for the track would be simpler and
+   * wrong, because a queue is allowed to hold the same video twice.
+   *
+   * `to` is the index in the list *after* the row has been lifted out, which
+   * is what a splice-out-splice-in does and what a drop between two rows
+   * means.
+   */
+  moveTrack(from: number, to: number): void {
+    const q = this.state.queue
+    if (from === to) return
+    if (from < 0 || from >= q.length || to < 0 || to >= q.length) return
+    const [track] = q.splice(from, 1)
+    if (!track) return
+    q.splice(to, 0, track)
+    this.state.index = movedIndex(this.state.index, from, to)
     this.changed()
   }
 
