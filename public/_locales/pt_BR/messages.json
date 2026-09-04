@@ -1,0 +1,14 @@
+{
+  "extName": {
+    "message": "RenewTube",
+    "description": "The extension name. The same in every language: it is a proper noun."
+  },
+  "extDescription": {
+    "message": "Transforma o YouTube em um player simples e fácil. Música e vídeo num só lugar, e volta à tela normal quando quiser.",
+    "description": "Store listing summary. Chrome allows 132 characters."
+  },
+  "actionTitle": {
+    "message": "RenewTube",
+    "description": "Tooltip on the toolbar button."
+  }
+}
