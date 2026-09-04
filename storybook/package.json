@@ -1,7 +1,6 @@
 {
   "name": "oc-easy-mode-storybook",
   "private": true,
-  "version": "0.6.3",
   "type": "module",
   "description": "Design workbench for the oc-easy-mode extension UI. Renders the real STYLES string and the real DOM helpers, so design iteration here is iteration on the shipped product.",
   "scripts": {
