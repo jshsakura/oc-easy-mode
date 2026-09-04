@@ -228,8 +228,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
     { view: { kind: 'recent' }, label: t('최근 감상'), icon: 'history', section: t('내 라이브러리') },
     { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history' },
-    { view: { kind: 'playlists' }, label: t('내 재생목록'), icon: 'library' },
+    // 대기열 above 내 재생목록, by the user's word (2026-09-04): what is
+    // playing next is reached for more often than what has been kept.
     { view: { kind: 'queue' }, label: t('대기열'), icon: 'queue' },
+    { view: { kind: 'playlists' }, label: t('내 재생목록'), icon: 'library' },
   ]
 
   // The header carries the way into the drawer and the name of the screen.
