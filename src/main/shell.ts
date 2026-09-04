@@ -644,6 +644,17 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     host.remove()
     overlayHost.remove()
     viewport?.remove()
+    // YouTube sizes its <video> from the player's box, and re-measures only
+    // on a resize. The box was ours for the whole session — the corner window,
+    // the stage — and the sheet that made it so is gone, but the picture still
+    // wears the size of the last box it was given. Measured on a phone: the
+    // video sat shrunk in the corner of a full-width player after leaving. So
+    // the page is told its size changed: now, once the removal has painted,
+    // and once more after the viewport meta's departure has reflowed it.
+    const nudge = () => window.dispatchEvent(new Event('resize'))
+    nudge()
+    requestAnimationFrame(nudge)
+    setTimeout(nudge, 300)
   }
 
   return { root, overlay, place, cover, hideSplash, teardown }

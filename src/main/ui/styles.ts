@@ -1176,10 +1176,15 @@ input[type=range]::-moz-range-thumb {
   -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
   border: 0; border-right: 1px solid var(--pop-line); border-radius: 0;
   transition: left .22s ease;
-  padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+  padding: calc(6px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
 }
 .app.narrow.drawer-open .side { left: 0; }
-.app.narrow .brand { padding: 4px 4px 14px; }
+/* The head of the drawer is one line, the height of the header strip beside
+   it, and no taller: three paddings and a margin had stacked under the notch
+   into a band of nothing before the first destination (asked about on
+   2026-09-04, "왜 이리 높은 거임"). */
+.app.narrow .brand { padding: 2px 4px 6px; }
+.app.narrow .sideHead { padding-bottom: 6px; margin-bottom: 6px; }
 /* A finger is not a cursor: every line in the drawer is a target. */
 .app.narrow .nav { padding: 11px 12px; font-size: 15px; }
 .app.narrow .side .pl { padding: 9px 12px; font-size: 14px; }

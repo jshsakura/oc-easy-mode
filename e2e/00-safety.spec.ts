@@ -59,6 +59,32 @@ test('Escape twice puts YouTube back', async () => {
   }
 })
 
+test('leaving gives the picture its size back', async () => {
+  // The player was a 320px corner window for the whole session; afterwards
+  // YouTube's own layout must own it again, video and all.
+  const h = await open('https://www.youtube.com/watch?v=BzYnNdJhZQw')
+  try {
+    await expect(app(h.page).locator('.app')).toBeVisible()
+    await h.page.keyboard.press('Escape')
+    await h.page.keyboard.press('Escape')
+    await expect(h.page.locator('oc-easy-mode')).toHaveCount(0)
+    await expect
+      .poll(
+        () =>
+          h.page.evaluate(() => {
+            const player = document.getElementById('movie_player')?.getBoundingClientRect()
+            const video = document.querySelector('video')?.getBoundingClientRect()
+            if (!player || !video) return 'missing'
+            return Math.abs(player.width - video.width) < 4 && player.width > 400 ? 'fits' : `${Math.round(video.width)} in ${Math.round(player.width)}`
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe('fits')
+  } finally {
+    await h.close()
+  }
+})
+
 test('a single Escape is left to YouTube', async () => {
   const h = await open('https://www.youtube.com/')
   try {
