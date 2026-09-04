@@ -114,3 +114,59 @@ test('nothing reaches the player while the checklist is open', async () => {
     await h.close()
   }
 })
+
+test('Escape closes the checklist and leaves the filter as it was', async () => {
+  const h = await open('https://www.youtube.com/')
+  try {
+    await serveSubs(h.page)
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '구독' }).click()
+
+    const rows = ui.locator('.row:not([aria-hidden])')
+    const overlay = h.page.locator('oc-easy-mode-overlay')
+    await expect(rows).toHaveCount(parsed.length)
+
+    // Ticking and then escaping is a change nobody asked to keep: the dialog
+    // resolves with null, not with what was on screen when it closed.
+    await ui.locator('.chanFilter').click()
+    await expect(overlay.locator('.channelRow').first()).toBeVisible()
+    await overlay.locator('.channelRow').first().click()
+    await h.page.keyboard.press('Escape')
+    await expect(overlay.locator('.channelRow')).toHaveCount(0)
+    await expect(rows).toHaveCount(parsed.length)
+    await expect(ui.locator('.chanFilter .chanCount')).toHaveCount(0)
+
+    // And the Escape stops there. The shell takes two of them to leave, so a
+    // single one that travelled on would arm that, and the next Escape would
+    // take the whole mode down with it.
+    await h.page.keyboard.press('Escape')
+    await expect(ui.locator('.app')).toBeVisible()
+    await expect(h.page.locator('oc-easy-mode')).toHaveCount(1)
+  } finally {
+    await h.close()
+  }
+})
+
+test('a menu over the screen closes alone', async () => {
+  const h = await open('https://www.youtube.com/')
+  try {
+    await serveSubs(h.page)
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '구독' }).click()
+    const overlay = h.page.locator('oc-easy-mode-overlay')
+    await expect(ui.locator('.row:not([aria-hidden])').first()).toBeVisible()
+
+    // A row's menu is a second layer over the screen. Escaping it must not
+    // also take the layer underneath, which is the rule the checklist follows
+    // by only closing when it is the last one in the overlay.
+    await ui.locator('.row:not([aria-hidden])').first().locator('button[data-nav]').last().click()
+    await expect(overlay.locator('.menu')).toBeVisible()
+    await h.page.keyboard.press('Escape')
+    await expect(overlay.locator('.menu')).toHaveCount(0)
+    await expect(ui.locator('.app')).toBeVisible()
+  } finally {
+    await h.close()
+  }
+})
