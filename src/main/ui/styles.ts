@@ -961,8 +961,13 @@ input[type=range]::-moz-range-thumb {
    in the width query below because this root has no .app to qualify it and the
    decision is made in script anyway. */
 .menu.sheetMenu {
-  left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
-  top: auto; min-width: 0; max-width: none; padding: 6px 8px 8px; border-radius: var(--radius-lg);
+  /* Hung from 100dvh, not from bottom: 0. A fixed box's bottom is the layout
+     viewport's, which is taller than the screen wherever the browser counts
+     its own bars into it, and the sheet's last line sat 62px under the last
+     visible pixel (measured). The app is 100dvh for the same reason. */
+  left: 10px; right: 10px; bottom: auto;
+  top: calc(100dvh - 12px - env(safe-area-inset-bottom)); transform: translateY(-100%);
+  min-width: 0; max-width: none; padding: 6px 8px 8px; border-radius: var(--radius-lg);
   /* Two columns, so seven choices are four lines and the sheet is a card at
      the foot of the screen rather than most of it. Asked for, repeatedly:
      "화면에 맞게 작게". Never more than two fifths of the screen either way,
@@ -1280,7 +1285,12 @@ input[type=range]::-moz-range-thumb {
    drawn above the app and cannot be covered, and a sheet that hid the video
    would be a sheet about a video you cannot see. */
 .app.narrow.sheet-open .bar {
-  position: fixed; left: 0; top: 0; width: 100dvw; bottom: 0; z-index: 30;
+  /* 100dvh, not bottom: 0. A fixed box stretched to the bottom of the layout
+     viewport is taller than the screen wherever the browser's own bars are
+     counted in that viewport, and the row of actions at its foot was drawn
+     74px below the last visible pixel (measured on a phone: sheet 918 tall
+     on an 844 screen). The app itself is 100dvh for the same reason. */
+  position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 30;
   flex-direction: column; align-items: stretch; gap: 0;
   padding: calc(6px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
   background: var(--pop);

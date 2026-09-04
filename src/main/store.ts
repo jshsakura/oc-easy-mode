@@ -276,3 +276,30 @@ export function setSubsFilter(ids: string[]): void {
     // which is better than refusing to filter.
   }
 }
+
+// ── Our own arrival ─────────────────────────────────────────────────────────
+//
+// A track pressed on a page with no player navigates to that track's page to
+// play it. The page that arrives has to know the difference between "we came
+// here to play this" and "this is where the reader happened to open the
+// mode", because the second must not start playing on its own.
+
+const ARRIVAL_KEY = 'oc-easy-mode:arriving'
+
+/** Marks that the next page load is ours, for `videoId`. */
+export function markArrival(videoId: string): void {
+  try {
+    localStorage.setItem(ARRIVAL_KEY, videoId)
+  } catch {}
+}
+
+/** Reads and clears the mark. */
+export function takeArrival(): string | null {
+  try {
+    const v = localStorage.getItem(ARRIVAL_KEY)
+    localStorage.removeItem(ARRIVAL_KEY)
+    return v
+  } catch {
+    return null
+  }
+}

@@ -116,6 +116,59 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     await ui.locator('.top .searchOpen').click()
     await expect(over.locator('.modal.search')).toBeVisible()
     await expect(over.locator('.searchbox input')).toBeFocused()
+    await over.locator('.modal.search .modalClose').click()
+
+    // Nothing of ours is wider than the phone. The document's own scroll
+    // width is YouTube's (a hidden desktop element of theirs measures 425);
+    // what matters is that no box in the app, outside a sideways-scrolling
+    // shelf, reaches past the right edge, because a phone answers a page
+    // wider than itself by zooming out. The swipe strip once did exactly
+    // that, parked past the edge of a row that was not positioned.
+    const overhang = await page.evaluate(() => {
+      const root = document.querySelector('oc-easy-mode')!.shadowRoot!
+      const out: string[] = []
+      for (const el of Array.from(root.querySelectorAll<HTMLElement>('.app *'))) {
+        // Sideways shelves scroll; the swipe strip is clipped by its row.
+        if (el.closest('.shelfRow, .rowActions')) continue
+        const b = el.getBoundingClientRect()
+        if (b.width > 0 && b.right > 391) out.push(`${el.className}:${Math.round(b.right)}`)
+      }
+      return out
+    })
+    expect(overhang).toEqual([])
+
+    // The drawer's head is one line, not a band.
+    await ui.locator('.drawerToggle').click()
+    const head = (await ui.locator('.sideHead').boundingBox())!
+    expect(head.height).toBeLessThan(80)
+    await ui.locator('.drawerClose').click()
+
+    // A row's menu is a small card at the foot of the screen with a name and
+    // a close button, never taller than two fifths of it. The drawer has to
+    // be out for its lines to be pressed.
+    await ui.locator('.drawerToggle').click()
+    await ui.locator('.nav').filter({ hasText: '둘러보기' }).click()
+    await ui.locator('.shelf .tile:not([aria-hidden])').first().click()
+    await ui.locator('.main .row .more').first().click()
+    const menu = over.locator('.menu.sheetMenu')
+    await expect(menu).toBeVisible()
+    const box = (await menu.boundingBox())!
+    expect(box.height).toBeLessThanOrEqual(844 * 0.4 + 1)
+    expect(box.y + box.height).toBeLessThanOrEqual(844)
+    await expect(menu.locator('.menuTitle')).not.toHaveText('')
+    await menu.locator('.menuClose').click()
+    await expect(over.locator('.menu')).toHaveCount(0)
+
+    // The opened player fits the screen: its row of actions, at the foot,
+    // is on the screen and not 74px under it.
+    await ui.locator('.main .row .meta').first().click()
+    await ui.locator('.bar .now').click()
+    await expect(ui.locator('.app.sheet-open')).toBeVisible()
+    const bar = (await ui.locator('.bar').boundingBox())!
+    expect(Math.round(bar.height)).toBe(844)
+    const actions = (await ui.locator('.bar .right').boundingBox())!
+    expect(actions.y + actions.height).toBeLessThanOrEqual(844)
+    expect(actions.y).toBeGreaterThan(400)
 
   } finally {
     await context.close()

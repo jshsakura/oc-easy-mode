@@ -35,20 +35,20 @@
 </script>
 
 <style>
-/* Paper, not pixels — 앱과 동일한 웜 페이퍼 / 더스티 바이올렛 기조 */
+/* Paper, not pixels. 앱과 같은 웜 페이퍼 기조 */
 :root {
   --bg: #f7f5f0;
   --surface: rgba(251, 250, 246, 0.85);
-  --surface-card: rgba(243, 239, 232, 0.78);
+  --surface-card: rgba(255, 255, 255, 0.72);
   --surface-subtle: rgba(235, 231, 222, 0.8);
   --border: #ddd8cd;
-  --glass-line: rgba(35, 32, 25, 0.08);
+  --glass-line: rgba(35, 32, 25, 0.14);
   --glass-highlight: rgba(255, 255, 255, 0.65);
   --text: #232019;
   --text-muted: #6f6a5f;
-  --accent: #776aa6;
-  --accent-hover: #8579b2;
-  --accent-contrast: #ffffff;
+  --accent: #232019;
+  --accent-hover: #3a352c;
+  --accent-contrast: #fbfaf6;
   --code-bg: #ece8df;
   --sk-bg: #e8e4db;
   --hover: rgba(0, 0, 0, 0.04);
@@ -65,8 +65,8 @@
   --glass-highlight: rgba(255, 255, 255, 0.05);
   --text: #ece7df;
   --text-muted: #a39c91;
-  --accent: #8578a6;
-  --accent-hover: #9286b4;
+  --accent: #ece7df;
+  --accent-hover: #ffffff;
   --accent-contrast: #141210;
   --code-bg: #1f1b17;
   --sk-bg: #221e1a;
@@ -85,8 +85,8 @@
     --glass-highlight: rgba(255, 255, 255, 0.05);
     --text: #ece7df;
     --text-muted: #a39c91;
-    --accent: #8578a6;
-    --accent-hover: #9286b4;
+    --accent: #ece7df;
+    --accent-hover: #ffffff;
     --accent-contrast: #141210;
     --code-bg: #1f1b17;
     --sk-bg: #221e1a;
@@ -105,9 +105,9 @@
   --glass-highlight: rgba(255, 255, 255, 0.65);
   --text: #232019;
   --text-muted: #6f6a5f;
-  --accent: #776aa6;
-  --accent-hover: #8579b2;
-  --accent-contrast: #ffffff;
+  --accent: #232019;
+  --accent-hover: #3a352c;
+  --accent-contrast: #fbfaf6;
   --code-bg: #ece8df;
   --sk-bg: #e8e4db;
   --hover: rgba(0, 0, 0, 0.04);
@@ -257,25 +257,7 @@ svg {
   padding: calc(var(--band) - 16px) 0 var(--gap);
 }
 
-/* 무지개 없이 정갈한 단일 앰비언트 더스티 바이올렛 비네트 */
-.hero::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(640px, 92vw);
-  height: 300px;
-  background: radial-gradient(ellipse at center, rgba(133, 120, 166, 0.12) 0%, transparent 68%);
-  filter: blur(40px);
-  pointer-events: none;
-  z-index: -1;
-  border-radius: 50%;
-}
 
-:root[data-theme='light'] .hero::before {
-  background: radial-gradient(ellipse at center, rgba(119, 106, 166, 0.08) 0%, transparent 68%);
-}
 
 .hero h1 {
   font-size: clamp(30px, 5vw, 50px);
@@ -330,13 +312,13 @@ svg {
   background-color: var(--accent);
   color: var(--accent-contrast);
   border-color: var(--accent);
-  box-shadow: 0 4px 12px -2px rgba(119, 106, 166, 0.3);
+  box-shadow: 0 4px 12px -2px rgba(20, 12, 4, 0.3);
 }
 
 .btn-primary:hover {
   background-color: var(--accent-hover);
   border-color: var(--accent-hover);
-  box-shadow: 0 6px 18px -3px rgba(119, 106, 166, 0.4);
+  box-shadow: 0 6px 18px -3px rgba(20, 12, 4, 0.4);
 }
 
 .btn-secondary {
@@ -400,7 +382,7 @@ svg {
 .showcase-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent);
-  box-shadow: 0 16px 36px -10px rgba(119, 106, 166, 0.2), inset 0 1px 0 0 var(--glass-highlight);
+  box-shadow: 0 16px 36px -10px rgba(20, 12, 4, 0.2), inset 0 1px 0 0 var(--glass-highlight);
 }
 
 /* 이미지 컨테이너 및 로딩 펄스 스켈레톤 */
@@ -413,14 +395,7 @@ svg {
   border-radius: 11px 11px 0 0;
 }
 
-.showcase-media.loading {
-  animation: skPulse 1.4s ease-in-out infinite;
-}
 
-@keyframes skPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
-}
 
 .showcase-card img {
   display: block;
@@ -490,7 +465,7 @@ section + section {
   word-break: keep-all;
 }
 
-/* 기능 6가지 격자 — 글래스모피즘 카드 */
+/* 기능 격자. 글래스모피즘 카드 */
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
@@ -514,7 +489,7 @@ section + section {
 .feature-item:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(119, 106, 166, 0.18);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(20, 12, 4, 0.18);
 }
 
 .feature-item h3 {
@@ -560,7 +535,7 @@ section + section {
 .install-card:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(119, 106, 166, 0.18);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(20, 12, 4, 0.18);
 }
 
 .install-card h3 {
@@ -623,7 +598,7 @@ code {
 .notice-item:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(119, 106, 166, 0.18);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(20, 12, 4, 0.18);
 }
 
 .notice-item dt {
@@ -731,15 +706,7 @@ kbd {
   text-underline-offset: 3px;
 }
 
-@keyframes badgeDrop {
-  from { opacity: 0; transform: translateY(-10px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 
-@keyframes heroFadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -772,6 +739,8 @@ kbd {
     <symbol id="i-queue" viewBox="0 0 24 24"><path d="M3 6h13v2H3zm0 4h13v2H3zm0 4h9v2H3zm15-2v6l5-3z"/></symbol>
     <symbol id="i-video" viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z"/></symbol>
     <symbol id="i-ban" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2c1.9 0 3.6.6 5 1.7L5.7 17A8 8 0 0 1 12 4zm0 16c-1.9 0-3.6-.6-5-1.7L18.3 7A8 8 0 0 1 12 20z"/></symbol>
+    <symbol id="i-eq" viewBox="0 0 24 24"><path d="M5 3h2v18H5zm6 0h2v18h-2zm6 0h2v18h-2zM3 12h6v2H3zm6-6h6v2H9zm6 9h6v2h-6z"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18v2l-7 7v6l-4-2v-4L3 7z"/></symbol>
     <symbol id="i-dpad" viewBox="0 0 24 24"><path d="M12 2.5 17 8H7zM2.5 12 8 7v10zm19 0L16 17V7zM12 21.5 7 16h10z"/></symbol>
     <symbol id="i-devices" viewBox="0 0 24 24"><path d="M3 4h13v2H4v9h8v2H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm3 15h6v2H6zm12-13h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 3v9h3V9z"/></symbol>
     <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M13 2a3 3 0 0 1 3 3v1h3a1 1 0 0 1 1 1v4h-1a2.5 2.5 0 1 0 0 5h1v4a1 1 0 0 1-1 1h-4v-1a2.5 2.5 0 1 0-5 0v1H6a1 1 0 0 1-1-1v-4h1a2.5 2.5 0 1 0 0-5H5V7a1 1 0 0 1 1-1h4V5a3 3 0 0 1 3-3z"/></symbol>
@@ -815,7 +784,7 @@ kbd {
     </h1>
     <p class="hero-description">
       <span lang="ko">유튜브 화면을 심플하고 쉬운 재생기로 완전히 바꿔 드립니다. 음악과 영상을 한자리에서 다루며, 재생과 스트림은 유튜브가 그대로 맡습니다.</span>
-      <span lang="en">Transforms YouTube into a quiet, distraction-free player. Music and videos live in one calm space, while YouTube handles playback.</span>
+      <span lang="en">Turns YouTube into a player of your own. Music and video on one screen, and YouTube still does the playing.</span>
     </p>
 
     <div class="button-row">
@@ -842,11 +811,11 @@ kbd {
     <div class="showcase-grid">
       <figure class="showcase-card">
         <div class="showcase-media">
-          <img src="shot-explore.png" width="1440" height="900" alt="RenewTube 둘러보기 화면 / Explore Screen" loading="eager">
+          <img src="shot-explore.png" width="1440" height="900" alt="RenewTube 둘러보기 화면 / Browse Screen" loading="eager">
         </div>
         <figcaption class="showcase-caption">
-          <span lang="ko">둘러보기 화면. 로그인하지 않으셔도 추천 선반이 풍성하게 채워집니다.</span>
-          <span lang="en">Explore view. Curated music shelves are filled even without signing in.</span>
+          <span lang="ko">둘러보기 화면. 로그인하지 않아도 선반이 채워집니다.</span>
+          <span lang="en">Browse view. The shelves are filled before you sign in.</span>
         </figcaption>
       </figure>
       <figure class="showcase-card">
@@ -872,19 +841,19 @@ kbd {
       <span lang="en">Core Experience</span>
     </h2>
     <p class="section-description">
-      <span lang="ko">복잡한 추천 피드 대신 정갈한 플레이어 화면을 제공합니다. 데이터와 재생은 유튜브가 그대로 맡고 화면만 바꿉니다.</span>
-      <span lang="en">Replaces algorithmic clutter with a focused player interface. YouTube handles streams; we keep the room calm.</span>
+      <span lang="ko">추천 피드 대신 플레이어 화면을 보여줍니다. 재생과 데이터는 유튜브가 그대로 맡고, 화면만 바꿉니다.</span>
+      <span lang="en">A player screen instead of the recommendation feed. YouTube keeps the streams and the data; only the screen changes.</span>
     </p>
     <div class="feature-grid">
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-radio"/></svg></span>
         <h3>
           <span lang="ko">둘러보기</span>
-          <span lang="en">Explore</span>
+          <span lang="en">Browse</span>
         </h3>
         <p>
-          <span lang="ko">선반 형태로 구성된 첫 화면입니다. 유튜브 계정에 로그인하지 않으셔도 비어 있지 않고 음악과 영상 목록을 바로 탐색하실 수 있습니다.</span>
-          <span lang="en">Curated shelves ready from the first second. Browse fresh music and video charts without requiring a Google sign-in.</span>
+          <span lang="ko">선반으로 구성된 첫 화면입니다. 로그인하지 않아도 비어 있지 않고, 음악과 영상 목록을 바로 둘러보실 수 있습니다.</span>
+          <span lang="en">The first screen is shelves, and they are filled without a Google sign-in.</span>
         </p>
       </div>
       <div class="feature-item">
@@ -894,8 +863,8 @@ kbd {
           <span lang="en">Queue & Playlists</span>
         </h3>
         <p>
-          <span lang="ko">재생 중인 대기열 목록을 자유롭게 확인하고 순서를 관리합니다. 무작위 재생, 반복 재생 기능과 함께 맞춤 재생목록을 간편하게 다룹니다.</span>
-          <span lang="en">Easily reorder upcoming tracks, toggle shuffle and repeat, and manage custom playlists in a compact sidebar.</span>
+          <span lang="ko">다음에 재생될 목록을 보고 순서를 바꿉니다. 무작위 재생과 반복, 재생목록도 여기서 다룹니다.</span>
+          <span lang="en">See what plays next and reorder it. Shuffle, repeat and playlists live here too.</span>
         </p>
       </div>
       <div class="feature-item">
@@ -905,8 +874,8 @@ kbd {
           <span lang="en">Music & Video Modes</span>
         </h3>
         <p>
-          <span lang="ko">가벼운 감상을 위한 트랙 줄 목록 형태와 큼직한 화면 감상을 위한 영상 썸네일 격자 형태를 버튼 하나로 자유롭게 오가실 수 있습니다.</span>
-          <span lang="en">Switch instantly between a lightweight audio row list and a large thumbnail video grid with a single tap.</span>
+          <span lang="ko">가볍게 들을 때는 트랙 목록, 화면을 볼 때는 썸네일 격자입니다. 버튼 하나로 오갑니다.</span>
+          <span lang="en">A track list for listening, a thumbnail grid for watching. One button switches between them.</span>
         </p>
       </div>
       <div class="feature-item">
@@ -916,8 +885,8 @@ kbd {
           <span lang="en">Zero Shorts</span>
         </h3>
         <p>
-          <span lang="ko">몰입을 방해하는 세로형 쇼츠 영상을 모든 화면과 탐색 목록에서 완전히 제외하여 정갈한 감상 환경을 유지합니다.</span>
-          <span lang="en">Short-form vertical clips are completely excluded from every shelf and search result to preserve uninterrupted listening.</span>
+          <span lang="ko">세로형 쇼츠는 어떤 화면과 목록에도 나오지 않습니다.</span>
+          <span lang="en">Shorts appear in no shelf and no search result.</span>
         </p>
       </div>
       <div class="feature-item">
@@ -927,8 +896,30 @@ kbd {
           <span lang="en">Keyboard & Remote</span>
         </h3>
         <p>
-          <span lang="ko">마우스 없이도 거실 TV를 다루듯 키보드 화살표 방향키로 항목을 이동하고 실행 키를 눌러 손쉽게 제어하실 수 있습니다.</span>
-          <span lang="en">Navigate shelves and play controls with keyboard arrow keys and Enter, just like a calm living-room TV interface.</span>
+          <span lang="ko">마우스 없이 키보드 화살표로 항목을 옮기고 Enter로 실행합니다. 거실 TV의 리모컨처럼 씁니다.</span>
+          <span lang="en">Arrow keys move between items and Enter opens them, the way a TV remote does.</span>
+        </p>
+      </div>
+      <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-eq"/></svg></span>
+        <h3>
+          <span lang="ko">이퀄라이저와 볼륨 부스터</span>
+          <span lang="en">Equalizer & Volume Booster</span>
+        </h3>
+        <p>
+          <span lang="ko">다섯 밴드 이퀄라이저와 최대 3배 볼륨 부스터를 켤 때만 오디오 그래프를 만듭니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.</span>
+          <span lang="en">A five-band equalizer and a booster up to 3x, built only when switched on. In a browser that goes silent, it switches itself off.</span>
+        </p>
+      </div>
+      <div class="feature-item">
+        <span class="icon-badge"><svg class="ico"><use href="#i-filter"/></svg></span>
+        <h3>
+          <span lang="ko">구독 채널 필터</span>
+          <span lang="en">Channel Filter</span>
+        </h3>
+        <p>
+          <span lang="ko">구독 화면에서 보고 싶은 채널만 골라 봅니다. 고른 채널은 기억되고, 한 번에 해제하실 수 있습니다.</span>
+          <span lang="en">Pick which subscribed channels the Subscriptions screen shows. The choice is remembered and cleared with one press.</span>
         </p>
       </div>
       <div class="feature-item">
@@ -939,7 +930,7 @@ kbd {
         </h3>
         <p>
           <span lang="ko">오리온, 크롬, 엣지 등 데스크톱 웹 브라우저는 물론, 모바일 오리온 브라우저에서도 동일하게 작동합니다.</span>
-          <span lang="en">Works seamlessly on desktop browsers (Chrome, Orion, Edge) and mobile Orion on iOS & iPadOS.</span>
+          <span lang="en">Works on desktop Chrome, Orion and Edge, and on Orion for iPhone and iPad.</span>
         </p>
       </div>
     </div>
@@ -1020,7 +1011,7 @@ kbd {
         </dt>
         <dd>
           <span lang="ko">유튜브의 본래 구조를 훼손하지 않습니다. 키보드의 <kbd>Esc</kbd> 키를 1초 안에 두 번 누르시면 언제든지 확장을 닫고 본래의 유튜브 화면으로 즉시 되돌아옵니다.</span>
-          <span lang="en">Leaves YouTube intact. Press <kbd>Esc</kbd> twice within 1 second to instantly close RenewTube and return to the standard YouTube interface.</span>
+          <span lang="en">Leaves YouTube intact. Press <kbd>Esc</kbd> twice within 1 second to close RenewTube and get the ordinary YouTube page back.</span>
         </dd>
       </div>
       <div class="notice-item">
@@ -1052,7 +1043,7 @@ kbd {
           <span lang="en">Library Requires Sign-In</span>
         </dt>
         <dd>
-          <span lang="ko">검색과 기본 둘러보기는 로그인 없이도 자유롭게 이용하실 수 있습니다. 다만 개인 구독 채널 목록, 시청 기록 및 보관함 재생목록을 불러오시려면 유튜브 로그인이 필요합니다.</span>
+          <span lang="ko">검색과 둘러보기는 로그인 없이 됩니다. 다만 개인 구독 채널 목록, 시청 기록 및 보관함 재생목록을 불러오시려면 유튜브 로그인이 필요합니다.</span>
           <span lang="en">Search and explore shelves work anonymously. Personal subscriptions, watch history, and saved playlists connect via standard YouTube login.</span>
         </dd>
       </div>

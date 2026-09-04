@@ -1134,6 +1134,12 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   let unlocked = false
   const unlockOnFirstTouch = () => {
     if (unlocked) return
+    // Not while the arrival is being held: the element is paused on purpose,
+    // this would start it, and the press that follows a beat later would read
+    // it as playing and pause it again, so the press did nothing. Measured.
+    // The press itself unlocks through the engine, which does the same
+    // dance inside toggle() and load().
+    if (engine.arrivalHeld) return
     unlocked = true
     const el = document.querySelector('video')
     if (!el || !el.paused) return

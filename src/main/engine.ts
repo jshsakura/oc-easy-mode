@@ -8,7 +8,7 @@ import { State, disableAutonav, videoIdInUrl, type YtPlayer } from './player.ts'
 import { AudioChain } from './audio.ts'
 import type { Track } from './parse.ts'
 import type { Lang } from '../shared/i18n.ts'
-import { load, remember, save, setQuickOn, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
+import { load, markArrival, remember, save, setQuickOn, takeArrival, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
 
 /**
  * How long after an advert the end-of-track check stays quiet.
@@ -107,6 +107,7 @@ export class Engine {
     this.applyRate()
     this.applyQuality()
     this.adoptPlaying()
+    this.holdArrival()
     this.tickTimer = window.setInterval(this.tick, 500)
     this.tick()
     this.changed()
@@ -166,6 +167,59 @@ export class Engine {
     }
     this.state.queue.splice(this.state.index + 1, 0, track)
     this.state.index += 1
+  }
+
+  /**
+   * Nothing plays until it is pressed.
+   *
+   * YouTube's watch page starts its video by itself, so a page opened with the
+   * mode on was sounding before anyone had touched a thing: "재생을 안 눌렀는데
+   * 혼자 재생" (2026-09-04). The one page that may play on arrival is the one
+   * we navigated to ourselves, for a track that was pressed — load() leaves a
+   * mark behind that says so. Only the first attach of a page's life counts as
+   * an arrival; the mode switched on over a video that is already playing is
+   * the reader's own doing and is left alone.
+   */
+  private static arrivalSeen = false
+  /**
+   * While set, the page's own attempts to start are put back down. One pause
+   * is not enough: the player attaches before the video is ready and starts
+   * it again when it is, measured as "paused, then playing three seconds
+   * later". Cleared by the first press on the transport, which is the press
+   * this whole hold is waiting for.
+   */
+  private holding = false
+  private holdArrival(): void {
+    if (Engine.arrivalSeen) return
+    Engine.arrivalSeen = true
+    const ours = takeArrival()
+    const here = videoIdInUrl()
+    if (!here || ours === here) return
+    // Late is not an arrival. A page that has been open for a while and then
+    // gets the mode switched on was playing by the reader's choice.
+    if (performance.now() > 15_000) return
+    this.holding = true
+    this.putDown()
+  }
+
+  /** Pauses whatever the page has started, while the hold is on. */
+  private putDown(): void {
+    if (!this.holding) return
+    try {
+      this.player?.pauseVideo()
+    } catch {}
+    const el = this.videoEl()
+    if (el && !el.paused) el.pause()
+  }
+
+  /** The reader has pressed something: the hold is over. */
+  private releaseHold(): void {
+    this.holding = false
+  }
+
+  /** Whether the page's own start is still being held down. */
+  get arrivalHeld(): boolean {
+    return this.holding
   }
 
   private onStateChange = (raw: unknown): void => {
@@ -275,6 +329,7 @@ export class Engine {
     this.watchElement()
     this.audio.follow(this.videoEl())
     this.probeVolume()
+    if (this.holding && this.sounding()) this.putDown()
     const s = p.getPlayerState()
     // A load is pending until the player is actually underway on the track we
     // asked for; `loading` is dropped the moment it is, so it means "this load
@@ -608,6 +663,7 @@ export class Engine {
 
   /** Points the player at the current track, navigating if there is no player yet. */
   private load(): void {
+    this.releaseHold()
     const track = this.current
     if (!track) return
     this.loading = track.videoId
@@ -621,6 +677,7 @@ export class Engine {
       this.applyRate()
     } else {
       setQuickOn(true)
+      markArrival(track.videoId)
       save(this.state)
       location.assign(`/watch?v=${track.videoId}`)
     }
@@ -629,6 +686,7 @@ export class Engine {
   // ── Transport ─────────────────────────────────────────────────────────────
 
   toggle(): void {
+    this.releaseHold()
     const p = this.player
     if (!p) {
       this.load()

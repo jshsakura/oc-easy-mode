@@ -27,53 +27,53 @@
 
 <style>
   :root {
-    --bg: #ffffff;
-    --surface: #f7f7f9;
-    --surface-subtle: #f0f0f4;
-    --border: #e2e2e8;
-    --text: #141418;
-    --text-muted: #5e5e6e;
-    --accent: #7e4dc5;
-    --accent-contrast: #ffffff;
-    --code-bg: #eeeeF2;
+    --bg: #f7f5f0;
+    --surface: #fbfaf6;
+    --surface-subtle: #efece4;
+    --border: #ddd8cd;
+    --text: #232019;
+    --text-muted: #6f6a5f;
+    --accent: #232019;
+    --accent-contrast: #fbfaf6;
+    --code-bg: #efece4;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0e0e12;
-      --surface: #17171e;
-      --surface-subtle: #1e1e28;
-      --border: #2a2a38;
-      --text: #f4f4f7;
-      --text-muted: #9c9ca9;
-      --accent: #9d6ee0;
-      --accent-contrast: #ffffff;
-      --code-bg: #1f1f2a;
+      --bg: #141210;
+      --surface: #1b1815;
+      --surface-subtle: #26221d;
+      --border: #322c25;
+      --text: #ece7df;
+      --text-muted: #a39c91;
+      --accent: #ece7df;
+      --accent-contrast: #fbfaf6;
+      --code-bg: #26221d;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0e0e12;
-    --surface: #17171e;
-    --surface-subtle: #1e1e28;
-    --border: #2a2a38;
-    --text: #f4f4f7;
-    --text-muted: #9c9ca9;
-    --accent: #9d6ee0;
-    --accent-contrast: #ffffff;
-    --code-bg: #1f1f2a;
+    --bg: #141210;
+    --surface: #1b1815;
+    --surface-subtle: #26221d;
+    --border: #322c25;
+    --text: #ece7df;
+    --text-muted: #a39c91;
+    --accent: #ece7df;
+    --accent-contrast: #fbfaf6;
+    --code-bg: #26221d;
     color-scheme: dark;
   }
   :root[data-theme="light"] {
-    --bg: #ffffff;
-    --surface: #f7f7f9;
-    --surface-subtle: #f0f0f4;
-    --border: #e2e2e8;
-    --text: #141418;
-    --text-muted: #5e5e6e;
-    --accent: #7e4dc5;
-    --accent-contrast: #ffffff;
-    --code-bg: #eeeeF2;
+    --bg: #f7f5f0;
+    --surface: #fbfaf6;
+    --surface-subtle: #efece4;
+    --border: #ddd8cd;
+    --text: #232019;
+    --text-muted: #6f6a5f;
+    --accent: #232019;
+    --accent-contrast: #fbfaf6;
+    --code-bg: #efece4;
     color-scheme: light;
   }
 
@@ -248,10 +248,10 @@
         <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/>
         </svg>
-        <span id="theme-text">테마</span>
+        <span id="theme-text"><span lang="ko">테마</span><span lang="en">Theme</span></span>
       </button>
       <button id="lang-toggle" class="btn-pill" type="button" aria-label="Language / 언어">
-        <span lang="ko">EN</span><span lang="en">한국어</span>
+        <span lang="ko">EN</span><span lang="en">KO</span>
       </button>
       <a class="btn-pill" href="./">
         <span lang="ko">홈으로</span><span lang="en">Home</span>

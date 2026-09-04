@@ -136,3 +136,46 @@ test('the picture is on top of the app, and out of the way when it is not wanted
     await h.close()
   }
 })
+
+test('arriving on a watch page plays nothing until play is pressed', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    // The page's own autoplay was stopped, and stays stopped.
+    await expect.poll(() => h.page.evaluate(() => document.querySelector('video')?.paused ?? null), { timeout: 15_000 }).toBe(true)
+    await h.page.waitForTimeout(3000)
+    expect(await h.page.evaluate(() => document.querySelector('video')?.paused)).toBe(true)
+    // The track is in the bar, waiting for the press.
+    await expect(ui.locator('.bar .now .t')).not.toHaveText('재생 중인 항목 없음')
+    await ui.locator('.ctl button[title="재생 / 일시정지"]').click()
+    await expect.poll(() => h.page.evaluate(() => document.querySelector('video')?.paused), { timeout: 15_000 }).toBe(false)
+  } finally {
+    await h.close()
+  }
+})
+
+test('an arrival of our own is allowed to play', async () => {
+  // A track pressed where there is no player navigates to its page and
+  // leaves this mark behind; the page that arrives reads it and lets the
+  // video go. The mark is set the way load() sets it.
+  const h = await open(WATCH, true)
+  try {
+    // The harness's quick flag is cleared by the background's answer once the
+    // app is up (see 10-equalizer); set again for the load that follows.
+    await h.page.addInitScript(() => {
+      try {
+        localStorage.setItem('oc-easy-mode:on', '1')
+      } catch {}
+    })
+    await h.page.evaluate(() => localStorage.setItem('oc-easy-mode:arriving', 'BzYnNdJhZQw'))
+    await h.page.reload({ waitUntil: 'domcontentloaded' })
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible({ timeout: 60_000 })
+    await expect.poll(() => h.page.evaluate(() => { const v = document.querySelector('video'); return v ? !v.paused && v.currentTime > 0 : null }), { timeout: 30_000 }).toBe(true)
+    // And the mark is spent.
+    expect(await h.page.evaluate(() => localStorage.getItem('oc-easy-mode:arriving'))).toBeNull()
+  } finally {
+    await h.close()
+  }
+})
