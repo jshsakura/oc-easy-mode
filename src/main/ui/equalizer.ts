@@ -27,18 +27,29 @@ function fill(el: HTMLInputElement): void {
 
 const dB = (v: number) => (v > 0 ? `+${v} dB` : `${v} dB`)
 
+/** The one dialog that can be open, and the way to close it. */
+let closeOpen: (() => void) | null = null
+
+/** Closes the dialog if it is open. The app calls this on its way out, so the hold on the dialog count cannot outlive the mode. */
+export function closeEqualizer(): void {
+  closeOpen?.()
+}
+
 export function openEqualizer(ctx: Ctx): void {
+  if (closeOpen) return
   const audio = ctx.engine.audio
   let closed = false
   const release = holdModal()
   const done = () => {
     if (closed) return
     closed = true
+    closeOpen = null
     release()
     off()
     document.removeEventListener('keydown', onEscape, true)
     scrim.remove()
   }
+  closeOpen = done
   const onEscape = (ev: KeyboardEvent) => {
     if (ev.key !== 'Escape') return
     const floating = ctx.overlay.querySelectorAll('.menu, .scrim')
@@ -50,19 +61,30 @@ export function openEqualizer(ctx: Ctx): void {
 
   const body = h('div', { class: 'eqBody' })
 
-  function draw(): void {
+  /**
+   * Redraws the body, and puts the focus back where it was: the whole body
+   * is rebuilt, and a remote that had the switch under its thumb must find
+   * it there again rather than at the top of the dialog.
+   */
+  function draw(focus = '.eqSwitch .btn'): void {
     const on = audio.on
     const refused = eqRefused()
+    // Off the remote's map while it can do nothing: a disabled button takes
+    // no focus, and an arrow aimed at it goes nowhere at all.
     const toggle = h(
       'button',
       {
         class: on ? 'btn primary' : 'btn',
-        'data-nav': '',
+        'data-nav': refused ? undefined : '',
         'aria-pressed': String(on),
         disabled: refused ? '' : undefined,
         onclick: () => {
           if (on) audio.disable()
-          else audio.enable(ctx.engine.media)
+          else if (!audio.enable(ctx.engine.media) && !eqRefused()) {
+            // Wired by someone else first, or not wired at all: the browser
+            // is not refusing, but the sound is not ours to shape.
+            ctx.say(t('이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.'), true)
+          }
           draw()
         },
       },
@@ -100,6 +122,7 @@ export function openEqualizer(ctx: Ctx): void {
         ),
       h('div', { class: on ? 'eqBands' : 'eqBands off' }, rows, h('label', { class: 'eqRow boost' }, h('span', { class: 'lbl' }, t('볼륨 부스터')), boost, boostVal)),
     )
+    ;(body.querySelector<HTMLElement>(refused ? '.eqRefused .btn' : focus) ?? body.querySelector<HTMLElement>('[data-nav]'))?.focus()
   }
 
   // Redrawn when the chain speaks for itself: a refusal while this is open
@@ -116,11 +139,10 @@ export function openEqualizer(ctx: Ctx): void {
       { class: `${modalClass()} equalizer`, role: 'dialog' },
       modalHead(t('이퀄라이저'), done),
       body,
-      h('div', { class: 'new', style: 'justify-content: flex-end' }, h('button', { class: 'btn ghost', 'data-nav': '', onclick: () => { audio.reset(); draw() } }, icon('repeat', 16), t('기본값으로'))),
+      h('div', { class: 'new', style: 'justify-content: flex-end' }, h('button', { class: 'btn ghost', 'data-nav': '', onclick: () => { audio.reset(); draw('.eqRow input') } }, icon('repeat', 16), t('기본값으로'))),
     ),
   )
-  draw()
   ctx.overlay.appendChild(scrim)
   document.addEventListener('keydown', onEscape, true)
-  scrim.querySelector<HTMLElement>('.eqSwitch .btn')?.focus()
+  draw()
 }

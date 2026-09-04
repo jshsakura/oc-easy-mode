@@ -126,11 +126,15 @@ test('a browser that silences the graph is refused, told, and reloaded', async (
     const over = await openDialog(h)
     const reloaded = h.page.waitForEvent('load', { timeout: 20_000 })
     await over.locator('.eqSwitch .btn').click()
-    await expect(over.locator('.toast.bad')).toContainText('소리가 나지 않아', { timeout: 10_000 })
-    expect(await stored(h.page, REFUSED)).toBe('1')
-    expect(JSON.parse((await stored(h.page, EQ)) ?? '{}').on).toBe(false)
-    // The dialog says so as well, while it is still up.
-    await expect(over.locator('.eqRefused')).toBeVisible()
+    await expect(over.locator('.toast.bad')).toContainText('소리가 나지 않아', { timeout: 15_000 })
+    // One look, taken at once: the page reloads itself a moment after the
+    // toast, and three separate round trips would race it.
+    const after = await h.page.evaluate(() => ({
+      refused: localStorage.getItem('oc-easy-mode:eq-refused'),
+      on: (JSON.parse(localStorage.getItem('oc-easy-mode:eq') ?? '{}') as { on?: boolean }).on,
+      told: document.querySelector('oc-easy-mode-overlay')!.shadowRoot!.querySelector('.eqRefused') !== null,
+    }))
+    expect(after).toEqual({ refused: '1', on: false, told: true })
 
     // Only a reload brings the sound back, so the page does that itself.
     await reloaded

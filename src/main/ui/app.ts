@@ -22,7 +22,7 @@ import { installRemote } from './remote.ts'
 import { installKeys } from './keys.ts'
 import { render } from './views.ts'
 import { closeSearch, openSearch } from './search.ts'
-import { openEqualizer } from './equalizer.ts'
+import { closeEqualizer, openEqualizer } from './equalizer.ts'
 
 export interface AppOptions {
   shell: Shell
@@ -568,10 +568,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // it. By then the sound is gone for this page load and only a reload
   // brings it back, so the reload is done for the reader after the toast has
   // had time to be read. The refusal is remembered, so it will not repeat.
+  let reloadTimer: ReturnType<typeof setTimeout> | undefined
   const offAudio = engine.audio.subscribe((ev) => {
     if (ev !== 'refused') return
     toast(shell.overlay, t('소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.'), true)
-    setTimeout(() => location.reload(), 2500)
+    reloadTimer = setTimeout(() => location.reload(), 2500)
   })
 
   /**
@@ -1207,6 +1208,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       // Escape listener are module state, and left open across a re-entry it
       // kept every shortcut and the twice-to-leave dead.
       closeSearch()
+      closeEqualizer()
+      // A reload still pending would take the plain page the reader has just
+      // gone back to; leaving the mode is the end of the matter.
+      clearTimeout(reloadTimer)
       offAudio()
       themeWatch.disconnect()
       window.removeEventListener('resize', onResize)

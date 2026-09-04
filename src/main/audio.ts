@@ -62,16 +62,22 @@ function clampBoost(n: number): number {
   return Math.max(1, Math.min(BOOST_MAX, Math.round(n * 10) / 10))
 }
 
+let refused: boolean | undefined
+
 /** Whether this browser has already been found unable to do this. */
 export function eqRefused(): boolean {
-  try {
-    return localStorage.getItem(REFUSED_KEY) === '1'
-  } catch {
-    return false
+  if (refused === undefined) {
+    try {
+      refused = localStorage.getItem(REFUSED_KEY) === '1'
+    } catch {
+      refused = false
+    }
   }
+  return refused
 }
 
 function setRefused(yes: boolean): void {
+  refused = yes
   try {
     if (yes) localStorage.setItem(REFUSED_KEY, '1')
     else localStorage.removeItem(REFUSED_KEY)
@@ -128,11 +134,12 @@ function graphFor(el: HTMLMediaElement): Graph {
   // catches what the gain pushes past full scale. At unity it is a straight
   // wire, so it stays in the chain whether or not the boost is on.
   const limiter = ctx.createDynamicsCompressor()
-  limiter.threshold.value = -3
   limiter.knee.value = 0
-  limiter.ratio.value = 20
   limiter.attack.value = 0.003
   limiter.release.value = 0.1
+  // Straight through until the chain is switched on; apply() sets the rest.
+  limiter.threshold.value = 0
+  limiter.ratio.value = 1
   const analyser = ctx.createAnalyser()
   analyser.fftSize = 256
   let head: AudioNode = source
@@ -149,9 +156,33 @@ function graphFor(el: HTMLMediaElement): Graph {
   return graph
 }
 
-/** How often the self-check listens, and how many playing-but-silent reads condemn the browser. */
+/**
+ * How often the self-check listens, and how many reads taken while the
+ * element is plainly playing may all be exact zeros before the browser is
+ * condemned. Four seconds of it: a track that opens on true digital silence
+ * lasts less, and a browser that silences the graph never stops.
+ */
 const CHECK_EVERY_MS = 120
-const CHECK_SILENT_READS = 8
+const CHECK_SILENT_READS = 34
+/** A jump in the element's clock larger than this between two reads is a seek or a new track. */
+const CHECK_JUMP_S = 1.5
+
+/**
+ * The context can only be started by a press. Built from a tick on a page
+ * that loads with the switch already on, it starts suspended, and the sound
+ * routed into it goes nowhere until something wakes it. So the next press
+ * anywhere on the page does.
+ */
+let wakeInstalled = false
+function installWake(): void {
+  if (wakeInstalled) return
+  wakeInstalled = true
+  const wake = () => {
+    if (sharedCtx && sharedCtx.state !== 'running') void sharedCtx.resume().catch(() => {})
+  }
+  document.addEventListener('pointerdown', wake, true)
+  document.addEventListener('keydown', wake, true)
+}
 
 export type AudioEvent = 'changed' | 'refused'
 type Listener = (ev: AudioEvent) => void
@@ -162,6 +193,8 @@ export class AudioChain {
   private graph: Graph | null = null
   private listeners = new Set<Listener>()
   private checkTimer: ReturnType<typeof setInterval> | undefined
+  /** Whether the analyser has ever heard a sample on this page. Once it has, no silence is a verdict. */
+  private heard = false
   private onVisible = (): void => {
     if (document.visibilityState === 'visible') void this.graph?.ctx.resume().catch(() => {})
   }
@@ -195,24 +228,36 @@ export class AudioChain {
    * does nothing at all while it is off, which is the whole promise.
    */
   follow(el: HTMLMediaElement | null): void {
-    if (!this.on || !el || el === this.element) return
-    this.wire(el)
+    if (!this.on || !el) return
+    if (el !== this.element) this.wire(el)
+    else if (this.graph && this.graph.ctx.state !== 'running') void this.graph.ctx.resume().catch(() => {})
   }
 
-  private wire(el: HTMLMediaElement): void {
+  /** Builds or finds the element's graph, applies the settings, and starts listening. Returns whether the sound is ours to shape. */
+  private wire(el: HTMLMediaElement): boolean {
     try {
       this.graph = graphFor(el)
     } catch {
       // Already connected to a graph that is not ours: another extension
       // got there first. Nothing can be done from here, and it is not this
-      // browser's fault, so it is not remembered as a refusal.
+      // browser's fault, so it is not remembered as a refusal — but the
+      // switch cannot honestly stay on either.
       this.graph = null
       this.element = el
-      return
+      this.settings.on = false
+      this.stopCheck()
+      this.save()
+      return false
     }
     this.element = el
+    installWake()
     void this.graph.ctx.resume().catch(() => {})
     this.apply()
+    // Every wiring is checked, not only the one made by the press: a page
+    // that loads with the switch on builds its graph from a tick, and that
+    // is the load on which a browser that silences this would be silent.
+    this.startCheck()
+    return true
   }
 
   private apply(): void {
@@ -222,6 +267,12 @@ export class AudioChain {
     const t = g.ctx.currentTime
     g.filters.forEach((f, i) => f.gain.setTargetAtTime(on ? this.settings.bands[i] ?? 0 : 0, t, 0.02))
     g.gain.gain.setTargetAtTime(on ? this.settings.boost : 1, t, 0.02)
+    // The limiter catches what the booster pushes past full scale, and is a
+    // straight wire whenever the chain is off: a compressor left biting after
+    // the switch would keep shaping YouTube's own sound for the rest of the
+    // page, which is exactly what "off" promises not to do.
+    g.limiter.threshold.setTargetAtTime(on ? -3 : 0, t, 0.02)
+    g.limiter.ratio.setTargetAtTime(on ? 20 : 1, t, 0.02)
   }
 
   private save(): void {
@@ -242,9 +293,8 @@ export class AudioChain {
     if (eqRefused()) return false
     this.settings.on = true
     this.save()
-    if (el) this.wire(el)
-    else this.apply()
-    this.startCheck()
+    if (el) return this.wire(el)
+    this.apply()
     return true
   }
 
@@ -290,12 +340,15 @@ export class AudioChain {
     const t = g.ctx.currentTime
     g.filters.forEach((f) => f.gain.setTargetAtTime(0, t, 0.02))
     g.gain.gain.setTargetAtTime(1, t, 0.02)
+    g.limiter.threshold.setTargetAtTime(0, t, 0.02)
+    g.limiter.ratio.setTargetAtTime(1, t, 0.02)
   }
 
   // ── Listening to itself ───────────────────────────────────────────────────
 
   private startCheck(): void {
     this.stopCheck()
+    if (this.heard) return
     let silent = 0
     let lastTime = -1
     const buf = new Float32Array(256)
@@ -305,14 +358,19 @@ export class AudioChain {
       if (!g || !el || !this.on) return
       // Only a read taken while sound should be coming out counts: playing,
       // moving, audible, with the context awake. Anything else is a pause,
-      // not a verdict.
-      const moving = el.currentTime !== lastTime
-      lastTime = el.currentTime
-      if (el.paused || el.ended || el.muted || el.volume === 0 || !moving || g.ctx.state !== 'running') return
+      // not a verdict. A seek or a new track starts the count over, so the
+      // silence has to be one continuous stretch of one recording.
+      const now = el.currentTime
+      const moving = now !== lastTime
+      const jumped = lastTime >= 0 && Math.abs(now - lastTime) > CHECK_JUMP_S
+      lastTime = now
+      if (jumped) silent = 0
+      if (el.paused || el.ended || el.muted || el.volume === 0 || !moving || el.readyState < 3 || g.ctx.state !== 'running') return
       g.analyser.getFloatTimeDomainData(buf)
       for (let i = 0; i < buf.length; i++) {
         if (buf[i] !== 0) {
-          // A single non-zero sample is the whole proof.
+          // A single non-zero sample is the whole proof, for the page.
+          this.heard = true
           this.stopCheck()
           return
         }
