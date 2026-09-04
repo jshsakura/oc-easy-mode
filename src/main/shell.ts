@@ -102,6 +102,69 @@ body > *:not(${HOST_TAG}):not(${OVERLAY_TAG}) { visibility: hidden !important; }
   transform: translate(var(--oc-dx, 0px), var(--oc-dy, 0px)) !important;
   transition: none !important;
 }
+/* YouTube's own touch controls, on the mobile page.
+ *
+ * m.youtube.com does not put its controls inside #movie_player. That player
+ * carries ytp-hide-controls and has no chrome at all — no 자막 button, no
+ * settings gear, nothing (measured 2026-09-04). The controls a thumb needs are
+ * a *sibling* subtree:
+ *
+ *   #player-container-id > #player-control-container
+ *     > ytm-custom-control > ytm-watch-player-controls > #player-control-overlay
+ *
+ * which the blanking rule above hides along with the rest of the page. So the
+ * picture was ours and its controls were somebody else's, sitting behind it —
+ * reported in exactly those words. The subtree is also built lazily, on the
+ * first tap of the picture, which is why it is absent until then.
+ *
+ * Three things are needed and no more: let it be seen, put it where the
+ * picture actually is, and let it be touched.
+ *
+ * **Only the container is made visible.** The visibility property is
+ * inherited, so the
+ * subtree comes back with it — except the parts YouTube hides itself, which is
+ * how these controls fade out a few seconds after a tap. Forcing the whole
+ * subtree visible would nail them over the video for ever.
+ *
+ * The overlay inside is positioned against its nearest positioned ancestor,
+ * which was #player-container-id: the page's idea of where the player is, not
+ * ours. Fixing this container to the stage's own geometry makes it that
+ * ancestor instead, and the controls land on the picture. Geometry copied from
+ * #movie_player above rather than recomputed — same variables, same transform
+ * correction, so the two can never drift apart. */
+#player-control-container {
+  visibility: visible !important;
+  position: fixed !important;
+  left: var(--oc-x, 0px) !important;
+  top: var(--oc-y, 0px) !important;
+  width: var(--oc-w, 320px) !important;
+  height: var(--oc-h, 180px) !important;
+  /* One above the picture, and it travels with it: cover() lowers --oc-z when
+     the drawer comes out, and the controls have to go down with the thing they
+     belong to rather than float over the menu. */
+  z-index: calc(var(--oc-z, 2147482100) + 1) !important;
+  transform: translate(var(--oc-dx, 0px), var(--oc-dy, 0px)) !important;
+  /* Deaf on purpose, and this is the whole trick.
+     The subtree is built on the first tap of the picture — so a container that
+     takes touches itself eats the very tap that would create the controls, and
+     nothing is ever built. Measured: with pointer-events auto here, the box sat
+     on top of everything and #player-control-overlay stayed absent for ever.
+     The container passes touches through to the player underneath; the overlay
+     inside it, once YouTube has built it, takes its own. */
+  pointer-events: none !important;
+}
+#player-control-overlay { pointer-events: var(--oc-pe, auto) !important; }
+
+/* The desktop player hides its own right-hand buttons once it is narrow —
+ * .ytp-xsmall-width-mode takes out every .ytp-right-controls .ytp-button — and
+ * our stage is narrow often. 자막 and 설정 are not optional furniture; they are
+ * the two things the picture is for. Scoped to that mode so a button YouTube
+ * hides for a reason of its own (no captions on this video) stays hidden. */
+#movie_player.ytp-xsmall-width-mode .ytp-subtitles-button,
+#movie_player.ytp-xsmall-width-mode .ytp-settings-button {
+  display: inline-block !important;
+}
+
 /* The player's own chrome is fine, but its size-follows-the-page logic is not. */
 #movie_player .html5-video-container,
 #movie_player video {

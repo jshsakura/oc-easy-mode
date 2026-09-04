@@ -731,16 +731,22 @@ input { font: inherit; color: inherit; }
   width: 28px; height: 28px; border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--muted-foreground);
+  /* No 300ms wait for a second tap that is never coming. A browser holds a tap
+     back on a page it thinks might be double-tapped to zoom, and the delay
+     read as the button not having taken the press. */
+  touch-action: manipulation;
   transition: background var(--ease), color var(--ease);
 }
 /* The glyph shrinks with the box, from CSS: the markup asks for 18 and every
    context that needs another size says so here, once. */
 .ctl button svg, .right button svg, .drawerToggle svg { width: 16px; height: 16px; }
 .ctl button:hover, .right button:hover, .drawerToggle:hover { color: var(--foreground); }
-/* On is said by brightness, not by a box and not by the accent: off recedes
-   into grey, on steps forward as paper-white. The strongest contrast the
-   palette has, spent on the smallest change of state. */
-.ctl button.on, .right button.on { color: var(--foreground); }
+/* On is said by brightness *and* by a chip. Brightness alone was the earlier
+   answer and it is the more elegant one, but it is grey-to-white on an 18px
+   glyph: on a phone, at arm's length, a shuffle that was on looked like a
+   shuffle that was off, and the press read as lost. The chip is the panel's
+   own secondary, not the accent, so the bar still has no colour in it. */
+.ctl button.on, .right button.on { color: var(--foreground); background: var(--secondary); }
 .ctl button.on:hover, .right button.on:hover { color: var(--foreground); }
 /* The transport's play button is not the accent. It was the largest purple
    thing on the screen, next to purple sliders and purple badges on every card,

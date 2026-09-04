@@ -6,6 +6,7 @@
 
 import { State, disableAutonav, videoIdInUrl, type YtPlayer } from './player.ts'
 import type { Track } from './parse.ts'
+import type { Lang } from '../shared/i18n.ts'
 import { load, remember, save, setQuickOn, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
 
 /**
@@ -87,6 +88,7 @@ export class Engine {
     setTimeout(disableAutonav, 2000)
     this.applyVolume()
     this.applyRate()
+    this.applyQuality()
     this.adoptPlaying()
     this.tickTimer = window.setInterval(this.tick, 500)
     this.tick()
@@ -266,6 +268,9 @@ export class Engine {
       // before would be quietly thrown away — both on the next track and on a
       // rate chosen while the current one was still loading.
       this.applyRate()
+      // And the quality, for the same reason and one more: the new video has
+      // its own list of levels, so the smallest one has to be read again.
+      this.applyQuality()
     }
     // The rate is re-asserted, not set. YouTube's player drops it back to 1 at
     // moments of its own choosing — a new video becoming ready, a quality
@@ -279,6 +284,20 @@ export class Engine {
         if (p.getPlaybackRate() !== this.state.rate) this.applyRate()
       } catch {
         // A player build without the getter keeps whatever rate it has.
+      }
+    }
+    // The pin is re-asserted the same way, and **only in music mode**. Video
+    // mode is the absence of a pin: re-stating a ceiling twice a second would
+    // stop the adaptive logic ever settling, which is the one thing video mode
+    // is supposed to let it do.
+    if (this.state.mode === 'music') {
+      try {
+        const now = p.getPlaybackQuality()
+        // `unknown` is what a player answers between videos. It is not a
+        // disagreement, and re-pinning on it fights the load that is landing.
+        if (now && now !== 'unknown' && now !== this.wantedQuality()) this.applyQuality()
+      } catch {
+        // No getter, no way to tell it drifted; the load-landed call stands.
       }
     }
     const pending = this.loading !== undefined && s !== State.Playing && s !== State.Paused
@@ -409,6 +428,74 @@ export class Engine {
       this.player?.setPlaybackRate(this.state.rate)
     } catch {
       // A player build that does not take the rate keeps the one it has.
+    }
+  }
+
+  // ── Quality ───────────────────────────────────────────────────────────────
+  //
+  // **음악 모드에서는 화면이 필요 없으니 가장 작은 스트림만 받습니다.**
+  // Music mode hides the picture, and a hidden picture is still downloaded and
+  // still decoded. Asking for the smallest stream there is costs nothing that
+  // anyone can see and saves the battery and the data that the other 99% of
+  // the pixels were spending. Video mode puts it back.
+  //
+  // There is no switch for this and there should not be: the mode the person
+  // already chose says which of the two they want.
+  //
+  // **Measured 2026-09-04, live, and none of it is guessable.**
+  //
+  //   setPlaybackQuality('tiny')          does nothing at all. 360p stayed 360p
+  //   setPlaybackQualityRange('tiny','tiny')   144p within a few seconds
+  //   setPlaybackQualityRange('tiny','hd1080') from a pinned 144p: still 144p
+  //                                            after 20s. A wide range permits,
+  //                                            it does not push
+  //   setPlaybackQualityRange('auto')     releases the pin, but crawls: 144p to
+  //                                       360p over 36 seconds and no further
+  //   auto, then the ceiling              1080p within 20s, and stays
+  //
+  // So restoring takes both calls in that order, and each alone fails in its
+  // own quiet way: the ceiling alone never leaves 144p, and auto alone leaves
+  // video mode sitting at 360p.
+
+  /** The ceiling for video mode. Above this is a lot of battery for a phone. */
+  private static readonly CEILING = 'hd1080'
+
+  /**
+   * The smallest stream this video actually offers.
+   *
+   * Read rather than assumed: the list is highest-first with `auto` last, and
+   * `tiny` is not on every video. Falls back to the name YouTube uses for 144p.
+   */
+  private lowestLevel(): string {
+    try {
+      const levels = this.player?.getAvailableQualityLevels?.() ?? []
+      const real = levels.filter((l) => l !== 'auto')
+      return real[real.length - 1] ?? 'tiny'
+    } catch {
+      return 'tiny'
+    }
+  }
+
+  /** What the current mode wants the player to be showing. */
+  private wantedQuality(): string {
+    return this.state.mode === 'music' ? this.lowestLevel() : Engine.CEILING
+  }
+
+  private applyQuality(): void {
+    const p = this.player
+    if (!p || typeof p.setPlaybackQualityRange !== 'function') return
+    try {
+      if (this.state.mode === 'music') {
+        const low = this.lowestLevel()
+        p.setPlaybackQualityRange(low, low)
+      } else {
+        // Both, in this order. See the measurements above.
+        p.setPlaybackQualityRange('auto')
+        p.setPlaybackQualityRange(this.lowestLevel(), Engine.CEILING)
+      }
+    } catch {
+      // A player build without the range form keeps whatever it was showing,
+      // which is the behaviour this feature replaced anyway.
     }
   }
 
@@ -717,7 +804,7 @@ export class Engine {
     save(this.state)
   }
 
-  setLang(lang: 'ko' | 'en'): void {
+  setLang(lang: Lang): void {
     this.state.lang = lang
     save(this.state)
   }
@@ -725,6 +812,8 @@ export class Engine {
 
   setMode(mode: Mode): void {
     this.state.mode = mode
+    // The mode is the switch. Nobody has to find a setting for this.
+    this.applyQuality()
     this.changed()
   }
 

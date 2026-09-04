@@ -360,13 +360,21 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   nextButton.addEventListener('click', () => engine.next())
   const shuffleButton = h('button', { class: 'sh', 'data-nav': '', title: t('셔플') }, icon('shuffle', 18))
   shuffleButton.addEventListener('click', () => {
-    engine.setShuffle(!engine.state.shuffle)
+    const on = !engine.state.shuffle
+    engine.setShuffle(on)
     drawBar()
+    // Said out loud, because on a phone the button is 40 pixels of glyph and
+    // the only other answer to the press is a change of colour inside it.
+    toast(shell.overlay, on ? t('셔플을 켰습니다.') : t('셔플을 껐습니다.'))
   })
   const repeatButton = h('button', { class: 'rp', 'data-nav': '', title: t('반복') }, icon('repeat', 18))
   repeatButton.addEventListener('click', () => {
     engine.cycleRepeat()
     drawBar()
+    toast(
+      shell.overlay,
+      { off: t('반복을 껐습니다.'), all: t('전체 반복입니다.'), one: t('한 곡 반복입니다.') }[engine.state.repeat],
+    )
   })
 
   const volume = h('input', { type: 'range', class: 'vol', min: '0', max: '100', value: String(engine.state.volume) })
@@ -543,7 +551,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     replace(
       lyricsPane,
       ...Array.from({ length: 5 }, (_, i) =>
-        h('div', { class: 'lyricLine sk', style: `width: ${46 + ((i * 17) % 3) * 14}%; margin: 0 auto; height: 16px` }),
+        // 14px between the bars, not zero: the real lines are set at
+        // line-height 1.7 and a stack of bars with no air between them reads
+        // as one grey block rather than as words on their way.
+        h('div', { class: 'lyricLine sk', style: `width: ${46 + ((i * 17) % 3) * 14}%; margin: 14px auto; height: 18px` }),
       ),
     )
     try {

@@ -34,6 +34,17 @@ export interface YtPlayer extends HTMLElement {
   setVolume(v: number): void
   setPlaybackRate(rate: number): void
   getPlaybackRate(): number
+  /**
+   * The only quality control the page still honours.
+   *
+   * `setPlaybackQuality` is the documented one and it does nothing: measured
+   * 2026-09-04 against a live watch page, asking for `tiny` left a 360p stream
+   * at 360p. The range form changes the stream within a few seconds.
+   */
+  setPlaybackQualityRange(min: string, max?: string): void
+  getPlaybackQuality(): string
+  /** Highest first, with `auto` last. What this video actually offers. */
+  getAvailableQualityLevels(): string[]
   isMuted(): boolean
   mute(): void
   unMute(): void
