@@ -219,36 +219,6 @@ export function forgetHistory(): void {
   } catch {}
 }
 
-// ── The playlist a one-press add goes to ────────────────────────────────────
-//
-// "Add" needs a destination, and asking every time is the two-press flow this
-// exists to replace. So the last playlist chosen through the picker becomes
-// the default, and the button says which one it used. Choosing again through
-// the menu moves the default.
-
-const LAST_PLAYLIST_KEY = 'oc-easy-mode:last-playlist'
-
-export interface PlaylistRef {
-  id: string
-  title: string
-}
-
-export function lastPlaylist(): PlaylistRef | undefined {
-  try {
-    const raw = localStorage.getItem(LAST_PLAYLIST_KEY)
-    if (!raw) return undefined
-    const got = JSON.parse(raw) as Partial<PlaylistRef>
-    if (typeof got.id === 'string' && typeof got.title === 'string') return { id: got.id, title: got.title }
-  } catch {}
-  return undefined
-}
-
-export function setLastPlaylist(ref: PlaylistRef): void {
-  try {
-    localStorage.setItem(LAST_PLAYLIST_KEY, JSON.stringify(ref))
-  } catch {}
-}
-
 export function quickOn(): boolean {
   try {
     return localStorage.getItem(KEY_ON) === '1'

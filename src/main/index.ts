@@ -16,7 +16,7 @@ import { InnertubeError } from './innertube.ts'
 import type { Playlist, Track } from './parse.ts'
 import { videoIdInUrl, waitForPlayer } from './player.ts'
 import { alreadyMounted, mount, type Shell } from './shell.ts'
-import { save, setLastPlaylist, setQuickOn } from './store.ts'
+import { save, setQuickOn } from './store.ts'
 import { DEFAULT_CONFIG, NS, isOurs, type Config, type ToIsolated, type ToMain } from '../shared/messages.ts'
 import { mountApp } from './ui/app.ts'
 import { explain, type Ctx } from './ui/ctx.ts'
@@ -147,15 +147,10 @@ async function start(): Promise<void> {
           if (typeof chosen === 'object') {
             const id = await api.createPlaylist(cfg, chosen.create, tracks.map((t) => t.videoId))
             await base.refreshPlaylists()
-            // Whatever was chosen here becomes where the row buttons put things,
-            // so the second track never has to be filed by hand.
-            setLastPlaylist({ id, title: chosen.create })
             toast(shell!.overlay, `'${chosen.create}'을(를) 만들었습니다.`)
           } else {
             if (tracks.length === 0) return
             await api.addToPlaylist(cfg, chosen, tracks.map((t) => t.videoId))
-            const named = playlists.find((p) => p.id === chosen)
-            setLastPlaylist({ id: chosen, title: named?.title ?? t('재생목록') })
             toast(shell!.overlay, `${tracks.length}개를 넣었습니다.`)
           }
         } catch (err) {
