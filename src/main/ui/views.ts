@@ -73,7 +73,7 @@ export function nothing(text: string, glyph: Parameters<typeof icon>[0] = 'note'
  * for more mid-listen should extend the queue you would have got, not start a
  * different one — so the array is held here and the play handler closes over it.
  */
-function listOf(ctx: Ctx, first: api.Page): HTMLElement {
+function listOf(ctx: Ctx, first: api.Page, shape: Shape = feedShape(ctx)): HTMLElement {
   const rows = h('div', { class: 'rows' })
   let page = first
   let all = first.tracks
@@ -84,7 +84,7 @@ function listOf(ctx: Ctx, first: api.Page): HTMLElement {
     // the same: the button steps aside and the rows it is about to fetch stand
     // there in outline. A button relabelled "가져오는 중…" says a wait is
     // happening somewhere; this says where, and how much.
-    const waiting = ctx.engine.state.mode === 'video'
+    const waiting = shape === 'grid'
       ? Array.from({ length: 6 }, () => skTile())
       : Array.from({ length: 4 }, () => skRow())
     more.remove()
@@ -103,7 +103,7 @@ function listOf(ctx: Ctx, first: api.Page): HTMLElement {
   })
 
   function draw(): void {
-    layout(ctx, rows, all, (track) => ({ quick: addQuick(ctx, track) }))
+    layout(ctx, rows, all, (track) => ({ quick: addQuick(ctx, track) }), shape)
     if (page.continuation) rows.appendChild(more)
   }
 
@@ -116,13 +116,37 @@ function listOf(ctx: Ctx, first: api.Page): HTMLElement {
  * Draws a list of tracks the way the current mode wants it: a track list in
  * music mode, a wall of thumbnails in video mode.
  */
+/**
+ * Cards or rows, decided in one place.
+ *
+ * **홈 is cards whatever the mode.** It is YouTube's own recommendation feed
+ * and it is video-shaped by definition: podcasts, uploads, whatever the
+ * account attracts. Drawn as a numbered list with running times beside a 전체
+ * 재생 button, it read as an album, and a forty-minute video sat in it looking
+ * like track four. The other feeds keep following the mode, because 구독 and
+ * 시청 기록 are whatever the person put in them and the mode is the person
+ * saying which of the two they are here for. 탐색 is music by decision and is
+ * drawn elsewhere.
+ *
+ * Not guessed from the tracks. There is no honest signal in a row for whether
+ * it is music, and a heuristic on duration or channel would be wrong often and
+ * silently. Which screen this is, is known.
+ */
+export type Shape = 'grid' | 'rows'
+
+function feedShape(ctx: Ctx, id?: api.FeedId): Shape {
+  if (id === 'FEwhat_to_watch') return 'grid'
+  return ctx.engine.state.mode === 'video' ? 'grid' : 'rows'
+}
+
 function layout(
   ctx: Ctx,
   into: HTMLElement,
   list: Track[],
   extraFor: (t: Track) => Pick<Parameters<typeof row>[2], 'extra' | 'quick'>,
+  shape: Shape = feedShape(ctx),
 ): void {
-  const asGrid = ctx.engine.state.mode === 'video'
+  const asGrid = shape === 'grid'
   into.className = asGrid ? 'grid' : 'rows'
   followNowPlaying(ctx, into)
   replace(
@@ -215,26 +239,58 @@ function relayoutOnModeChange(ctx: Ctx, el: HTMLElement, draw: () => void): void
  * layout classes and puts grey blocks inside them, so when the data lands the
  * screen does not change shape — it fills in.
  */
+/**
+ * The outline of one row, in the shape a row actually has.
+ *
+ * **It has to carry .rowInner.** A row became two columns when the swipe went
+ * in, the content in one and the actions in the other, and this outline kept
+ * emitting the old flat children straight into that grid. They landed in the
+ * wrong tracks and stacked: measured 2026-09-04, an outlined row stood 84px
+ * against a real one's 60px, so every feed dropped 24px per row, six rows at a
+ * time, the instant its data arrived. An outline whose whole job is to hold
+ * the shape was the thing changing it.
+ */
 export function skRow(): HTMLElement {
   return h(
     'div',
     { class: 'row', 'aria-hidden': 'true' },
-    h('div', { class: 'idx sk', style: 'width: 14px; height: 8px; justify-self: end' }),
-    h('div', { class: 'thumb sk' }),
-    h('div', { class: 'meta' },
-      h('div', { class: 'sk', style: 'height: 10px; width: 62%; margin-bottom: 6px' }),
-      h('div', { class: 'sk', style: 'height: 8px; width: 38%' })),
-    h('div', { class: 'dur sk', style: 'width: 34px; height: 8px' }),
+    h(
+      'div',
+      { class: 'rowInner' },
+      h('div', { class: 'idx sk', style: 'width: 14px; height: 8px; justify-self: end' }),
+      h('div', { class: 'thumb sk' }),
+      h('div', { class: 'meta' },
+        h('div', { class: 'sk', style: 'height: 10px; width: 62%; margin-bottom: 6px' }),
+        h('div', { class: 'sk', style: 'height: 8px; width: 38%' })),
+      h('div', { class: 'dur sk', style: 'width: 34px; height: 8px' }),
+    ),
+    // The strip the quick button and the menu sit in. Empty, but it holds the
+    // width they will take, so the title does not shorten when they arrive.
+    h('div', { class: 'rowActions' },
+      h('div', { class: 'sk', style: 'width: 18px; height: 18px; border-radius: 6px' }),
+      h('div', { class: 'sk', style: 'width: 18px; height: 18px; border-radius: 6px' })),
   )
 }
 
+/**
+ * The outline of one card, in the box a card actually occupies.
+ *
+ * The title and subtitle wear the card's own classes rather than free-floating
+ * bars, because .tile .t keeps two lines of room whether the title needs them
+ * or not, and an outline that did not reserve them stood 259px against a real
+ * card's 295px: measured 2026-09-04, every card in 영상 mode grew 36px the
+ * moment its data landed.
+ */
 function skTile(): HTMLElement {
   return h(
     'div',
     { class: 'tile', style: 'background: none', 'aria-hidden': 'true' },
     h('div', { class: 'cover sk' }),
-    h('div', { class: 'sk', style: 'height: 10px; width: 80%; margin: 8px 10px 0' }),
-    h('div', { class: 'sk', style: 'height: 8px; width: 55%; margin: 4px 10px 10px' }),
+    // Inline, so the line box comes from the font the real text will use.
+    // As blocks the bars *were* the height, and .s came out 11px short of the
+    // 13px line it stands in.
+    h('div', { class: 't' }, h('span', { class: 'sk skLine', style: 'height: 10px; width: 80%' })),
+    h('div', { class: 's' }, h('span', { class: 'sk skLine', style: 'height: 8px; width: 55%' })),
   )
 }
 
@@ -263,19 +319,56 @@ export function skRows(n: number): HTMLElement {
   return h('div', { class: 'rows' }, Array.from({ length: n }, () => skRow()))
 }
 
-/** The two buttons every feed and playlist screen carries above its list. */
-function skToolbar(): HTMLElement {
+/**
+ * The buttons a screen is about to draw, as outlines the same size.
+ *
+ * **Sized by the words themselves, not by a number.** These used to be two
+ * fixed widths, and a button is as wide as its label: 104px and 124px against
+ * the 114px and 140px the Korean ones actually take, and no relation at all to
+ * the fourteen other languages this ships in. So the real label goes in,
+ * hidden, and the button box is what gets painted. It costs nothing and it
+ * cannot drift.
+ */
+function skToolbar(...labels: string[]): HTMLElement {
   return h(
     'div',
     { class: 'toolbar', 'aria-hidden': 'true' },
-    h('div', { class: 'sk', style: 'height: 36px; width: 104px' }),
-    h('div', { class: 'sk', style: 'height: 36px; width: 124px' }),
+    // The glyph's room as well as the word's: .btn lays out icon, gap, label,
+    // and an outline with only the label came out 24px short of the button
+    // that replaced it.
+    labels.map((label) =>
+      h('div', { class: 'btn skBtn' }, h('span', { class: 'skBtnIcon' }), h('span', null, label)),
+    ),
   )
 }
 
-/** A feed, in whichever of the two shapes the mode is asking for. */
-function skFeed(ctx: Ctx): HTMLElement {
-  return ctx.engine.state.mode === 'video'
+/** The outline of a playlist row, which is not the shape a track row is. */
+function skPlaylistRow(): HTMLElement {
+  return h(
+    'div',
+    { class: 'row plrow', 'aria-hidden': 'true' },
+    h('div', { class: 'thumb sk' }),
+    h('div', { class: 'meta' },
+      h('div', { class: 'sk', style: 'height: 10px; width: 54%; margin-bottom: 6px' }),
+      h('div', { class: 'sk', style: 'height: 8px; width: 26%' })),
+    h('div', { class: 'sk', style: 'width: 12px; height: 12px; justify-self: end' }),
+  )
+}
+
+function skPlaylistRows(n: number): HTMLElement {
+  return h('div', { class: 'rows' }, Array.from({ length: n }, () => skPlaylistRow()))
+}
+
+/**
+ * A feed's outline, in the shape that feed is about to take.
+ *
+ * It asks feedShape, the same function the screen asks. The two used to decide
+ * separately and that is exactly how they drift: measured 2026-09-04, outlined
+ * rows stood 84px against real ones at 60px and outlined cards 259px against
+ * 295px, so every feed changed height the moment its data landed.
+ */
+function skFeed(ctx: Ctx, id: api.FeedId): HTMLElement {
+  return feedShape(ctx, id) === 'grid'
     ? h('div', { class: 'grid' }, Array.from({ length: 6 }, () => skTile()))
     : skRows(6)
 }
@@ -431,7 +524,16 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
   // shape when the data arrived instead of filling in, which is the one thing
   // these outlines exist to prevent. The toolbar is drawn too: it is what
   // pushes everything below it down.
-  replace(main, h('h2', null, title), skToolbar(), skFeed(ctx))
+  // The same buttons this screen is about to have, 구독 included: its channel
+  // filter is a third one, and an outline that promised two put it in later.
+  replace(
+    main,
+    h('h2', null, title),
+    id === 'FEsubscriptions'
+      ? skToolbar(t('전체 재생'), t('대기열에 추가'), t('채널'))
+      : skToolbar(t('전체 재생'), t('대기열에 추가')),
+    skFeed(ctx, id),
+  )
   try {
     const page = await api.feed(ctx.cfg, id)
     if (!current(token)) return
@@ -528,7 +630,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
       main,
       h('h2', null, title),
       toolbar,
-      feed.length > 0 && listOf(ctx, { ...page, tracks: feed }),
+      feed.length > 0 && listOf(ctx, { ...page, tracks: feed }, feedShape(ctx, id)),
       // The shelves are YouTube's own injections and carry no channel of ours
       // to filter by, so they stand aside while a filter is on rather than
       // sitting under a narrowed feed pretending to belong to it.
@@ -544,7 +646,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
 
 async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
   const token = generation
-  replace(main, h('h2', null, t('내 재생목록')), skRows(5))
+  replace(main, h('h2', null, t('내 재생목록')), skToolbar(t('새 재생목록')), skPlaylistRows(5))
   try {
     await ctx.refreshPlaylists()
     if (!current(token)) return
