@@ -11,6 +11,7 @@ import { State, type YtPlayer } from '../../src/main/player.ts'
 import type { Persisted } from '../../src/main/store.ts'
 import type { Ctx, View } from '../../src/main/ui/ctx.ts'
 import { pick, toast } from '../../src/main/ui/overlay.ts'
+import { openSearch } from '../../src/main/ui/search.ts'
 import type { YtCfg } from '../../src/main/ytcfg.ts'
 import { frame } from './frame.ts'
 
@@ -366,6 +367,9 @@ export function makeCtx(overrides: CtxOverrides = {}): Ctx {
       ctx.view = view
     },
     reload() {},
+    search(query?: string) {
+      openSearch(ctx, query)
+    },
     say(message: string, bad?: boolean) {
       toast(overlay, message, bad)
     },

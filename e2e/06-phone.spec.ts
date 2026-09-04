@@ -94,10 +94,24 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     await ui.locator('.drawerToggle').click()
     await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBe(0)
     await ui.locator('.nav').filter({ hasText: '검색' }).click()
-    await expect(ui.locator('.searchbox input')).toBeVisible()
+    const over = page.locator('oc-easy-mode-overlay')
+    await expect(over.locator('.searchbox input')).toBeVisible()
     await expect
       .poll(async () => (await ui.locator('.side').boundingBox())!.x)
       .toBeLessThan(0)
+
+    // On a phone the panel is the whole screen, hung from the top so the field
+    // is nowhere near the keyboard, and its own close button puts it away.
+    const panel = (await over.locator('.modal.search').boundingBox())!
+    expect(panel.y).toBe(0)
+    expect(Math.round(panel.width)).toBe(Math.round(app.width))
+    await over.locator('.modal.search .modalClose').click()
+    await expect(over.locator('.modal.search')).toHaveCount(0)
+
+    // And the header has its own way in, beside the theme, for every screen.
+    await ui.locator('.top .searchOpen').click()
+    await expect(over.locator('.modal.search')).toBeVisible()
+    await expect(over.locator('.searchbox input')).toBeFocused()
 
   } finally {
     await context.close()

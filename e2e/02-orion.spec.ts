@@ -3,7 +3,7 @@
 // the same thing from the extension's side.
 
 import { expect, test } from '@playwright/test'
-import { app, open, orionFlavour } from './fixture.ts'
+import { app, open, orionFlavour, searchFor } from './fixture.ts'
 
 const ORION = orionFlavour()
 
@@ -30,11 +30,8 @@ test('and the product works from there: search, play, leave', async () => {
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
-    await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('아이유 밤편지')
-    await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row:not([aria-hidden])').first()
-    await expect(first).toBeVisible()
+    const over = await searchFor(h.page, '아이유 밤편지')
+    const first = over.locator('.row:not([aria-hidden])').first()
 
     const title = (await first.locator('.title').textContent())?.trim() ?? ''
     await first.locator('.meta').click()

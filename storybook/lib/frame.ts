@@ -202,10 +202,10 @@ export function createFrame(opts: FrameOptions): Frame {
       // separately; the workbench should not be sitting on it either way.
       //
       // The name is the view's kind, which is what app.ts stores for every
-      // view that is only its kind. A view carrying more than that (a search
-      // with a query, a named playlist) does not survive the round trip, so
-      // it is navigated to instead. No story needs one yet.
-      const simple = o.view && o.view.kind !== 'playlist' && o.view.kind !== 'search'
+      // view that is only its kind. A view carrying more than that (a named
+      // playlist) does not survive the round trip, so it is navigated to
+      // instead. No story needs one yet.
+      const simple = o.view && o.view.kind !== 'playlist'
       if (o.view && simple) engine.state.view = o.view.kind
       const app = mountApp({
         shell,

@@ -1,7 +1,7 @@
 // The product: our UI, YouTube's player, one queue between them.
 
 import { expect, test } from '@playwright/test'
-import { app, open } from './fixture.ts'
+import { app, open, searchFor } from './fixture.ts'
 
 const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
 
@@ -11,11 +11,8 @@ test('search returns tracks, and choosing one drives the page\'s player', async 
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
 
-    await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('아이유 밤편지')
-    await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row:not([aria-hidden])').first()
-    await expect(first).toBeVisible()
+    const over = await searchFor(h.page, '아이유 밤편지')
+    const first = over.locator('.row:not([aria-hidden])').first()
 
     const title = (await first.locator('.title').textContent())?.trim() ?? ''
     expect(title.length).toBeGreaterThan(0)
@@ -46,10 +43,8 @@ test('the player is placed over the slot, and the slot moves with the layout', a
 
     // Something has to be playing for there to be a picture at all: it is
     // shown while a track is loaded and gone when none is.
-    await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('lofi')
-    await ui.locator('.searchbox input').press('Enter')
-    await ui.locator('.row:not([aria-hidden])').first().click()
+    const over = await searchFor(h.page, 'lofi')
+    await over.locator('.row:not([aria-hidden])').first().click()
 
     const rects = async () =>
       h.page.evaluate(() => {
@@ -87,12 +82,8 @@ test('the queue advances and the mode survives it', async () => {
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
-    await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('lofi')
-    await ui.locator('.searchbox input').press('Enter')
-    await expect(ui.locator('.row:not([aria-hidden])').first()).toBeVisible()
-
-    await ui.locator('.toolbar button', { hasText: '전체 재생' }).click()
+    const over = await searchFor(h.page, 'lofi')
+    await over.locator('.searchAct', { hasText: '전체 재생' }).click()
     const firstTitle = await ui.locator('.bar .now .t').textContent()
 
     await ui.locator('.ctl button[title="다음"]').click()

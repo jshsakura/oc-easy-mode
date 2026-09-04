@@ -20,6 +20,9 @@ const LRC = [
   '[00:45.00]다시 겨울이 오면',
 ].join('\n')
 
+/** A real search answer, the same one the parser tests are written against. */
+import SEARCH from '../../e2e/fixtures/search-with-shorts.json'
+
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
@@ -51,6 +54,12 @@ export function stubNetwork(): void {
     // The heart. Signed out is the honest answer here, and the toast it
     // produces is a screen the design has to have.
     if (url.includes('/youtubei/v1/like/')) return json({ error: 'workbench is signed out' }, 401)
+    // The search panel. One answer for every query, except the one that asks
+    // for nothing, so the empty state can be looked at too.
+    if (url.includes('/youtubei/v1/search')) {
+      const query = String((JSON.parse(String(init?.body ?? '{}')) as { query?: string }).query ?? '')
+      return json(query.includes('없음') ? {} : SEARCH)
+    }
     if (url.includes('/youtubei/v1/next')) return json({})
 
     // Anything else is the workbench's own assets.

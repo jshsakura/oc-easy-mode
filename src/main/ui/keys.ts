@@ -2,7 +2,8 @@
 //
 // The keys are YouTube's own, because they are the ones already in the hands
 // this is for: k and space play, j and l jump ten seconds, m mutes. The rest
-// are this player's — s for shuffle, r for repeat, v for the picture.
+// are this player's — s for shuffle, r for repeat, v for the picture — and
+// / opens the search, which is YouTube's key for its own.
 //
 // **The arrows are not here.** They are how a remote control moves between
 // rows, and a seek bound to them would fight that for as long as something was
@@ -29,6 +30,8 @@ function typing(ev: KeyboardEvent): boolean {
 export interface KeyActions {
   /** Cycles the picture, which is the player bar's own button. */
   toggleVideo(): void
+  /** Opens the search panel over the current screen. */
+  openSearch(): void
 }
 
 export function installKeys(engine: Engine, actions: KeyActions): () => void {
@@ -74,6 +77,8 @@ export function installKeys(engine: Engine, actions: KeyActions): () => void {
         case 'm':
         case 'M':
           return () => engine.toggleMute()
+        case '/':
+          return () => actions.openSearch()
         default:
           return undefined
       }

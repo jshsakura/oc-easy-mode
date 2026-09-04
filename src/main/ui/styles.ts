@@ -1406,4 +1406,43 @@ input[type=range]::-moz-range-thumb {
 .right .sp, .right .sl { display: none; }
 /* The speed button is a word, not a glyph. */
 .right .sp { font-size: 12.5px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+/* ── Search, floating ────────────────────────────────────────────────────── */
+/* The panel hangs from the top of the screen rather than floating in the
+   middle: its answers grow downward as they arrive, and a list growing from a
+   centre point would move its own field about. */
+.searchScrim { align-items: flex-start; }
+.modal.search { width: min(680px, calc(100dvw - 32px)); margin-top: 8dvh; max-height: 80dvh; }
+/* The field is the heading. Nothing above it says 검색, because the field
+   already does, and the close button beside it is the one every dialog has. */
+.searchHead { display: flex; align-items: center; gap: 6px; padding: 14px 12px 0 16px; flex: none; }
+.searchHead .searchbox { flex: 1; margin: 0; }
+.searchHead .modalClose { margin: 0; }
+/* An explicit minimum, which is also what lets a flex child shrink and scroll
+   at all: left at auto it would grow the panel past its ceiling instead. */
+.searchBody { flex: 1 1 auto; min-height: 140px; overflow-y: auto; padding: 16px 14px 18px; }
+/* The two actions above the answers: lines as wide as the field, so the
+   arrows find them on the way down (see search.ts). Quiet like a row, with
+   the count in grey after the verb. */
+.searchAct {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 9px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500;
+  transition: background var(--ease);
+}
+.searchAct:hover { background: var(--hover); }
+.searchAct:active { background: var(--secondary); }
+.searchAct svg { color: var(--muted-foreground); flex: none; }
+.searchAct .sub { margin-left: auto; font-weight: 400; }
+.searchAct + .rows { margin-top: 10px; }
+.searchBody .empty { padding: 40px 0; }
+/* The phone form is the whole screen, hung from the top, not a sheet along the
+   bottom like every other dialog: a sheet puts the field where the keyboard
+   is about to be. Padded for the notch, since there is no header above it. */
+.modal.search.full {
+  align-self: flex-start; width: 100dvw; height: 100dvh; max-height: none; margin: 0;
+  border: 0; border-radius: 0; padding: env(safe-area-inset-top) 0 0;
+}
+.modal.search.full .searchHead { padding: 10px 6px 0 12px; }
+.modal.search.full .searchBody { padding: 14px 12px calc(14px + env(safe-area-inset-bottom)); }
+.modal.search.full .searchAct { padding: 11px 12px; font-size: 15px; }
 `

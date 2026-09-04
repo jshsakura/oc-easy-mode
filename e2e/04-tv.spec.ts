@@ -1,7 +1,7 @@
 // The television shape: shelves, a grid, and arrow keys that move between them.
 
 import { expect, test } from '@playwright/test'
-import { app, open } from './fixture.ts'
+import { app, open, overlay } from './fixture.ts'
 
 const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
 
@@ -41,21 +41,54 @@ test('opening a shelf card opens that playlist', async () => {
   }
 })
 
-test('a track list comes back as rows', async () => {
+test('search opens over the screen, and its answers are rows', async () => {
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
+    const over = overlay(h.page)
     await expect(ui.locator('.app')).toBeVisible()
     await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('lofi')
-    await ui.locator('.searchbox input').press('Enter')
-    await expect(ui.locator('.rows .row:not([aria-hidden])').first()).toBeVisible()
+    // A panel, not a screen: the sidebar still says where we are.
+    await expect(over.locator('.modal.search')).toBeVisible()
+    await expect(ui.locator('.nav.on')).toHaveText('탐색')
+    await over.locator('.searchbox input').fill('lofi')
+    await over.locator('.searchbox input').press('Enter')
+    await expect(over.locator('.rows .row:not([aria-hidden])').first()).toBeVisible()
 
-    // The wall of thumbnails is not covered here, and cannot be: since the
-    // mode switch was taken out, the shape follows the screen — YouTube's own
-    // feeds (홈, 구독, 시청 기록) are the video-shaped ones, and every one of
-    // them is empty without an account. This suite is signed out.
-    await expect(ui.locator('.grid')).toHaveCount(0)
+    // Escape puts the panel away and is spent on it: one press does not count
+    // towards leaving the mode.
+    await h.page.keyboard.press('Escape')
+    await expect(over.locator('.modal.search')).toHaveCount(0)
+    await expect(ui.locator('.app')).toBeVisible()
+  } finally {
+    await h.close()
+  }
+})
+
+test('choosing a result plays it, and the panel closes over the screen it left', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    const over = overlay(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '대기열' }).click()
+    await expect(ui.locator('.nav.on')).toHaveText('대기열')
+
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    const box = over.locator('.searchbox input')
+    await expect(box).toBeFocused()
+    // Typed, not filled: the answers arrive as the typing settles, without
+    // Enter.
+    await box.pressSequentially('아이유 밤편지', { delay: 20 })
+    const first = over.locator('.row:not([aria-hidden])').first()
+    await expect(first).toBeVisible()
+    const title = (await first.locator('.title').textContent())?.trim() ?? ''
+
+    await first.locator('.meta').click()
+    await expect(over.locator('.modal.search')).toHaveCount(0)
+    await expect(ui.locator('.bar .now .t')).toHaveText(title)
+    // The screen underneath was never left.
+    await expect(ui.locator('.nav.on')).toHaveText('대기열')
   } finally {
     await h.close()
   }
@@ -66,20 +99,26 @@ test('arrow keys move focus, and Enter opens what is focused', async () => {
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
+    const over = overlay(h.page)
     await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('아이유 밤편지')
-    await ui.locator('.searchbox input').press('Enter')
-    await expect(ui.locator('.row:not([aria-hidden])').first()).toBeVisible()
+    await over.locator('.searchbox input').fill('아이유 밤편지')
+    await over.locator('.searchbox input').press('Enter')
+    await expect(over.locator('.row:not([aria-hidden])').first()).toBeVisible()
 
+    // The panel is drawn in the overlay root, so that is where focus lives.
     const focused = () =>
       h.page.evaluate(() => {
-        const root = document.querySelector('oc-easy-mode')!.shadowRoot!
+        const root = document.querySelector('oc-easy-mode-overlay')!.shadowRoot!
         const el = root.activeElement as HTMLElement | null
         return el ? `${el.className}|${el.textContent?.slice(0, 24) ?? ''}` : null
       })
 
-    // Down out of the search field, through the toolbar, and into the rows.
-    await ui.locator('.searchbox input').focus()
+    // Down out of the search field lands on 전체 재생, the first of the two
+    // actions above the rows, and not on a row past them: the actions are as
+    // wide as the field for exactly this reason.
+    await over.locator('.searchbox input').focus()
+    await h.page.keyboard.press('ArrowDown')
+    expect(await focused()).toContain('searchAct')
     let landed = ''
     for (let i = 0; i < 8 && !landed.includes('row'); i++) {
       await h.page.keyboard.press('ArrowDown')
@@ -87,8 +126,9 @@ test('arrow keys move focus, and Enter opens what is focused', async () => {
     }
     expect(landed).toContain('row')
 
-    // Enter plays it, and the bar agrees.
+    // Enter plays it, the panel goes, and the bar agrees.
     await h.page.keyboard.press('Enter')
+    await expect(over.locator('.modal.search')).toHaveCount(0)
     await expect(ui.locator('.bar .now .t')).not.toHaveText('재생 중인 항목 없음')
   } finally {
     await h.close()

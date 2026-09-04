@@ -136,8 +136,7 @@ export const DEFAULTS: Persisted = {
   volume: 100,
   rate: 1,
   video: 'corner',
-  // Not 'search', which opens on an empty box, and not 'home', which YouTube
-  // leaves empty until it knows you.
+  // Not 'home', which YouTube leaves empty until it knows you.
   view: 'explore',
 }
 

@@ -2,7 +2,7 @@
 // the controls the phone shows with its screen off.
 
 import { expect, test } from '@playwright/test'
-import { app, open } from './fixture.ts'
+import { app, open, overlay } from './fixture.ts'
 
 const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
 
@@ -10,12 +10,13 @@ test('what was played comes back under 최근 감상, signed out', async () => {
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
+    const over = overlay(h.page)
     await expect(ui.locator('.app')).toBeVisible()
 
     await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('아이유 밤편지')
-    await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row:not([aria-hidden])').first()
+    await over.locator('.searchbox input').fill('아이유 밤편지')
+    await over.locator('.searchbox input').press('Enter')
+    const first = over.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
     const title = (await first.locator('.title').textContent())?.trim() ?? ''
     await first.locator('.meta').click()
@@ -77,21 +78,24 @@ test('the shortcuts drive the player, and stay out of the search box', async () 
     // Typing first, because every one of these letters is also a shortcut and
     // the box has to win. This is the bug that ate "c" once already.
     await ui.locator('.nav', { hasText: '검색' }).click()
-    const box = ui.locator('.searchbox input')
-    // The view focuses its own field as it finishes rendering. Typing before
-    // that lands drops the first few keys — a race in the test, not in the
-    // product: typed into a settled box, all eight of these arrive every time.
+    const over = overlay(h.page)
+    const box = over.locator('.searchbox input')
+    // The panel focuses its own field as it opens. Typing before that lands
+    // drops the first few keys — a race in the test, not in the product:
+    // typed into a settled box, all eight of these arrive every time.
     await expect(box).toBeFocused()
     await box.fill('')
     await box.pressSequentially('smkjlv 아이유', { delay: 30 })
     await expect(box).toHaveValue('smkjlv 아이유')
 
-    // Now with the focus off the box, the same letters are controls.
+    // Choosing a result closes the panel, and with it gone the same letters
+    // are controls again.
     await box.fill('아이유 밤편지')
     await box.press('Enter')
-    const first = ui.locator('.row:not([aria-hidden])').first()
+    const first = over.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
     await first.locator('.meta').click()
+    await expect(over.locator('.modal.search')).toHaveCount(0)
 
     // Counted rather than watched. Whether a video actually starts in a
     // headless run is the browser's decision, and the question here is only
@@ -110,10 +114,8 @@ test('the shortcuts drive the player, and stay out of the search box', async () 
     })
     const calls = () => h.page.evaluate(() => (window as unknown as { __calls: string[] }).__calls)
 
-    // Off the box, which is the whole difference between a letter and a
-    // control. Blurred rather than clicked somewhere else: a click has to land
-    // on something, and everything on this page does something when clicked.
-    await box.evaluate((el: HTMLElement) => el.blur())
+    // The panel took the box with it, so nothing is being typed into, which
+    // is the whole difference between a letter and a control.
     await h.page.keyboard.press('k')
     await expect.poll(async () => (await calls()).length, { timeout: 10_000 }).toBe(1)
     await h.page.keyboard.press('k')
@@ -141,14 +143,14 @@ test('speed reaches the player, and the sleep timer arms and disarms', async () 
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
-    const over = h.page.locator('oc-easy-mode-overlay')
+    const over = overlay(h.page)
     await expect(ui.locator('.app')).toBeVisible()
 
     // Something has to be playing for a rate to mean anything.
     await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('아이유 밤편지')
-    await ui.locator('.searchbox input').press('Enter')
-    const first = ui.locator('.row:not([aria-hidden])').first()
+    await over.locator('.searchbox input').fill('아이유 밤편지')
+    await over.locator('.searchbox input').press('Enter')
+    const first = over.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
     const title = (await first.locator('.title').textContent())?.trim() ?? ''
     await first.locator('.meta').click()
@@ -195,15 +197,21 @@ test('nothing reaches the player through a menu or a dialog', async () => {
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
-    const over = h.page.locator('oc-easy-mode-overlay')
+    const over = overlay(h.page)
     await expect(ui.locator('.app')).toBeVisible()
 
     await ui.locator('.nav', { hasText: '검색' }).click()
-    await ui.locator('.searchbox input').fill('아이유 밤편지')
-    await ui.locator('.searchbox input').press('Enter')
+    await over.locator('.searchbox input').fill('아이유 밤편지')
+    await over.locator('.searchbox input').press('Enter')
+    const result = over.locator('.row:not([aria-hidden])').first()
+    await expect(result).toBeVisible()
+    await result.locator('.meta').click()
+    await expect(over.locator('.modal.search')).toHaveCount(0)
+
+    // The answers went into the queue, and a row there has the same menu.
+    await ui.locator('.nav', { hasText: '대기열' }).click()
     const first = ui.locator('.row:not([aria-hidden])').first()
     await expect(first).toBeVisible()
-    await first.locator('.meta').click()
 
     const settings = () =>
       h.page.evaluate(() => {

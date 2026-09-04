@@ -21,6 +21,7 @@ import { confirm, showMenu, toast, type MenuItem } from './overlay.ts'
 import { installRemote } from './remote.ts'
 import { installKeys } from './keys.ts'
 import { render } from './views.ts'
+import { closeSearch, openSearch } from './search.ts'
 
 export interface AppOptions {
   shell: Shell
@@ -28,7 +29,7 @@ export interface AppOptions {
   /** Leaves the mode: the one thing this UI promises always works. */
   exit(): void
   /** Everything a view needs that the app does not own. */
-  ctx: Omit<Ctx, 'view' | 'go' | 'reload' | 'say' | 'overlay'>
+  ctx: Omit<Ctx, 'view' | 'go' | 'reload' | 'say' | 'search' | 'overlay'>
 }
 
 export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
@@ -179,6 +180,9 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     overlay: shell.overlay,
     view: viewFromName(engine.state.view),
     go(view) {
+      // A screen change puts the panel away: 이 곡으로 라디오 from a result
+      // opens the queue, and a queue drawn behind a search is not opened.
+      closeSearch()
       if (nameOf(view) !== nameOf(ctx.view)) {
         trail.push(ctx.view)
         if (trail.length > 20) trail.shift()
@@ -195,6 +199,9 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     reload() {
       void render(ctx, main)
     },
+    search(query) {
+      openSearch(ctx, query)
+    },
     say(message, bad) {
       toast(shell.overlay, message, bad)
     },
@@ -205,9 +212,16 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // Two groups, because seven destinations in one column is a list to read
   // rather than a menu to glance at. The first four are YouTube's own screens;
   // the last three are the listener's, and a heading says which is which.
-  const NAV: Array<{ view: View; label: string; icon: Parameters<typeof icon>[0]; section?: string }> = [
+  //
+  // 검색 is in the column but is not a screen: it opens the panel over
+  // whatever screen is up, so it never reads as the current one.
+  type NavItem = { label: string; icon: Parameters<typeof icon>[0]; section?: string } & (
+    | { view: View; open?: undefined }
+    | { view?: undefined; open: () => void }
+  )
+  const NAV: NavItem[] = [
     { view: { kind: 'explore' }, label: t('탐색'), icon: 'radio' },
-    { view: { kind: 'search', query: '' }, label: t('검색'), icon: 'search' },
+    { open: () => ctx.search(), label: t('검색'), icon: 'search' },
     { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
     { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
     { view: { kind: 'recent' }, label: t('최근 감상'), icon: 'history', section: t('내 라이브러리') },
@@ -225,24 +239,34 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   function drawTop(): void {
     // No glyph beside the name. The header is a strip with one button and one
     // word on it; a second mark in that space reads as clutter, not as help.
+    // Search sits at the far end with the theme, the same 34px square: it is
+    // the one thing done from every screen, and the drawer is a press away
+    // from being too far for it.
     replace(
       top,
       menuButton,
       h('div', { class: 'name' }, titleOf(ctx.view)),
+      h(
+        'button',
+        { class: 'headAction searchOpen', 'data-nav': '', title: t('검색'), 'aria-label': t('검색'), onclick: () => ctx.search() },
+        icon('search', 18),
+      ),
       themeButton(true),
     )
   }
 
-  /** One destination in the column. */
-  function navButton(item: { view: View; label: string; icon: Parameters<typeof icon>[0] }): HTMLElement {
+  /** One destination in the column, or the one line that opens a panel instead. */
+  function navButton(item: NavItem): HTMLElement {
+    const on = item.view !== undefined && nameOf(item.view) === nameOf(ctx.view)
     return h(
       'button',
       {
-        class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
+        class: on ? 'nav on' : 'nav',
         'data-nav': '',
         onclick: () => {
           closeDrawer()
-          ctx.go(item.view)
+          if (item.open) item.open()
+          else ctx.go(item.view)
         },
       },
       icon(item.icon, 18),
@@ -259,7 +283,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
    * The refresh redraws this column when it lands, so the fold does not wait
    * on the network to open.
    */
-  function playlistBranch(item: { view: View; label: string; icon: Parameters<typeof icon>[0] }): Array<HTMLElement | false> {
+  function playlistBranch(item: NavItem & { view: View }): Array<HTMLElement | false> {
     // An empty branch is not a branch. Signed out, or on an account with no
     // lists of its own, folding a nothing open to show one line that says
     // 전체 보기 reads as a stray heading — measured on the phone, and it is
@@ -368,7 +392,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           // said twice, and unbounded, which on an account with many lists is
           // most of the column. It folds now, it remembers, and the way to the
           // screen is the last line inside it.
-          nameOf(item.view) === 'playlists' ? playlistBranch(item) : navButton(item),
+          item.view !== undefined && item.view.kind === 'playlists' ? playlistBranch(item) : navButton(item),
         ]),
         h('div', { class: 'spacer' }),
         // The theme lives in the header on a phone; here it is one more line.
@@ -1106,7 +1130,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const offRemote = installRemote(shell.root, shell.overlay)
   // The keyboard, so the whole thing can be driven from a sofa. `v` reuses the
   // bar's own button rather than repeating what it decides.
-  const offKeys = installKeys(engine, { toggleVideo: () => videoButton.click() })
+  const offKeys = installKeys(engine, { toggleVideo: () => videoButton.click(), openSearch: () => ctx.search() })
 
   // The picture is up while something is playing and gone when nothing is —
   // asked for in those words ("재생할때는 위쪽에 플레이어 보여주고"), and it
@@ -1164,6 +1188,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   return {
     ctx,
     destroy() {
+      // Or the panel outlives the mode: its hold on the dialog count and its
+      // Escape listener are module state, and left open across a re-entry it
+      // kept every shortcut and the twice-to-leave dead.
+      closeSearch()
       themeWatch.disconnect()
       window.removeEventListener('resize', onResize)
       document.removeEventListener('keydown', onEscape)
@@ -1180,8 +1208,6 @@ function titleOf(view: View): string {
   switch (view.kind) {
     case 'explore':
       return t('탐색')
-    case 'search':
-      return t('검색')
     case 'home':
       return t('홈')
     case 'subs':
@@ -1220,6 +1246,6 @@ function viewFromName(name: string): View {
     case 'queue':
       return { kind: name }
     default:
-      return { kind: 'search', query: '' }
+      return { kind: 'explore' }
   }
 }

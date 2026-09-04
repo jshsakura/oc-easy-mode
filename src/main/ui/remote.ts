@@ -29,7 +29,7 @@ interface Box {
   bottom: number
 }
 
-function boxes(root: ShadowRoot): Box[] {
+function boxes(root: ParentNode): Box[] {
   const out: Box[] = []
   for (const el of root.querySelectorAll<HTMLElement>('[data-nav]')) {
     const r = el.getBoundingClientRect()
@@ -109,8 +109,17 @@ function isTyping(el: Element | null): boolean {
  */
 export function installRemote(root: ShadowRoot, overlay: ShadowRoot): () => void {
   const onKey = (ev: KeyboardEvent) => {
-    if (overlay.querySelector('.menu, .scrim')) return
-    const active = root.activeElement as HTMLElement | null
+    // The topmost floating thing, if any, keeps the arrows to itself unless it
+    // says otherwise. A menu and a dialog drive themselves; a panel that is a
+    // whole screen of things to reach (the search) carries data-remote, and
+    // then the same rule that walks the app walks the panel, and only the
+    // panel. Opting in by attribute, not by having tagged elements: every
+    // dialog's close button is tagged, and a rule that read that as consent
+    // sent the first arrow press in a dialog straight to its own X.
+    const floating = Array.from(overlay.querySelectorAll<HTMLElement>('.menu, .scrim')).at(-1)
+    if (floating && !floating.hasAttribute('data-remote')) return
+    const scope: ParentNode = floating ?? root
+    const active = (floating ? overlay : root).activeElement as HTMLElement | null
 
     if (ev.key === 'Enter' || ev.key === ' ') {
       if (isTyping(active) || !active?.hasAttribute('data-nav')) return
@@ -126,7 +135,7 @@ export function installRemote(root: ShadowRoot, overlay: ShadowRoot): () => void
     // get out of the search field and into the results.
     if (isTyping(active) && (dir === 'left' || dir === 'right')) return
 
-    const all = boxes(root)
+    const all = boxes(scope)
     if (all.length === 0) return
     ev.preventDefault()
 

@@ -38,8 +38,6 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
   switch (view.kind) {
     case 'explore':
       return explore(ctx, main)
-    case 'search':
-      return search(ctx, main, view.query)
     case 'home':
       return listFeed(ctx, main, t('홈'), 'FEwhat_to_watch')
     case 'subs':
@@ -63,7 +61,7 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
  * A line of grey text in the middle of a blank panel reads as something that
  * failed to load. A glyph says the screen arrived and there is nothing in it.
  */
-function nothing(text: string, glyph: Parameters<typeof icon>[0] = 'note'): HTMLElement {
+export function nothing(text: string, glyph: Parameters<typeof icon>[0] = 'note'): HTMLElement {
   return h('div', { class: 'empty' }, icon(glyph, 34), h('div', null, text))
 }
 
@@ -260,7 +258,7 @@ export function skHead(): HTMLElement {
   )
 }
 
-function skRows(n: number): HTMLElement {
+export function skRows(n: number): HTMLElement {
   return h('div', { class: 'rows' }, Array.from({ length: n }, () => skRow()))
 }
 
@@ -380,7 +378,7 @@ function shelfRow(ctx: Ctx, shelf: Shelf): HTMLElement {
  * press. The title names the destination, so a button that files silently
  * still says where.
  */
-function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['quick'] {
+export function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['quick'] {
   return {
     icon: 'plus',
     title: t('재생목록에 넣기'),
@@ -420,54 +418,6 @@ async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
   }
 }
 
-// ── Search ─────────────────────────────────────────────────────────────────
-
-async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void> {
-  const token = generation
-  const input = h('input', {
-    type: 'search',
-    placeholder: t('노래, 영상, 채널 검색'),
-    value: query,
-    autocomplete: 'off',
-    'data-nav': '',
-  })
-  const results = h('div')
-  const box = h('div', { class: 'searchbox' }, icon('search', 20), input)
-  replace(main, h('h2', null, t('검색')), box, results)
-
-  const run = async (q: string) => {
-    if (!q.trim()) return replace(results, nothing(t('무엇을 들을까요?'), 'search'))
-    replace(results, skRows(6))
-    try {
-      const page = await api.search(ctx.cfg, q.trim())
-      if (!current(token)) return
-      if (page.tracks.length === 0) return replace(results, nothing(t('결과가 없습니다.'), 'search'))
-      replace(
-        results,
-        h(
-          'div',
-          { class: 'toolbar' },
-          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(page.tracks, 0) }, icon('play', 16), t('전체 재생')),
-          h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(page.tracks); ctx.say(`${tn('곡', page.tracks.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
-          h('button', { class: 'btn', 'data-nav': '', onclick: () => void ctx.addToPlaylist(page.tracks) }, icon('library', 16), t('재생목록에 추가')),
-        ),
-        listOf(ctx, page),
-      )
-    } catch (err) {
-      if (!current(token)) return
-      replace(results, h('div', { class: 'err' }, explain(err)))
-    }
-  }
-
-  input.addEventListener('keydown', (ev) => {
-    if ((ev as KeyboardEvent).key !== 'Enter') return
-    const q = input.value
-    ctx.go({ kind: 'search', query: q })
-  })
-  input.focus()
-  await run(query)
-}
-
 // ── Feeds ──────────────────────────────────────────────────────────────────
 
 async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.FeedId): Promise<void> {
@@ -496,7 +446,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
           'div',
           { class: 'toolbar', style: 'justify-content: center' },
           h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('탐색')),
-          h('button', { class: 'btn', 'data-nav': '', onclick: () => ctx.go({ kind: 'search', query: '' }) }, icon('search', 16), t('검색')),
+          h('button', { class: 'btn', 'data-nav': '', onclick: () => ctx.search() }, icon('search', 16), t('검색')),
         ),
       )
     }

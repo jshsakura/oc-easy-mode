@@ -9,7 +9,6 @@ import type { YtCfg } from '../ytcfg.ts'
 export type View =
   | { kind: 'explore' }
   | { kind: 'home' }
-  | { kind: 'search'; query: string }
   | { kind: 'subs' }
   | { kind: 'history' }
   | { kind: 'recent' }
@@ -27,6 +26,8 @@ export interface Ctx {
   go(view: View): void
   /** Re-renders the current view from scratch. */
   reload(): void
+  /** Opens the search panel over the current view, looking `query` up if given. */
+  search(query?: string): void
   say(message: string, bad?: boolean): void
   /** The user's playlists, as last fetched. Empty when signed out. */
   playlists: Playlist[]

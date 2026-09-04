@@ -28,6 +28,21 @@ export function overlayIsOpen(): boolean {
   return openMenu !== null || openModals > 0
 }
 
+/**
+ * Counts a dialog drawn by another file as one of the open ones, so the
+ * shortcuts, the remote and the panic key treat it the way they treat these.
+ * Returns the release, which is safe to call twice.
+ */
+export function holdModal(): () => void {
+  openModals += 1
+  let held = true
+  return () => {
+    if (!held) return
+    held = false
+    openModals -= 1
+  }
+}
+
 export function closeMenu(): void {
   releaseMenu?.()
   releaseMenu = null

@@ -3,7 +3,7 @@
 // Headed-in-headless via the new headless mode, because MV3 content scripts in
 // the MAIN world are not delivered by the old one.
 
-import { chromium, type BrowserContext, type Page } from '@playwright/test'
+import { chromium, expect, type BrowserContext, type Page } from '@playwright/test'
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -84,4 +84,23 @@ export async function open(url: string, on = true): Promise<Harness> {
 /** The app's shadow root, as a locator that pierces it. */
 export function app(page: Page) {
   return page.locator('oc-easy-mode')
+}
+
+/** The other root: menus, dialogs, toasts and the search panel live here. */
+export function overlay(page: Page) {
+  return page.locator('oc-easy-mode-overlay')
+}
+
+/**
+ * Opens the search panel, asks it `query`, and waits for the first answer.
+ * Returns the overlay root, which is where the panel and its rows are.
+ */
+export async function searchFor(page: Page, query: string) {
+  await app(page).locator('.nav', { hasText: '검색' }).click()
+  const over = overlay(page)
+  const box = over.locator('.searchbox input')
+  await box.fill(query)
+  await box.press('Enter')
+  await expect(over.locator('.row:not([aria-hidden])').first()).toBeVisible()
+  return over
 }

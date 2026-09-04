@@ -123,7 +123,7 @@ async function start(): Promise<void> {
     if (player) engine.attach(player)
 
     let playlists: Playlist[] = []
-    const base: Omit<Ctx, 'view' | 'go' | 'reload' | 'say' | 'overlay'> = {
+    const base: Omit<Ctx, 'view' | 'go' | 'reload' | 'say' | 'search' | 'overlay'> = {
       engine,
       cfg,
       get playlists() {

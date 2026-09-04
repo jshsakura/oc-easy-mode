@@ -13,7 +13,7 @@
 // tell a working cap from a call into the void.
 
 import { expect, test } from '@playwright/test'
-import { app, open } from './fixture.ts'
+import { app, open, searchFor } from './fixture.ts'
 
 const WATCH = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
@@ -39,13 +39,9 @@ const modeNow = (page: import('@playwright/test').Page) =>
  * watch the same track keep playing and pass for the wrong reason. It did.
  */
 async function queueOf(page: import('@playwright/test').Page) {
-  const ui = app(page)
-  await ui.locator('.nav', { hasText: '검색' }).click()
-  await ui.locator('.searchbox input').fill('lofi')
-  await ui.locator('.searchbox input').press('Enter')
-  await expect(ui.locator('.row:not([aria-hidden])').first()).toBeVisible()
-  await ui.locator('.toolbar button', { hasText: '전체 재생' }).click()
-  return ui
+  const over = await searchFor(page, 'lofi')
+  await over.locator('.searchAct', { hasText: '전체 재생' }).click()
+  return app(page)
 }
 
 test('music mode plays the smallest stream, and still does on the next track', async () => {
