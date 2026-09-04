@@ -8,10 +8,32 @@ import { forgetHistory, history, lastPlaylist } from '../store.ts'
 import { h, icon, replace } from './dom.ts'
 import { explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
-import { removeFromPlaylistItem, removeFromPlaylistNow, row, startRadio } from './rows.ts'
+import { removeFromPlaylistNow, row, startRadio } from './rows.ts'
+
+/**
+ * Which render is the one on screen.
+ *
+ * Every screen here draws a skeleton, waits for YouTube, and then writes the
+ * answer into `main`. Nothing stopped a *slow* screen from writing its answer
+ * after the reader had already moved on: open 둘러보기, press 대기열 before it
+ * lands, and the queue is drawn — and then the explore fetch finishes and puts
+ * itself, or its error, on top of it. The reader sees a screen they left, or
+ * "가져오지 못했습니다" over a queue that arrived perfectly well.
+ *
+ * A number rather than a comparison of views, because `reload()` re-renders
+ * the same view on purpose and the older of two renders of one screen still
+ * has to lose.
+ */
+let generation = 0
+
+/** Whether the render holding this token is still the one being awaited. */
+function current(token: number): boolean {
+  return token === generation
+}
 
 /** Draws `view` into `main`. Returns once the first paint is done. */
 export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
+  generation += 1
   const view = ctx.view
   switch (view.kind) {
     case 'explore':
@@ -329,9 +351,11 @@ function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['quick'] {
 // ── Explore ────────────────────────────────────────────────────────────────
 
 async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
+  const token = generation
   replace(main, h('h2', null, t('둘러보기')), skShelf(), skShelf())
   try {
     const page = await api.explore(ctx.cfg)
+    if (!current(token)) return
     if (page.shelves.length === 0 && page.tracks.length === 0) {
       return replace(main, h('h2', null, t('둘러보기')), nothing(t('보여줄 것이 없습니다.'), 'radio'))
     }
@@ -342,6 +366,7 @@ async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
       page.shelves.length === 0 && h('div', { class: 'grid' }, page.tracks.map((_, i) => trackTile(ctx, page.tracks, i))),
     )
   } catch (err) {
+    if (!current(token)) return
     replace(main, h('h2', null, t('둘러보기')), h('div', { class: 'err' }, explain(err)))
   }
 }
@@ -349,6 +374,7 @@ async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
 // ── Search ─────────────────────────────────────────────────────────────────
 
 async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void> {
+  const token = generation
   const input = h('input', {
     type: 'search',
     placeholder: t('노래, 영상, 채널 검색'),
@@ -365,6 +391,7 @@ async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void>
     replace(results, skRows(6))
     try {
       const page = await api.search(ctx.cfg, q.trim())
+      if (!current(token)) return
       if (page.tracks.length === 0) return replace(results, nothing(t('결과가 없습니다.'), 'search'))
       replace(
         results,
@@ -378,6 +405,7 @@ async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void>
         listOf(ctx, page),
       )
     } catch (err) {
+      if (!current(token)) return
       replace(results, h('div', { class: 'err' }, explain(err)))
     }
   }
@@ -394,9 +422,11 @@ async function search(ctx: Ctx, main: HTMLElement, query: string): Promise<void>
 // ── Feeds ──────────────────────────────────────────────────────────────────
 
 async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.FeedId): Promise<void> {
+  const token = generation
   replace(main, h('h2', null, title), skShelf(), skShelf())
   try {
     const page = await api.feed(ctx.cfg, id)
+    if (!current(token)) return
     if (page.tracks.length === 0) {
       // A dead end otherwise, and 영상 mode lands here on purpose: YouTube's
       // home is empty until it knows you, so a session with no watch history
@@ -428,6 +458,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
       page.shelves.length > 0 ? page.shelves.map((shelf) => shelfRow(ctx, shelf)) : listOf(ctx, page),
     )
   } catch (err) {
+    if (!current(token)) return
     replace(main, h('h2', null, title), h('div', { class: 'err' }, explain(err)))
   }
 }
@@ -435,9 +466,11 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
 // ── Playlists ──────────────────────────────────────────────────────────────
 
 async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
+  const token = generation
   replace(main, h('h2', null, t('내 재생목록')), skRows(5))
   try {
     await ctx.refreshPlaylists()
+    if (!current(token)) return
     const list = ctx.playlists
     const create = h(
       'button',
@@ -460,6 +493,7 @@ async function playlists(ctx: Ctx, main: HTMLElement): Promise<void> {
         : h('div', { class: 'rows' }, list.map((p) => card(ctx, p))),
     )
   } catch (err) {
+    if (!current(token)) return
     replace(main, h('h2', null, t('내 재생목록')), h('div', { class: 'err' }, explain(err)))
   }
 }
@@ -493,6 +527,7 @@ function card(ctx: Ctx, p: Playlist): HTMLElement {
 }
 
 async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string): Promise<void> {
+  const token = generation
   replace(
     main,
     skHead(),
@@ -503,6 +538,7 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
   )
   try {
     const tracks = await api.playlistTracks(ctx.cfg, id)
+    if (!current(token)) return
     const cover = tracks[0]?.videoId
     const body = h('div', { class: 'rows' })
     const menuButton = h('button', { class: 'btn ghost', 'data-nav': '' }, icon('more', 18))
@@ -586,14 +622,35 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
         if (tracks.length === 0) draw()
         else renumber()
       }
+      // **Only a playlist of one's own can have things taken out of it.**
+      // 둘러보기 opens YouTube's own editorial playlists, and the row button
+      // was offered there too — pressing it asked YouTube to edit a list
+      // belonging to someone else, which it refuses, and the reader got a red
+      // toast for pressing a button we drew. Reported from a phone, on a
+      // 99-track list nobody here owns.
+      //
+      // Where the list is not ours the same slot does what every other list's
+      // does: put the track somewhere that *is* ours.
+      // Two signals, and the second is YouTube's own. A row that can be
+      // removed arrives carrying a `setVideoId` — the handle its own remove
+      // action needs — and a row that cannot does not. Measured on two lists
+      // nobody here owns: 151 tracks, not one setVideoId between them. That
+      // answers the question per row and keeps working when the reader's own
+      // playlists have not been fetched, which our first test quietly needs.
+      const mine =
+        ctx.playlists.some((p) => p.id === id) || tracks.some((track) => track.setVideoId !== undefined)
       layout(ctx, body, tracks, (track) => ({
-        // In a playlist, the thing done most often to a row is taking it out.
-        quick: {
-          icon: 'close',
-          title: t('이 재생목록에서 빼기'),
-          run: (rowEl) => void removeFromPlaylistNow(ctx, id, track, rowEl, gone(track)),
-        },
-        extra: (rowEl) => ['-', removeFromPlaylistItem(ctx, id, track, rowEl, gone(track))],
+        quick: mine
+          ? {
+              icon: 'close',
+              title: t('이 재생목록에서 빼기'),
+              run: (rowEl) => void removeFromPlaylistNow(ctx, id, track, rowEl, gone(track)),
+            }
+          : addQuick(ctx, track),
+        // No menu entry either way, and for two different reasons: where the
+        // list is ours the X beside it already does this, and a sheet carrying
+        // a second copy of the button next to it is exactly the length nobody
+        // asked for; where it is not ours the action cannot succeed at all.
       }))
     }
 
@@ -602,6 +659,7 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       relayoutOnModeChange(ctx, body, draw)
     }
   } catch (err) {
+    if (!current(token)) return
     replace(main, h('h2', null, title), h('div', { class: 'err' }, explain(err)))
   }
 }

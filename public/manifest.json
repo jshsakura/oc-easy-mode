@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RenewTube",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "author": "OpenCourse",
   "description": "유튜브 화면을 심플하고 쉬운 재생기로 바꿉니다. 음악과 영상을 한자리에서 다루며, 언제든 원래 화면으로 돌아갑니다.",
   "minimum_chrome_version": "120",

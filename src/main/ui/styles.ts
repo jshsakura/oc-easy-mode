@@ -695,15 +695,20 @@ input[type=range]::-moz-range-thumb {
   /* Never more than half the screen, and scrolls if the list is longer. A
      sheet that grows with its contents eventually stops being a menu over the
      page and becomes the page. */
-  max-height: 50dvh; overflow-y: auto; overscroll-behavior: contain;
+  max-height: 44dvh; overflow-y: auto; overscroll-behavior: contain;
   /* The dimming, without a second element to manage. A menu with nothing
      behind it reads as the screen having changed rather than as something
      opening on top of it — which is exactly how it was read. */
   box-shadow: var(--shadow), 0 0 0 100vmax oklch(0 0 0 / 45%);
 }
-.menu.sheetMenu button { padding: 13px 14px; font-size: 15px; }
+/* Tighter than it was. A thumb still has a 40px target, which is the number
+   that matters, but the sheet was spending 50px a line and seven lines is half
+   a phone. */
+.menu.sheetMenu button { padding: 10px 12px; font-size: 14px; gap: 10px; }
 /* A thumb aims at the sheet, so the glyph gives it something to aim at. */
-.menu.sheetMenu button svg { width: 18px; height: 18px; }
+.menu.sheetMenu button svg { width: 17px; height: 17px; }
+/* The dividers were eating a line each. A hairline is enough to group. */
+.menu.sheetMenu hr { margin: 4px 8px; }
 
 .scrim {
   position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 2147483090;

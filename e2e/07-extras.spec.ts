@@ -274,3 +274,27 @@ test('space over a focused item activates it and nothing else', async () => {
     await h.close()
   }
 })
+
+test('a screen you have left does not come back over the one you chose', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+
+    // Leave a screen while it is still fetching. Whatever it was waiting for
+    // must not land on top of the screen chosen instead — nor its error, which
+    // is the louder half of the same bug: "가져오지 못했습니다" written over a
+    // queue that arrived perfectly well.
+    for (let i = 0; i < 2; i++) {
+      await ui.locator('.nav', { hasText: '둘러보기' }).click()
+      await h.page.waitForTimeout(120)
+      await ui.locator('.nav', { hasText: '대기열' }).click()
+      // Long enough for the abandoned fetch to arrive if it were going to.
+      await h.page.waitForTimeout(6000)
+      await expect(ui.locator('h2').first()).toHaveText('대기열')
+      await expect(ui.locator('.err')).toHaveCount(0)
+    }
+  } finally {
+    await h.close()
+  }
+})

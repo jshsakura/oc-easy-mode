@@ -6,7 +6,7 @@ import * as api from '../api.ts'
 import { thumbnail, type Track } from '../parse.ts'
 import { h, icon, type IconName } from './dom.ts'
 import { clock, explain, type Ctx } from './ctx.ts'
-import { confirm, showMenu, type MenuItem } from './overlay.ts'
+import { showMenu, type MenuItem } from './overlay.ts'
 
 export interface RowOptions {
   /** 1-based number shown at the left. Omitted for search results. */
@@ -157,23 +157,14 @@ function collapse(row: HTMLElement, done: () => void): void {
 }
 
 /**
- * The menu item a playlist view adds to each of its rows.
- *
- * `onRemoved` is called once YouTube has agreed and the row has gone, and is
- * where the view puts its own house in order: the count in the header, the
- * array the play buttons hold, the numbers down the left. Redrawing the view
- * would do all of that for free and was what this used to do — but it also
- * threw the screen away and put "가져오는 중…" in its place for as long as the
- * playlist took to fetch again, which is a strange thing to show someone who
- * just deleted one row of it.
- */
-/**
  * Takes the track out and takes the row with it. No question asked.
  *
- * The menu's version asks first, because a menu is a considered place. The row
- * button is the opposite: it exists to be one press, and a dialog would make
- * it two. Putting the track back is one press as well, which is what makes
- * that safe.
+ * One press is the whole point — a dialog would make it two — and putting the
+ * track back is one press as well, which is what makes that safe.
+ *
+ * Only ever offered on a playlist of one's own. YouTube refuses an edit to
+ * someone else's list, and offering the button anyway earns the reader a red
+ * toast for pressing what we drew; the caller decides, and does.
  */
 export async function removeFromPlaylistNow(
   ctx: Ctx,
@@ -188,30 +179,6 @@ export async function removeFromPlaylistNow(
     collapse(row, onRemoved)
   } catch (err) {
     ctx.say(explain(err), true)
-  }
-}
-
-export function removeFromPlaylistItem(
-  ctx: Ctx,
-  playlistId: string,
-  track: Track,
-  row: HTMLElement,
-  onRemoved: () => void,
-): MenuItem {
-  return {
-    label: t('이 재생목록에서 제거'),
-    icon: 'trash',
-    danger: true,
-    onSelect: async () => {
-      if (!(await confirm(ctx.overlay, `'${track.title}'을(를) 재생목록에서 뺄까요?`, t('빼기')))) return
-      try {
-        await api.removeFromPlaylist(ctx.cfg, playlistId, track)
-        ctx.say(t('재생목록에서 뺐습니다.'))
-        collapse(row, onRemoved)
-      } catch (err) {
-        ctx.say(explain(err), true)
-      }
-    },
   }
 }
 
