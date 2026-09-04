@@ -5,7 +5,7 @@ import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
 import { forgetHistory, history } from '../store.ts'
-import { h, icon, replace } from './dom.ts'
+import { art, h, icon, replace } from './dom.ts'
 import { explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
 import { removeFromPlaylistNow, row, startRadio } from './rows.ts'
@@ -278,9 +278,9 @@ function tile(opts: {
   return h(
     'button',
     { class: opts.square ? 'tile square' : 'tile', 'data-nav': '', onclick: opts.onOpen },
-    h(
-      'div',
-      { class: 'cover', style: opts.cover ? `background-image: url(${opts.cover})` : '' },
+    art(
+      'cover',
+      opts.cover,
       !opts.cover && icon('note', 26),
       opts.badge && h('span', { class: 'badge' }, opts.badge),
       h('span', { class: 'play' }, icon('play', 20)),
@@ -469,19 +469,38 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
         ),
       )
     }
-    // A feed that came with its own titled rows keeps them. YouTube's home is
-    // shaped that way when there is a history behind it, and flattening it
-    // would throw away the only editorial structure on the screen.
+    // The feed *and* its shelves, in that order — never the shelves instead of
+    // the feed.
+    //
+    // YouTube injects rows of its own into a personal feed: a recommendation
+    // shelf sits in the middle of your subscriptions, and the subscriptions
+    // themselves are the loose grid around it. This screen used to draw the
+    // shelves the moment one existed and drop the grid entirely, so 구독 came
+    // out as a single sideways row of videos from channels nobody had
+    // subscribed to — the feed was parsed, then thrown away. Measured
+    // 2026-09-04: signed in, the response is a richGridRenderer of the
+    // subscriptions with one richShelfRenderer injected beside it.
+    //
+    // The shelf keeps its place under the feed, because a feed that came with
+    // titled rows does carry editorial structure and flattening it would lose
+    // that. What it must not do is speak for the whole screen.
+    //
+    // Minus the tracks the shelves already hold: parseTracks collects those
+    // too, and a video should not be on one screen twice.
+    const shelved = new Set(page.shelves.flatMap((s) => s.tracks.map((tr) => tr.videoId)))
+    const loose = page.tracks.filter((tr) => !shelved.has(tr.videoId))
+    const feed = loose.length > 0 ? loose : page.tracks
     replace(
       main,
       h('h2', null, title),
       h(
         'div',
         { class: 'toolbar' },
-        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(page.tracks, 0) }, icon('play', 16), t('전체 재생')),
-        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(page.tracks); ctx.say(`${tn('개', page.tracks.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
+        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(feed, 0) }, icon('play', 16), t('전체 재생')),
+        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(feed); ctx.say(`${tn('개', feed.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
       ),
-      page.shelves.length > 0 ? page.shelves.map((shelf) => shelfRow(ctx, shelf)) : listOf(ctx, page),
+      loose.length > 0 && listOf(ctx, { ...page, tracks: loose }),
+      page.shelves.map((shelf) => shelfRow(ctx, shelf)),
     )
   } catch (err) {
     if (!current(token)) return
@@ -541,7 +560,7 @@ function card(ctx: Ctx, p: Playlist): HTMLElement {
       role: 'button',
       onclick: () => ctx.go({ kind: 'playlist', id: p.id, title: p.title }),
     },
-    h('div', { class: 'thumb', style: p.cover ? `background-image: url(${p.cover})` : '' }),
+    art('thumb', p.cover),
     h(
       'div',
       { class: 'meta' },
@@ -601,7 +620,7 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       h(
         'div',
         { class: 'head' },
-        h('div', { class: 'cover', style: cover ? `background-image: url(${thumbnail(cover)})` : '' }),
+        art('cover', cover ? thumbnail(cover) : undefined),
         h(
           'div',
           { style: 'min-width:0' },
@@ -751,7 +770,22 @@ function queue(ctx: Ctx, main: HTMLElement): void {
       { class: 'toolbar' },
       h('span', { class: 'sub' }, tn('개', q.length)),
       q.length > 0 && h('button', { class: 'btn', 'data-nav': '', onclick: () => void ctx.addToPlaylist(q) }, icon('library', 16), t('재생목록으로 저장')),
-      q.length > 0 && h('button', { class: 'btn ghost', 'data-nav': '', onclick: () => { ctx.engine.clear(); ctx.reload() } }, icon('trash', 16), t('비우기')),
+      // Asks first. One press was throwing away a queue that could be forty
+      // tracks long with nothing to put it back.
+      q.length > 0 && h(
+        'button',
+        {
+          class: 'btn ghost',
+          'data-nav': '',
+          onclick: async () => {
+            if (!(await confirm(ctx.overlay, t('대기열을 비울까요?'), t('비우기')))) return
+            ctx.engine.clear()
+            ctx.reload()
+          },
+        },
+        icon('trash', 16),
+        t('비우기'),
+      ),
     ),
     q.length === 0
       ? nothing(t('대기열이 비어 있습니다.'), 'queue')
@@ -768,8 +802,11 @@ function queue(ctx: Ctx, main: HTMLElement): void {
               index: i + 1,
               onPlay: () => ctx.engine.jumpTo(i),
               // Same idea as a playlist: what a queue row is for is leaving.
+              // A bin, not a cross — a cross closes things, and this deletes
+              // one. The two used to disagree between this screen and a
+              // playlist, which taught the glyph to mean nothing.
               quick: {
-                icon: 'close',
+                icon: 'trash',
                 title: t('대기열에서 빼기'),
                 run: () => {
                   ctx.engine.removeAt(i)

@@ -171,6 +171,22 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
   const overlayHost = document.createElement(OVERLAY_TAG)
   const overlay = overlayHost.attachShadow({ mode: 'open' })
 
+  // ── Keys typed in here stay in here ──────────────────────────────────────
+  //
+  // YouTube's own shortcuts listen on the document, and a key pressed inside a
+  // shadow root reaches it retargeted to the host element — which is not a
+  // text field as far as the page can tell. So every letter typed into our
+  // search box was also a shortcut: k and space paused what was playing, l
+  // jumped ten seconds, m muted. Stopped at the host in the bubble phase, so
+  // everything inside the app still sees the press (the search box's Enter,
+  // the remote control's arrows) and our own shortcuts still work — those
+  // listen on the document in the *capture* phase, which runs before this.
+  for (const el of [host, overlayHost]) {
+    for (const type of ['keydown', 'keypress', 'keyup']) {
+      el.addEventListener(type, (ev) => ev.stopPropagation())
+    }
+  }
+
   // ── The splash ────────────────────────────────────────────────────────────
   //
   // The player is visible from the instant the hide style lands — parked at
@@ -200,9 +216,11 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
     .splash.gone { opacity: 0; pointer-events: none; }
     .splash > div { background: ${dark ? '#1b1815' : '#ffffff'}; border-radius: 0;
       padding: 20px; box-sizing: border-box; overflow: hidden; }
-    .splash .sideCol { display: flex; flex-direction: column; gap: 14px; }
+    /* The same shape the app settles into: a column that runs the whole
+       height, and a bar that starts where it ends. */
+    .splash .sideCol { grid-row: 1 / -1; grid-column: 1; display: flex; flex-direction: column; gap: 14px; }
     .splash .body { grid-column: 2; display: flex; flex-direction: column; gap: 16px; }
-    .splash .barRow { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+    .splash .barRow { grid-column: 2; display: flex; align-items: center; gap: 14px; }
     .splash i { display: block; background: ${ink}; border-radius: 0;
       animation: splash-pulse 1.2s ease-in-out infinite; }
     @keyframes splash-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
@@ -214,6 +232,7 @@ export function mount(onExit: (reason: 'panic' | 'watchdog') => void): Shell {
       .splash { grid-template-columns: 1fr; }
       .splash .sideCol { display: none; }
       .splash .body { grid-column: 1; }
+      .splash .barRow { grid-column: 1; }
     }
   `
   // Built node by node. **Never innerHTML**: YouTube enforces Trusted Types,

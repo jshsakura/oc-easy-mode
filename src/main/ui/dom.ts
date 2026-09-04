@@ -1,7 +1,7 @@
 // A hand-rolled element builder. Small enough to read in one sitting, which is
 // the whole reason it is not a framework.
 
-type Child = Node | string | number | null | undefined | false | Child[]
+export type Child = Node | string | number | null | undefined | false | Child[]
 
 type Props = Record<string, unknown> & {
   class?: string
@@ -46,6 +46,33 @@ function append(el: Node, children: Child[]): void {
 export function replace(el: HTMLElement, ...children: Child[]): void {
   el.textContent = ''
   append(el, children)
+}
+
+/**
+ * Artwork that shows its own arrival.
+ *
+ * Every picture in the app used to be a `background-image` on its box, which
+ * can say neither "not yet" nor "here": the box sat in the panel colour until
+ * its own request came back, and a list of a hundred rows asked i.ytimg.com
+ * for a hundred pictures the moment it was drawn, whether or not anyone had
+ * scrolled to them. An <img> answers both. `loading="lazy"` leaves the ones
+ * below the fold alone, and `load` is the moment to stop the shimmer.
+ *
+ * The box keeps its own class — `.thumb`, `.cover` — so nothing about the
+ * layout moves; only what is inside it changes.
+ */
+export function art(cls: string, url: string | undefined, ...children: Child[]): HTMLElement {
+  const box = h('div', { class: url ? `${cls} loading` : cls }, ...children)
+  if (!url) return box
+  const img = h('img', { src: url, alt: '', loading: 'lazy', decoding: 'async' })
+  const done = (): void => box.classList.remove('loading')
+  img.addEventListener('load', done)
+  // A picture that will never arrive must not shimmer for ever.
+  img.addEventListener('error', done)
+  // A cached picture can be complete before a listener could ever fire.
+  if (img.complete && img.naturalWidth > 0) done()
+  box.prepend(img)
+  return box
 }
 
 /**

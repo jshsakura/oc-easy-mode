@@ -12,7 +12,7 @@
   --accent: rgba(236, 231, 223, .06);
   --border: #322c25;
   --ring: #8578a6;
-  --radius-md: 0px;
+  --radius-md: 8px;
 }
 body {
   margin: 0;
@@ -34,14 +34,16 @@ p { margin: 0; color: var(--muted-foreground); font-size: 13px; }
   margin-top: 16px; font-size: 14px; font-weight: 500;
 }
 /* Switch */
+/* A pill with a round knob, which is what a switch looks like everywhere else
+   a switch is. It was square on both counts and read as a stray box. */
 .switch {
   position: relative; width: 36px; height: 20px; flex: none;
-  border: 0; border-radius: 0; background: var(--secondary); cursor: pointer;
+  border: 0; border-radius: 999px; background: var(--secondary); cursor: pointer;
   transition: background .15s;
 }
 .switch::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-  border-radius: 0; background: var(--foreground);
+  border-radius: 50%; background: var(--foreground);
   transition: transform .15s, background .15s;
 }
 .switch:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--background), 0 0 0 5px var(--ring); }

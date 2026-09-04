@@ -63,6 +63,13 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
           ),
     ),
   )
+  // Measured before it is placed, and placed before it is seen.
+  //
+  // A fixed element with no left or top of its own lays out where it happens
+  // to fall — the corner of the overlay root — so the menu appeared there for
+  // one frame and then jumped to the button. That flicker is what reads as
+  // the menu moving about.
+  menu.style.visibility = 'hidden'
   root.appendChild(menu)
   openMenu = menu
   // On a narrow screen it is a sheet along the bottom rather than a popover.
@@ -87,13 +94,18 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
     const r = anchor.getBoundingClientRect()
     const w = menu.offsetWidth
     const hgt = menu.offsetHeight
-    let x = r.right - w
+    // Under the button and aligned to its right edge, then pushed back inside
+    // the window on both axes. Only the left edge was being kept in; a menu
+    // opened from a button near the right edge of a narrow window ran off it,
+    // and one flipped above a button near the top ran off that.
+    const x = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8))
     let y = r.bottom + 4
-    if (x < 8) x = 8
     if (y + hgt > window.innerHeight - 8) y = r.top - hgt - 4
+    y = Math.max(8, Math.min(y, window.innerHeight - hgt - 8))
     menu.style.left = `${x}px`
     menu.style.top = `${y}px`
   }
+  menu.style.visibility = ''
   // Dismissal listens on the document, not on this shadow root.
   //
   // The menu lives in the overlay root; everything a person would click to
@@ -140,6 +152,20 @@ export interface Choice {
 }
 
 /**
+ * A dialog fills a phone.
+ *
+ * A 420px card floating in the middle of a 390px screen is a card with fifteen
+ * pixels of scrim either side of it — the shape of a desktop dialog on a device
+ * that has no desktop. On a narrow screen the question takes the whole screen,
+ * the way the player sheet does, and for the same reason: it is the only thing
+ * being asked. Decided by narrowNow() rather than a width of our own, so the
+ * dialog can never disagree with the layout it is drawn over.
+ */
+function modalClass(): string {
+  return narrowNow() ? 'modal full' : 'modal'
+}
+
+/**
  * A picker with an inline "new" field. Resolves with the chosen id, with
  * `{ create: text }` for a new one, or null when dismissed.
  */
@@ -181,7 +207,7 @@ export function pick(
       { class: 'scrim', onclick: (ev) => ev.target === scrim && done(null) },
       h(
         'div',
-        { class: 'modal', role: 'dialog' },
+        { class: modalClass(), role: 'dialog' },
         h('h3', null, title),
         h(
           'div',
@@ -231,7 +257,7 @@ export function confirm(root: ShadowRoot, message: string, yes = t('삭제')): P
       { class: 'scrim', onclick: (ev) => ev.target === scrim && done(false) },
       h(
         'div',
-        { class: 'modal', role: 'alertdialog' },
+        { class: modalClass(), role: 'alertdialog' },
         h('h3', null, message),
         h(
           'div',

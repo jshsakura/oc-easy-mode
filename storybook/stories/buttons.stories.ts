@@ -1,6 +1,6 @@
 // Every button recipe in STYLES, at rest and in its states: the .btn set,
-// the circular transport chips (off / .on), the big play button with its
-// buffering ring, and the header's theme button.
+// the squared transport chips (off / .on), the big play button, and the
+// header's theme button.
 import type { Meta, StoryObj } from '@storybook/html'
 import { t } from '../../src/shared/i18n.ts'
 import { h, icon } from '../../src/main/ui/dom.ts'
@@ -57,11 +57,6 @@ function board(): HTMLElement {
           h('button', { class: 'rp on', title: t('한 곡 반복') }, icon('repeatOne', 18)),
         ),
         h('button', { class: 'big', disabled: true }, icon('play', 20)),
-      ),
-      h(
-        'div',
-        { style: 'display:flex; flex-wrap:wrap; gap:28px; align-items:center; margin-top:20px' },
-        h('span', { class: 'sub', style: 'display:inline-flex; align-items:center; gap:10px' }, '.ctl .big.buffering', h('button', { class: 'big buffering', title: t('재생 / 일시정지') })),
       ),
     ),
     h(

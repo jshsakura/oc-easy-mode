@@ -84,6 +84,8 @@ export class Engine {
 
   detach(): void {
     if (this.player) this.player.removeEventListener('onStateChange', this.onStateChange)
+    this.boundVideo?.removeEventListener('ended', this.onElementEnded)
+    this.boundVideo = null
     this.player = null
     if (this.tickTimer) clearInterval(this.tickTimer)
     this.tickTimer = undefined
@@ -124,6 +126,9 @@ export class Engine {
   }
 
   private onStateChange = (raw: unknown): void => {
+    // A new video usually means a new element, and this arrives before the
+    // next tick would.
+    this.watchElement()
     const s = typeof raw === 'number' ? raw : Number((raw as { data?: unknown })?.data ?? raw)
     if (s === State.Ended) {
       // A stale ENDED from the previous video can arrive right after loadVideoById.
@@ -162,6 +167,32 @@ export class Engine {
   }
 
   /**
+   * The element tells us the track ended; we do not wait to notice.
+   *
+   * The end of a track was found by polling — twice a second, which is
+   * instant while anyone is looking. In a tab nobody is looking at it is not:
+   * a browser throttles timers in a hidden tab, and once the audio stops there
+   * is nothing left to exempt this one, so the queue could sit for a long
+   * moment on a finished track before moving to the next. That is the
+   * "background 다음 재생을 헤맨다" of it. The element's own `ended` event is
+   * not throttled, and running the same guarded check from it costs nothing:
+   * `endedFor` already makes a second look harmless.
+   *
+   * Rebound whenever YouTube swaps the element under us, which it does.
+   */
+  private boundVideo: HTMLVideoElement | null = null
+  private onElementEnded = (): void => {
+    this.tick()
+  }
+  private watchElement(): void {
+    const el = this.videoEl()
+    if (el === this.boundVideo) return
+    this.boundVideo?.removeEventListener('ended', this.onElementEnded)
+    this.boundVideo = el
+    el?.addEventListener('ended', this.onElementEnded)
+  }
+
+  /**
    * Whether YouTube is playing an advert in front of the track.
    *
    * It matters twice, and both times because an advert shares the one video
@@ -193,6 +224,7 @@ export class Engine {
   private tick = (): void => {
     const p = this.player
     if (!p) return
+    this.watchElement()
     const s = p.getPlayerState()
     // A load is pending until the player is actually underway on the track we
     // asked for; `loading` is dropped the moment it is, so it means "this load

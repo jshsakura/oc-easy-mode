@@ -58,7 +58,7 @@ export function setStoredTheme(theme: 'light' | 'dark'): void {
 
 /**
  * Whether the mode should be in dark theme.
- * Explicit user selection in Easy Mode wins and survives reloads.
+ * Explicit user selection in RenewTube wins and survives reloads.
  * Fallbacks follow YouTube's root attribute and system preference.
  */
 export function youtubeIsDark(): boolean {

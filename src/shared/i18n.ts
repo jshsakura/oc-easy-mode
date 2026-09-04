@@ -31,7 +31,6 @@ const EN: Record<string, string> = {
   '닫기': 'Close',
   '내리기': 'Collapse',
   'RenewTube 종료': 'Exit RenewTube',
-  '이지 모드 종료': 'Exit RenewTube',
   '좋아요': 'Like',
   '관심 없음': 'Not interested',
   '관심 없음 취소': 'Undo not interested',
@@ -46,6 +45,7 @@ const EN: Record<string, string> = {
   // Transport
   '재생 중인 항목 없음': 'Nothing playing',
   '재생 / 일시정지': 'Play / pause',
+  '불러오는 중…': 'Loading…',
   '이전': 'Previous',
   '다음': 'Next',
   '셔플': 'Shuffle',
@@ -95,6 +95,7 @@ const EN: Record<string, string> = {
   '취소': 'Cancel',
   '삭제': 'Delete',
   '빼기': 'Remove',
+  '대기열을 비울까요?': 'Empty the queue?',
   '새 재생목록 이름': 'New playlist name',
   '새 재생목록 만들기': 'Create a playlist',
 

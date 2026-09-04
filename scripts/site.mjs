@@ -99,7 +99,7 @@ createServer((req, res) => {
   })
   createReadStream(file).pipe(res)
 }).listen(PORT, () => {
-  console.log(`\n  이지 모드 v${version}`)
+  console.log(`\n  RenewTube v${version}`)
   console.log(`  http://localhost:${PORT}/`)
   console.log(`  download/${zipName} — ${(size / 1024).toFixed(0)}KB\n`)
 })

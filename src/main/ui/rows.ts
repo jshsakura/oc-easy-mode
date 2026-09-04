@@ -4,7 +4,7 @@
 import { t } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Track } from '../parse.ts'
-import { h, icon, type IconName } from './dom.ts'
+import { art, h, icon, type IconName } from './dom.ts'
 import { clock, explain, type Ctx } from './ctx.ts'
 import { showMenu, type MenuItem } from './overlay.ts'
 
@@ -53,6 +53,10 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
   }
 
   const open = () => {
+    // A drag ends in a click. Left alone, every swipe would also start playing
+    // the row it revealed — and a tap on an open row closes it rather than
+    // playing, which is what a phone has taught the gesture to mean.
+    if (swipeAte(el)) return
     if (track.unavailable) return ctx.say(t('재생할 수 없는 항목입니다.'), true)
     opts.onPlay()
   }
@@ -75,9 +79,9 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
   // target, which is also what makes it work under a remote control.
   // data-id names the track the element is, so a view can take this one row
   // out of the screen again without redrawing anything to find it.
-  const el = h(
+  const inner = h(
     'div',
-    { class: classes, 'data-nav': '', 'data-id': track.videoId, tabindex: '0', role: 'button', onclick: open },
+    { class: 'rowInner' },
     h(
       'div',
       { class: 'idx' },
@@ -87,10 +91,7 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
           ? String(opts.index)
           : '',
     ),
-    h('div', {
-      class: 'thumb',
-      style: `background-image: url(${thumbnail(track.videoId)})`,
-    }),
+    art('thumb', thumbnail(track.videoId)),
     h(
       'div',
       { class: 'meta' },
@@ -98,11 +99,141 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
       h('div', { class: 'by' }, track.unavailable ? t('재생할 수 없음') : track.byline),
     ),
     h('div', { class: 'dur' }, track.duration),
-    quickButton,
-    menuButton,
+  )
+  // Where a pointer hovers, this sits at the end of the row as it always has.
+  // Where there is no pointer, it waits just off the right-hand edge and a
+  // swipe brings it in.
+  const actions = h('div', { class: 'rowActions' }, quickButton, menuButton)
+  const el = h(
+    'div',
+    { class: classes, 'data-nav': '', 'data-id': track.videoId, tabindex: '0', role: 'button', onclick: open },
+    inner,
+    actions,
   )
   menuButton.addEventListener('click', (ev) => openMenu(ev, el))
+  swipeable(el, actions)
   return el
+}
+
+// ── Swipe ───────────────────────────────────────────────────────────────────
+//
+// The buttons on a row were always-on where a finger is, because a finger
+// cannot hover: two glyphs on every line of every list, on the screen where
+// there is least room for them. So on a touch screen they step off the edge
+// and a leftward drag brings them back, which is the gesture a phone already
+// teaches — and it means one row's actions at a time rather than forty.
+//
+// Only where there is no pointer. A mouse has hover, and hover is better.
+
+/** The one row showing its actions, if any. */
+let openRow: HTMLElement | null = null
+/** When the last swipe ended, so the click it produces does not open a track. */
+let swipedAt = 0
+/** How far a drag must go sideways before it stops being a scroll. */
+const SLOP = 8
+
+export function closeSwipe(): void {
+  if (!openRow) return
+  openRow.classList.remove('open')
+  openRow.style.removeProperty('--swipe')
+  openRow = null
+}
+
+let watchingDocument = false
+function closeOnTouchElsewhere(): void {
+  if (watchingDocument) return
+  watchingDocument = true
+  document.addEventListener(
+    'touchstart',
+    (ev) => {
+      if (!openRow || ev.composedPath().includes(openRow)) return
+      closeSwipe()
+    },
+    { passive: true, capture: true },
+  )
+}
+
+/** Whether a click on a row is the tail of a swipe and should be ignored. */
+function swipeAte(row: HTMLElement): boolean {
+  if (row.classList.contains('open')) {
+    closeSwipe()
+    return true
+  }
+  return Date.now() - swipedAt < 400
+}
+
+function swipeable(row: HTMLElement, actions: HTMLElement): void {
+  if (!matchMedia('(hover: none)').matches) return
+  closeOnTouchElsewhere()
+  let x0 = 0
+  let y0 = 0
+  let dx = 0
+  let width = 0
+  let tracking = false
+  let sliding = false
+
+  row.addEventListener(
+    'touchstart',
+    (ev) => {
+      if (ev.touches.length !== 1) return
+      if (openRow && openRow !== row) closeSwipe()
+      const touch = ev.touches[0]!
+      width = actions.offsetWidth
+      if (width < 8) return
+      x0 = touch.clientX
+      y0 = touch.clientY
+      dx = openRow === row ? -width : 0
+      tracking = true
+      sliding = false
+    },
+    { passive: true },
+  )
+
+  row.addEventListener(
+    'touchmove',
+    (ev) => {
+      if (!tracking) return
+      const touch = ev.touches[0]!
+      const mx = touch.clientX - x0
+      const my = touch.clientY - y0
+      if (!sliding) {
+        // A scroll is a scroll: the finger has to be going mostly sideways,
+        // and far enough that a tap with a shaky hand is not a swipe.
+        if (Math.abs(my) > Math.abs(mx)) {
+          tracking = false
+          return
+        }
+        if (Math.abs(mx) < SLOP) return
+        sliding = true
+        row.classList.add('swiping')
+      }
+      const from = openRow === row ? -width : 0
+      dx = Math.max(-width, Math.min(0, from + mx))
+      row.style.setProperty('--swipe', `${dx}px`)
+    },
+    { passive: true },
+  )
+
+  const settle = (): void => {
+    if (!tracking) return
+    tracking = false
+    row.classList.remove('swiping')
+    if (!sliding) return
+    swipedAt = Date.now()
+    // Past halfway it opens, short of it it goes back. The transition does the
+    // rest, which is why the inline property is removed rather than set to 0.
+    if (dx < -width / 2) {
+      row.classList.add('open')
+      row.style.setProperty('--swipe', `${-width}px`)
+      openRow = row
+    } else {
+      row.classList.remove('open')
+      row.style.removeProperty('--swipe')
+      if (openRow === row) openRow = null
+    }
+  }
+  row.addEventListener('touchend', settle, { passive: true })
+  row.addEventListener('touchcancel', settle, { passive: true })
 }
 
 /** Replaces the queue with a mix built around one track. */

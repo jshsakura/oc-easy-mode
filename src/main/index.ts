@@ -107,7 +107,7 @@ async function start(): Promise<void> {
       // The panic key and the watchdog both mean the same thing: get out now.
       leave(reason === 'panic')
       if (reason === 'watchdog') {
-        console.warn('[Easy Mode] 화면을 띄우지 못해 원래 유튜브로 돌아갑니다.')
+        console.warn('[RenewTube] 화면을 띄우지 못해 원래 유튜브로 돌아갑니다.')
       }
     })
 
@@ -189,7 +189,7 @@ async function start(): Promise<void> {
       toast(shell.overlay, t('유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.'))
     }
   } catch (err) {
-    console.warn('[Easy Mode] 시작하지 못했습니다:', err)
+    console.warn('[RenewTube] 시작하지 못했습니다:', err)
     shell?.teardown()
     running = null
     leave(false)

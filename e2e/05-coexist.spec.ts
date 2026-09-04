@@ -1,4 +1,4 @@
-// 이지 모드 and oc-ad-bye-pass, installed together.
+// RenewTube and oc-ad-bye-pass, installed together.
 //
 // The two are deliberately separate products: this one never blocks an ad, so
 // whichever blocker the user prefers stays their choice. That only works if

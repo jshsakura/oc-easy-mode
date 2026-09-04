@@ -9,7 +9,7 @@
 model make one produced things that were fine on their own and wrong as a
 family member. The sibling extension (oc-ad-bye-pass) builds its icon in three
 layers — a purple tile, a dark shape inside it, a peach glyph inside that —
-and its exact colours are sampled below. Easy Mode uses the same three layers
+and its exact colours are sampled below. RenewTube uses the same three layers
 with a circle where the sibling has a shield, and a play triangle where it has
 a sparkle. Same family, different product.
 
@@ -104,7 +104,7 @@ def og(src: Image.Image) -> None:
     x = 76
     plate.paste(small, (x, 150), small)
 
-    draw.text((x, 268), "Easy Mode", font=font(80, "Bold"), fill=FOREGROUND)
+    draw.text((x, 268), "RenewTube", font=font(80, "Bold"), fill=FOREGROUND)
     body = font(27, "Regular")
     draw.text((x, 372), "유튜브를 음악과 영상", font=body, fill=MUTED)
     draw.text((x, 410), "플레이어로 사용하는 확장", font=body, fill=MUTED)

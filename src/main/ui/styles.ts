@@ -97,6 +97,14 @@ export const STYLES = `
   --glass: #1b1815;
   --glass-strong: #1b1815;
   --glass-line: #322c25;
+  /* Glass, but only where something floats. Panels stay flat — that is the
+     rule above and it holds. A menu, a dialog, a sheet and a toast are the
+     four things in this UI that sit *over* the app, and they are the four
+     the reader asked to be glass: translucent, blurred, with the light
+     hairline that tells an edge from a shadow. */
+  --pop: rgba(30, 27, 23, .72);
+  --pop-line: rgba(236, 231, 223, .12);
+  --pop-blur: saturate(180%) blur(20px);
 
   --hover: rgba(236, 231, 223, .06);
   --shadow: 0 2px 6px rgba(20, 12, 4, .28);
@@ -165,6 +173,9 @@ export const STYLES = `
   --glass: #fbfaf6;
   --glass-strong: #fbfaf6;
   --glass-line: #ddd8cd;
+  --pop: rgba(251, 250, 246, .74);
+  --pop-line: rgba(35, 32, 25, .12);
+  --pop-blur: saturate(180%) blur(20px);
   --hover: rgba(0, 0, 0, .05);
   --shadow: 0 2px 6px rgba(70, 60, 40, .1);
 }
@@ -252,18 +263,36 @@ input { font: inherit; color: inherit; }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .side {
+  /* Full height, floor to ceiling. It used to stop where the player bar began
+     and give up the last 80 pixels to a strip it had nothing to do with, so
+     the column of destinations and playlists was the shortest thing on a
+     screen otherwise full of room. The bar keeps the width it needs by
+     starting where this column ends. */
+  grid-row: 1 / -1; grid-column: 1;
   /* One flat surface, edged with a hairline — a pane told from a box by the
      line, not by translucency. */
   background: var(--glass);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
   padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
-  /* It has to scroll, and on a phone that needs saying twice: min-height so a
-     column of buttons that will not shrink can overflow rather than push the
-     box open, and overscroll-behavior so a flick that reaches the end does not
-     hand the page underneath a scroll it will do nothing with. */
-  overflow-y: auto; min-height: 0; overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  /* The pane itself does not scroll; the list inside it does. With enough
+     playlists in the column the name and the way out used to travel up and
+     off the top with everything else. */
+  overflow: hidden; min-height: 0;
+}
+/* Stays put. Never shrinks, whatever is underneath it. */
+.sideHead {
+  flex: none; display: flex; flex-direction: column; gap: 2px;
+  padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--glass-line);
+}
+/* Everything else. min-height so a column of buttons that will not shrink can
+   overflow rather than push the box open, and overscroll-behavior so a flick
+   that reaches the end does not hand the page underneath a scroll it will do
+   nothing with. */
+.sideScroll {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 /* Everything in this column shares one left edge and one icon-to-label gap:
    10px of padding, an 18px glyph, 12px of gap. They had been 8/20/8, 10/18/10
@@ -271,7 +300,7 @@ input { font: inherit; color: inherit; }
    a different x and the column read as three lists stacked. */
 .brand {
   display: flex; align-items: center; gap: 12px;
-  padding: 6px 10px 18px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+  padding: 6px 10px 10px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
 }
 .nav {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -287,9 +316,10 @@ input { font: inherit; color: inherit; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
 }
 .side .spacer { flex: 1; }
-/* One more line in the list, with the same indent and the same gap. It was a
-   bordered button under the menu, which read as a different kind of thing. */
-.exit { margin-top: 4px; }
+/* At the top, under the name, where the way out of a thing belongs — and in
+   the head, so it is reachable however far the playlists below have scrolled.
+   Same indent and same gap as every other line in the column. */
+.exit { margin-top: 0; }
 
 /* ── The header strip, on a narrow screen only ───────────────────────────── */
 .top { display: none; }
@@ -388,11 +418,19 @@ input { font: inherit; color: inherit; }
 }
 .rows > .queueMark:first-child { margin-top: 4px; }
 .row {
-  display: grid; grid-template-columns: 24px 44px 1fr auto 32px 32px;
-  align-items: center; gap: 16px; padding: 8px;
+  /* Content, and a strip of actions after it. The content used to be the row
+     itself; it is its own box now so a swipe can move it without moving the
+     actions with it. */
+  display: grid; grid-template-columns: 1fr auto;
+  align-items: center; padding: 8px;
   border-radius: var(--radius-md); cursor: pointer;
   transition: background var(--ease);
 }
+.rowInner {
+  display: grid; grid-template-columns: 24px 44px 1fr auto;
+  align-items: center; gap: 16px; min-width: 0;
+}
+.rowActions { display: flex; align-items: center; gap: 16px; margin-left: 16px; }
 /* A quiet fill, like any list's chosen row. The bars say which row it is;
    the fill says it is the one you are on. Nothing lifts, nothing glows. */
 .row.now { background: var(--secondary); }
@@ -419,8 +457,10 @@ input { font: inherit; color: inherit; }
    shape, like a record sleeve. Video stills crop to it without complaint. */
 .row .thumb { width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--secondary) center/cover; }
 /* Square, because a playlist's picture is a cover. The trailing chevron is the
-   one from the sidebar's exit, turned around. */
-.row.plrow { grid-template-columns: 44px 1fr 20px; }
+   one from the sidebar's exit, turned around.
+   A playlist row has no action strip, so its parts are laid out directly and
+   it carries the gap the ordinary row now keeps on .rowInner. */
+.row.plrow { grid-template-columns: 44px 1fr 20px; gap: 16px; }
 .row.plrow .thumb { width: 44px; height: 44px; border-radius: var(--radius-md); }
 .row.plrow > svg { color: var(--muted-foreground); transform: rotate(180deg); justify-self: end; }
 .row .meta { min-width: 0; }
@@ -455,7 +495,7 @@ input { font: inherit; color: inherit; }
 /* Top-right of the artwork, where a card's own play button is not. Always
    visible on touch — a card has no hover to wait for. */
 .tileAdd {
-  position: absolute; right: 6px; top: 6px; z-index: 2;
+  position: absolute; right: 8px; top: 8px; z-index: 2;
   width: 30px; height: 30px; border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
   background: oklch(0 0 0 / 55%); color: #fff; cursor: pointer;
@@ -474,7 +514,9 @@ input { font: inherit; color: inherit; }
 /* Sits on the artwork and appears on hover or focus, like every music client.
    It is decoration only — the whole card is the button. */
 .cover .play {
-  position: absolute; right: 10px; bottom: 10px;
+  /* 8px from the edge, the same as the badge opposite it and the same as the
+     add button above it. Three different insets read as three accidents. */
+  position: absolute; right: 8px; bottom: 8px;
   width: 40px; height: 40px; border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
   background: oklch(0 0 0 / 74%); color: oklch(0.985 0 0);
@@ -491,7 +533,40 @@ input { font: inherit; color: inherit; }
      is fine for a menu nobody has asked for; it is not fine for the button
      that puts a track in a playlist, which is meant to be pressed. */
   .row .more, .row .quick { opacity: 1; }
+
+  /* ── Swipe ───────────────────────────────────────────────────────────────
+     Two glyphs on every line of every list is a lot of furniture on the screen
+     with the least room, and a finger cannot hover them away. So the actions
+     wait just past the right-hand edge and a leftward drag brings them in —
+     one row's at a time. The strip is placed outside the row and clipped by
+     it, which is why nothing needs an opaque background to hide behind.
+     --swipe is written by the gesture; both halves move by the same amount. */
+  .row { overflow: hidden; touch-action: pan-y; }
+  .rowInner, .rowActions {
+    transform: translateX(var(--swipe, 0px));
+    transition: transform .2s cubic-bezier(.2, .8, .2, 1);
+  }
+  .row.swiping .rowInner, .row.swiping .rowActions { transition: none; }
+  .rowActions {
+    position: absolute; left: 100%; top: 0; bottom: 0;
+    margin: 0; padding: 0 8px 0 4px; gap: 4px;
+  }
 }
+
+/* ── A picture that shows its own arrival ──────────────────────────────────
+   The artwork is an <img> inside the box rather than the box's background:
+   a background can be neither deferred nor waited on, so a hundred rows asked
+   for a hundred pictures at once and each box stayed panel-coloured until its
+   own arrived. Now the box shimmers like every other skeleton in the app and
+   the picture fades in over it. */
+.thumb, .cover { position: relative; overflow: hidden; }
+.thumb > img, .cover > img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; border-radius: inherit;
+  transition: opacity var(--ease);
+}
+.thumb.loading, .cover.loading { background: var(--muted); animation: sk 1.2s ease-in-out infinite; }
+.thumb.loading > img, .cover.loading > img { opacity: 0; }
 
 /* The running time, where every video player puts it. */
 .cover .badge {
@@ -544,6 +619,12 @@ input { font: inherit; color: inherit; }
 
 /* ── The slot YouTube's player is positioned over ────────────────────────── */
 .slot { position: fixed; pointer-events: none; background: #000; }
+/* Black is what a video element is before it has a frame, and a black
+   rectangle in the middle of the screen reads as breakage rather than as
+   loading. While there is nothing to show, the slot is a skeleton like every
+   other waiting thing here; it goes back to black the moment the picture can
+   letterbox against it. */
+.slot.warming { background: var(--muted); animation: sk 1.2s ease-in-out infinite; }
 .slot.hidden { display: none; }
 .slot.corner {
   left: calc(100dvw - 280px - var(--gap)); bottom: calc(var(--bar) + var(--gap)); width: 280px;
@@ -559,6 +640,16 @@ input { font: inherit; color: inherit; }
 .app.has-stage .main { padding-top: calc(var(--stage-h) + 20px); }
 .app.has-corner .main { padding-bottom: 220px; }
 
+/* A wait, drawn inside the button that is waiting. currentColor, so it reads
+   on the light disc of the big button and on the bare ones either side. */
+.spin {
+  display: block; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid currentColor; border-top-color: transparent;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
+
 /* ── Player bar ──────────────────────────────────────────────────────────── */
 .bar {
   /* min-width: 0, or a long title makes the bar wider than the screen.
@@ -569,7 +660,7 @@ input { font: inherit; color: inherit; }
      something has decided the box is narrower than its text. */
   /* relative, because the elapsed line runs along the bar's bottom edge —
      see the seek rule just below the transport. */
-  grid-column: 1 / -1; min-width: 0; background: transparent; position: relative;
+  grid-column: 2; min-width: 0; background: transparent; position: relative;
   display: grid; grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr) minmax(200px, 1fr);
   align-items: center; padding: 0; gap: 16px;
 }
@@ -589,9 +680,19 @@ input { font: inherit; color: inherit; }
 .rate:hover { background: var(--hover); color: var(--foreground); }
 .rate:disabled { opacity: .35; pointer-events: none; }
 /* Lit apart, because they mean opposite things: approval takes the accent, and
-   "not this one" takes the colour nothing else in the bar uses. */
+   "not this one" takes the colour nothing else in the bar uses.
+   And lit *loudly*: the state was a colour change on an 18px outline, which on
+   a phone is no feedback at all — the press read as having been missed. Now
+   the button takes a fill as well, and the glyph pops once as it lands. The
+   call to YouTube still happens afterwards and still puts this back if it is
+   refused; this is only about the press being seen. */
+.rate.on { background: var(--secondary); }
 .rate.up.on { color: var(--primary); }
 .rate.down.on { color: var(--destructive); }
+.rate:active { transform: scale(.92); }
+.rate.on > svg { animation: pop .24s ease; }
+@keyframes pop { 0% { transform: scale(.82); } 60% { transform: scale(1.16); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .rate.on > svg { animation: none; } }
 .bar .now .thumb {
   width: 56px; height: 56px; flex: none; border-radius: var(--radius-md);
   background: var(--secondary) center/cover;
@@ -701,10 +802,14 @@ input[type=range]::-moz-range-thumb {
 /* ── Menu, dialog, toast — the only things that float ────────────────────── */
 /* Compact like the bar beneath it: a menu is a tool palette, dense is right. */
 .menu {
-  position: fixed; z-index: 2147483100; min-width: 168px; padding: 4px;
-  background: var(--glass-strong); color: var(--popover-foreground);
- 
-  border: 1px solid var(--glass-line); border-radius: var(--radius-md); box-shadow: var(--shadow);
+  /* Wide enough for the longest line it holds. At 168 the labels wrapped and
+     the menu came out a different width for every row it was opened from,
+     which is what made it feel like it moved. */
+  position: fixed; z-index: 2147483100; padding: 4px;
+  min-width: 224px; max-width: min(320px, calc(100dvw - 16px));
+  background: var(--pop); color: var(--popover-foreground);
+  -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
+  border: 1px solid var(--pop-line); border-radius: var(--radius-md); box-shadow: var(--shadow);
 }
 .menu button {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
@@ -725,7 +830,7 @@ input[type=range]::-moz-range-thumb {
    decision is made in script anyway. */
 .menu.sheetMenu {
   left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
-  top: auto; min-width: 0; padding: 8px; border-radius: var(--radius-lg);
+  top: auto; min-width: 0; max-width: none; padding: 8px; border-radius: var(--radius-lg);
   /* Never more than half the screen, and scrolls if the list is longer. A
      sheet that grows with its contents eventually stops being a menu over the
      page and becomes the page. */
@@ -746,14 +851,26 @@ input[type=range]::-moz-range-thumb {
 
 .scrim {
   position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 2147483090;
-  background: oklch(0 0 0 / 70%); display: flex; align-items: center; justify-content: center;
+  background: oklch(0 0 0 / 55%); display: flex; align-items: center; justify-content: center;
 }
 .modal {
-  width: 420px; max-height: 72vh; display: flex; flex-direction: column;
-  background: var(--glass-strong); color: var(--popover-foreground);
- 
-  border: 1px solid var(--glass-line); border-radius: var(--radius-lg); box-shadow: var(--shadow);
+  width: min(420px, calc(100dvw - 32px)); max-height: 72dvh; display: flex; flex-direction: column;
+  background: var(--pop); color: var(--popover-foreground);
+  -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
+  border: 1px solid var(--pop-line); border-radius: var(--radius-lg); box-shadow: var(--shadow);
 }
+/* The phone form: the whole screen, no card, no corners, and the buttons at
+   the foot where a thumb is. */
+.modal.full {
+  width: 100dvw; max-width: none; height: 100dvh; max-height: none;
+  border: 0; border-radius: 0;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.modal.full h3 { padding: 26px 20px 14px; font-size: 20px; }
+.modal.full .list { flex: 1; padding: 0 12px 8px; }
+.modal.full .list button { padding: 14px 12px; font-size: 15px; }
+.modal.full .new { margin-top: auto; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); }
+.modal.full .new .btn { height: 44px; font-size: 15px; }
 .modal h3 { margin: 0; padding: 22px 22px 12px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
 .modal .list { overflow-y: auto; padding: 0 14px 8px; }
 .modal .list button {
@@ -771,14 +888,21 @@ input[type=range]::-moz-range-thumb {
 .modal .new input:focus { border-color: var(--ring); }
 
 .toasts {
-  position: fixed; left: 50dvw; bottom: calc(var(--bar) + var(--gap) + 12px); transform: translateX(-50%);
-  z-index: 2147483120; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  /* Full width and centred by the flex box, not left: 50dvw with a translate.
+     A fixed element sized shrink-to-fit gets the containing block minus that
+     left offset — half a screen — so every message of more than a few words
+     wrapped. Same trap as the app being 508px wide: measure the viewport, in
+     viewport units. */
+  position: fixed; left: 0; width: 100dvw; bottom: calc(var(--bar) + var(--gap) + 12px);
+  z-index: 2147483120; display: flex; flex-direction: column; align-items: center;
+  gap: 8px; pointer-events: none;
 }
 .toast {
+  max-width: min(560px, calc(100dvw - 32px));
   padding: 12px 18px; border-radius: var(--radius-md); font-size: 14px;
-  background: var(--glass-strong); color: var(--popover-foreground);
- 
-  border: 1px solid var(--glass-line); box-shadow: var(--shadow);
+  background: var(--pop); color: var(--popover-foreground);
+  -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
+  border: 1px solid var(--pop-line); box-shadow: var(--shadow);
 }
 .toast.bad { color: var(--destructive); }
 
@@ -819,7 +943,8 @@ input[type=range]::-moz-range-thumb {
   .tile { width: 158px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 22px 14px; }
   .head .cover { width: 168px; }
-  .row { grid-template-columns: 24px 44px 1fr auto 32px 32px; gap: 8px; }
+  .rowInner { grid-template-columns: 24px 44px 1fr auto; gap: 8px; }
+  .rowActions { gap: 8px; margin-left: 8px; }
 }
 
 /* ── Narrow ───────────────────────────────────────────────────────────────
@@ -875,7 +1000,7 @@ input[type=range]::-moz-range-thumb {
    literal.) */
 .app.narrow .side {
   position: fixed; left: -302px; top: 0; height: 100dvh; width: 302px; z-index: 20;
-  overflow-y: auto; overscroll-behavior: contain;
+  overflow: hidden;
   background: var(--glass-strong);
   border: 0; border-right: 1px solid var(--glass-line); border-radius: 0;
   transition: left .22s ease;
@@ -887,6 +1012,17 @@ input[type=range]::-moz-range-thumb {
 .app.narrow .nav { padding: 11px 12px; font-size: 15px; }
 .app.narrow .exit { padding: 11px 12px; font-size: 15px; }
 .app.narrow .side .pl { padding: 9px 12px; font-size: 14px; }
+/* A shelf reaches both edges of the screen and keeps going. The fade was a
+   desktop answer to a hard clip; on a phone it greys out the card a thumb is
+   reaching for, and the row stopping short of the edge reads as a margin
+   error rather than as more content. The negative margin is the content
+   padding, so the first card still lines up with the heading above it. */
+.app.narrow .shelfRow {
+  -webkit-mask-image: none; mask-image: none;
+  margin-left: -16px; margin-right: -16px;
+  padding-left: 16px; padding-right: 16px;
+  scroll-padding-left: 16px;
+}
 
 /* Sized like the app, and for the same reason: inset: 0 measures a box that
    can be wider than the screen, and a scrim wider than the screen makes the

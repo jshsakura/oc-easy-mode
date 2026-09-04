@@ -156,8 +156,20 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     get playlists() {
       return opts.ctx.playlists
     },
-    refreshPlaylists: () => opts.ctx.refreshPlaylists(),
-    addToPlaylist: (tracks) => opts.ctx.addToPlaylist(tracks),
+    // Both redraw the column afterwards. Making a playlist wrote it to
+    // YouTube and left the sidebar showing the list as it was before — the
+    // new one appeared only on the next reload, which reads as the creation
+    // having failed. The screen that asked is redrawn too when it is the one
+    // the playlists are on.
+    async refreshPlaylists() {
+      await opts.ctx.refreshPlaylists()
+      drawSide()
+    },
+    async addToPlaylist(tracks) {
+      await opts.ctx.addToPlaylist(tracks)
+      drawSide()
+      if (ctx.view.kind === 'playlists') ctx.reload()
+    },
     overlay: shell.overlay,
     view: viewFromName(engine.state.view),
     go(view) {
@@ -200,7 +212,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   // The header carries the way into the drawer and the name of the screen.
   //
-  // It said "Easy Mode" before, which the drawer says too — the same words
+  // It said "RenewTube" before, which the drawer says too — the same words
   // twice on one screen — while the screen's own name was set in 22px type
   // below it, taking a band of a phone's height to say one word. The header
   // had the room and the content did not.
@@ -220,61 +232,69 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       side,
       h(
         'div',
-        { class: 'brand' },
-        mark(20),
-        h('span', null, 'RenewTube'),
-        h('div', { class: 'spacer' }),
-        // Only ever visible in the drawer. Reaching the scrim means reaching
-        // across the screen, and a drawer with no close button reads as stuck.
+        { class: 'sideHead' },
+        h(
+          'div',
+          { class: 'brand' },
+          mark(20),
+          h('span', null, 'RenewTube'),
+          h('div', { class: 'spacer' }),
+          // Only ever visible in the drawer. Reaching the scrim means reaching
+          // across the screen, and a drawer with no close button reads as stuck.
+          h(
+            'button',
+            { class: 'drawerClose', 'data-nav': '', title: t('닫기'), 'aria-label': t('닫기'), onclick: closeDrawer },
+            icon('close', 18),
+          ),
+        ),
+        // Leaving is a line in the list, with a glyph that leaves — and it is
+        // the second line, not the last one. At the foot of the column it was
+        // below thirty playlists and had to be scrolled to.
         h(
           'button',
-          { class: 'drawerClose', 'data-nav': '', title: t('닫기'), 'aria-label': t('닫기'), onclick: closeDrawer },
-          icon('close', 18),
+          { class: 'nav exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
+          icon('leave', 18),
+          h('span', null, t('RenewTube 종료')),
         ),
       ),
-      NAV.map((item) => [
-        item.section && h('h4', null, item.section),
-        h(
-          'button',
-          {
-            class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
-            'data-nav': '',
-            onclick: () => {
-              closeDrawer()
-              ctx.go(item.view)
-            },
-          },
-          icon(item.icon, 18),
-          h('span', null, item.label),
-        ),
-      ]),
-      ctx.playlists.length > 0 && h('h4', null, t('재생목록')),
-      ctx.playlists.slice(0, 30).map((p) =>
-        h(
-          'button',
-          {
-            class: 'nav pl',
-            'data-nav': '',
-            title: p.title,
-            onclick: () => {
-              closeDrawer()
-              ctx.go({ kind: 'playlist', id: p.id, title: p.title })
-            },
-          },
-          p.title,
-        ),
-      ),
-      h('div', { class: 'spacer' }),
-      // The theme lives in the header on a phone; here it is one more line.
-      !narrowNow() && themeButton(false),
-      // Leaving is a line in the list too, with a glyph that leaves. The
-      // bordered button read as a different kind of thing sitting under the
-      // menu, and the back arrow said "previous screen", not "out".
       h(
-        'button',
-        { class: 'nav exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
-        icon('leave', 18),
-        h('span', null, t('RenewTube 종료')),
+        'div',
+        { class: 'sideScroll' },
+        NAV.map((item) => [
+          item.section && h('h4', null, item.section),
+          h(
+            'button',
+            {
+              class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
+              'data-nav': '',
+              onclick: () => {
+                closeDrawer()
+                ctx.go(item.view)
+              },
+            },
+            icon(item.icon, 18),
+            h('span', null, item.label),
+          ),
+        ]),
+        ctx.playlists.length > 0 && h('h4', null, t('재생목록')),
+        ctx.playlists.slice(0, 30).map((p) =>
+          h(
+            'button',
+            {
+              class: 'nav pl',
+              'data-nav': '',
+              title: p.title,
+              onclick: () => {
+                closeDrawer()
+                ctx.go({ kind: 'playlist', id: p.id, title: p.title })
+              },
+            },
+            p.title,
+          ),
+        ),
+        h('div', { class: 'spacer' }),
+        // The theme lives in the header on a phone; here it is one more line.
+        !narrowNow() && themeButton(false),
       ),
     )
   }
@@ -729,13 +749,24 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   function drawTick(): void {
     const p = engine.position
+    // Nothing loaded yet: the slot is a skeleton rather than a black hole.
+    slot.classList.toggle('warming', p.duration <= 0)
     // YouTube-core: a load is playing-in-waiting and wears the pause glyph,
     // exactly as YouTube's own bar does — a fetch must never read as stopped.
     // Only a wait that has outlasted its welcome turns the glyph to stop:
     // playback is genuinely stuck, and pressing it halts the track (a
     // buffering player pauses; the next tick shows play again).
-    replace(playButton, icon(p.stalled ? 'stop' : p.playing ? 'pause' : 'play', 20))
-    playButton.title = p.stalled ? t('정지') : t('재생 / 일시정지')
+    // A wait is drawn as a wait. The stop square said "this is stopped" about
+    // a track that was in fact loading — and often playing a second later, so
+    // the one glyph meant two opposite things. A ring turning inside the
+    // button says the only true thing: it is coming. Pressing it still halts.
+    if (p.buffering || p.stalled) {
+      replace(playButton, h('span', { class: 'spin' }))
+      playButton.title = t('불러오는 중…')
+    } else {
+      replace(playButton, icon(p.playing ? 'pause' : 'play', 20))
+      playButton.title = t('재생 / 일시정지')
+    }
     total.textContent = clock(p.duration)
     if (!scrubbing) {
       elapsed.textContent = clock(p.current)
