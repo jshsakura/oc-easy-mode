@@ -125,4 +125,13 @@ export const VI: Record<string, string> = {
   "적용": "Áp dụng",
   "고른 채널의 영상이 없습니다.": "Không có gì từ các kênh bạn đã chọn.",
   "채널을 찾지 못했습니다.": "Không tìm thấy kênh nào.",
+  "이퀄라이저": "Bộ chỉnh âm",
+  "볼륨 부스터": "Tăng âm lượng",
+  "켜짐": "Bật",
+  "꺼짐": "Tắt",
+  "기본값으로": "Đặt lại",
+  "다시 시도": "Thử lại",
+  "이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.": "Trình duyệt này không dùng được bộ chỉnh âm.",
+  "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "Khi bật, âm thanh đi qua tiện ích này. Ở trình duyệt bị mất tiếng, nó sẽ tự tắt.",
+  "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "Không có âm thanh nên đã tắt bộ chỉnh âm. Đang tải lại.",
 }

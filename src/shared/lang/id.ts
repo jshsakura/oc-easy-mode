@@ -125,4 +125,13 @@ export const ID: Record<string, string> = {
   "적용": "Terapkan",
   "고른 채널의 영상이 없습니다.": "Tidak ada dari kanal yang Anda pilih.",
   "채널을 찾지 못했습니다.": "Kanal tidak ditemukan.",
+  "이퀄라이저": "Equalizer",
+  "볼륨 부스터": "Penguat volume",
+  "켜짐": "Aktif",
+  "꺼짐": "Nonaktif",
+  "기본값으로": "Setel ulang",
+  "다시 시도": "Coba lagi",
+  "이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.": "Equalizer tidak bisa dipakai di browser ini.",
+  "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "Saat aktif, suara melewati ekstensi ini. Di browser yang jadi hening, ia mati sendiri.",
+  "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "Tidak ada suara, equalizer dimatikan. Memuat ulang.",
 }

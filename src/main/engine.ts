@@ -5,6 +5,7 @@
 // it never touches the player itself.
 
 import { State, disableAutonav, videoIdInUrl, type YtPlayer } from './player.ts'
+import { AudioChain } from './audio.ts'
 import type { Track } from './parse.ts'
 import type { Lang } from '../shared/i18n.ts'
 import { load, remember, save, setQuickOn, type Mode, type Persisted, type Repeat, type Theme, type VideoLayout } from './store.ts'
@@ -35,6 +36,8 @@ export interface Position {
 export class Engine {
   state: Persisted = load()
   player: YtPlayer | null = null
+  /** The equalizer and booster. Idle until switched on; follows the element from here. */
+  readonly audio = new AudioChain()
   private listeners = new Set<Listener>()
   private tickListeners = new Set<Listener>()
   private tickTimer: number | undefined
@@ -111,6 +114,7 @@ export class Engine {
 
   detach(): void {
     if (this.player) this.player.removeEventListener('onStateChange', this.onStateChange)
+    this.audio.release()
     // Handed back exactly as it was found, volume and mute both. Wrapped
     // because a player being torn down is allowed to have stopped answering,
     // and a throw here would take the rest of the exit with it.
@@ -168,6 +172,7 @@ export class Engine {
     // A new video usually means a new element, and this arrives before the
     // next tick would.
     this.watchElement()
+    this.audio.follow(this.videoEl())
     const s = typeof raw === 'number' ? raw : Number((raw as { data?: unknown })?.data ?? raw)
     if (s === State.Ended) {
       // A stale ENDED from the previous video can arrive right after loadVideoById.
@@ -199,6 +204,10 @@ export class Engine {
    * mode is on.
    */
   private cachedVideo: HTMLVideoElement | null = null
+  /** YouTube's media element, for the one thing outside that needs it: wiring the equalizer on a press. */
+  get media(): HTMLVideoElement | null {
+    return this.videoEl()
+  }
   private videoEl(): HTMLVideoElement | null {
     if (this.cachedVideo?.isConnected) return this.cachedVideo
     this.cachedVideo = document.querySelector('video')
@@ -264,6 +273,7 @@ export class Engine {
     const p = this.player
     if (!p) return
     this.watchElement()
+    this.audio.follow(this.videoEl())
     this.probeVolume()
     const s = p.getPlayerState()
     // A load is pending until the player is actually underway on the track we

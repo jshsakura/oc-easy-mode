@@ -125,4 +125,13 @@ export const EN: Record<string, string> = {
   "적용": "Apply",
   "고른 채널의 영상이 없습니다.": "Nothing from the channels you chose.",
   "채널을 찾지 못했습니다.": "No channels found.",
+  "이퀄라이저": "Equalizer",
+  "볼륨 부스터": "Volume booster",
+  "켜짐": "On",
+  "꺼짐": "Off",
+  "기본값으로": "Reset",
+  "다시 시도": "Try again",
+  "이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.": "The equalizer cannot run in this browser.",
+  "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "When on, the sound passes through this extension. In a browser that goes silent, it switches itself off.",
+  "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "No sound came through, so the equalizer is off. Reloading.",
 }

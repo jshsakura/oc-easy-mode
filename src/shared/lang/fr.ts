@@ -125,4 +125,13 @@ export const FR: Record<string, string> = {
   "적용": "Appliquer",
   "고른 채널의 영상이 없습니다.": "Rien des chaînes que vous avez choisies.",
   "채널을 찾지 못했습니다.": "Aucune chaîne trouvée.",
+  "이퀄라이저": "Égaliseur",
+  "볼륨 부스터": "Amplificateur de volume",
+  "켜짐": "Activé",
+  "꺼짐": "Désactivé",
+  "기본값으로": "Réinitialiser",
+  "다시 시도": "Réessayer",
+  "이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.": "L’égaliseur ne fonctionne pas dans ce navigateur.",
+  "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "Activé, le son passe par cette extension. Dans un navigateur qui devient muet, il se désactive de lui-même.",
+  "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "Aucun son ne sortait, l’égaliseur a été désactivé. Rechargement.",
 }

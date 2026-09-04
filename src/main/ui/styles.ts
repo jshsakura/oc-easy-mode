@@ -1387,7 +1387,8 @@ input[type=range]::-moz-range-thumb {
 @media (hover: none) {
   .app.narrow.sheet-open .right .vol { display: none; }
   .app.narrow.sheet-open .right .sp,
-  .app.narrow.sheet-open .right .sl { display: inline-flex; }
+  .app.narrow.sheet-open .right .sl,
+  .app.narrow.sheet-open .right .eqb { display: inline-flex; }
   .app.narrow.sheet-open .right .mr { display: none; }
   /* A finger, on the row that now has six things in it. */
   .app.narrow.sheet-open .right button { width: 40px; height: 40px; }
@@ -1403,7 +1404,7 @@ input[type=range]::-moz-range-thumb {
 .app.narrow:not(.sheet-open) .bar .now .rate-box { display: none; }
 /* Off everywhere else: a desktop keeps the menu, which is where these two have
    always lived and where there is no shortage of room. */
-.right .sp, .right .sl { display: none; }
+.right .sp, .right .sl, .right .eqb { display: none; }
 /* The speed button is a word, not a glyph. */
 .right .sp { font-size: 12.5px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
@@ -1489,4 +1490,23 @@ input[type=range]::-moz-range-thumb {
 }
 /* The way out of the filter sits at the far end from the way into it. */
 .channelActions .ghost { margin-right: auto; }
+
+/* ── The equalizer ───────────────────────────────────────────────────────── */
+.eqBody { padding: 4px 22px 6px; overflow-y: auto; }
+.eqSwitch { display: flex; align-items: center; gap: 16px; padding: 6px 0 14px; }
+.eqSwitch > div { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; }
+.eqSwitch .sub { font-weight: 400; margin-top: 3px; }
+.eqRefused { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.eqRefused .err { flex: 1; padding: 0; }
+.eqBands { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; transition: opacity var(--ease); }
+/* Off, the sliders keep their values and stay settable, only quieter: what is
+   set while it is off is what comes on. */
+.eqBands.off { opacity: .55; }
+.eqRow { display: grid; grid-template-columns: 64px 1fr 56px; align-items: center; gap: 12px; font-size: 13px; }
+.eqRow .lbl { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.eqRow .val { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
+.eqRow input { width: 100%; min-width: 0; }
+.eqRow.boost { margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.modal.full .eqBody { padding: 4px 20px 6px; }
+.modal.full .eqRow { grid-template-columns: 60px 1fr 56px; }
 `
