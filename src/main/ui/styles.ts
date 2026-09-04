@@ -117,6 +117,12 @@ export const STYLES = `
   --pop: rgba(30, 27, 23, .72);
   --pop-line: rgba(236, 231, 223, .12);
   --pop-blur: saturate(180%) blur(20px);
+  /* The panes themselves, one step less glassy than a popover: these carry the
+     reading, and text on a heavy blur is text you squint at. Over the ground
+     they mostly read as depth; over content — the drawer on a phone, the
+     player opened over a list — they read as glass, which is where it counts. */
+  --pane: rgba(27, 24, 21, .84);
+  --pane-blur: saturate(160%) blur(16px);
 
   --hover: rgba(236, 231, 223, .06);
   --shadow: 0 2px 6px rgba(20, 12, 4, .28);
@@ -188,6 +194,8 @@ export const STYLES = `
   --pop: rgba(251, 250, 246, .74);
   --pop-line: rgba(35, 32, 25, .12);
   --pop-blur: saturate(180%) blur(20px);
+  --pane: rgba(251, 250, 246, .86);
+  --pane-blur: saturate(160%) blur(16px);
   --hover: rgba(0, 0, 0, .05);
   --shadow: 0 2px 6px rgba(70, 60, 40, .1);
 }
@@ -280,7 +288,8 @@ input { font: inherit; color: inherit; }
   grid-row: 1 / -1; grid-column: 1;
   /* One flat surface, edged with a hairline — a pane told from a box by the
      line, not by translucency. */
-  background: var(--glass);
+  background: var(--pane);
+  -webkit-backdrop-filter: var(--pane-blur); backdrop-filter: var(--pane-blur);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
   padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
@@ -350,10 +359,26 @@ input { font: inherit; color: inherit; }
 .nav:hover, .nav.on { color: var(--foreground); }
 .nav.on { background: var(--secondary); }
 .side h4 { margin: 20px 10px 4px; font-size: 12px; font-weight: 500; color: var(--muted-foreground); }
+/* Inside the branch, so the eye can see what belongs to what: indented to
+   where the label above it starts, which is the glyph plus its gap. */
 .side .pl {
-  font-size: 13px; font-weight: 400; padding: 6px 10px;
+  font-size: 13px; font-weight: 400; padding: 6px 10px 6px 40px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
 }
+/* A way out of the branch, not a heading: it keeps the indent of the lists it
+   follows and carries an arrow, so it reads as the last line of the group
+   rather than the first line of the next one. */
+.side .pl.all { color: var(--muted-foreground); display: flex; align-items: center; gap: 6px; }
+.side .pl.all svg { transform: rotate(180deg); }
+.side .pl.all:hover { color: var(--foreground); }
+/* The triangle at the end of the branch. It points down when the lists are
+   showing and lies on its side when they are folded away. */
+.nav.branch { position: relative; }
+.nav.branch .chev {
+  margin-left: auto; display: inline-flex; color: var(--muted-foreground);
+  transform: rotate(-90deg); transition: transform var(--ease);
+}
+.nav.branch .chev.open { transform: none; }
 .side .spacer { flex: 1; }
 /* The pane's own controls: leaving, and closing. Both live in the name row,
    both are the same 34px square as the theme glyph in the header strip, so the
@@ -390,7 +415,8 @@ input { font: inherit; color: inherit; }
 /* The page has margins the way a book does — text starts away from the edge,
    and the edge is where the paper is. */
 .main {
-  background: var(--glass-strong);
+  background: var(--pane);
+  -webkit-backdrop-filter: var(--pane-blur); backdrop-filter: var(--pane-blur);
   border: 1px solid var(--glass-line);
   border-radius: var(--radius-lg);
   overflow-y: auto; padding: 32px 44px 56px; min-width: 0;
@@ -1064,7 +1090,8 @@ input[type=range]::-moz-range-thumb {
   grid-row: 1; grid-column: 1;
   display: flex; align-items: center; gap: 9px;
   height: var(--top-all); padding: env(safe-area-inset-top) 10px 0;
-  background: var(--glass);
+  background: var(--pane);
+  -webkit-backdrop-filter: var(--pane-blur); backdrop-filter: var(--pane-blur);
   border-bottom: 1px solid var(--glass-line);
 }
 .app.narrow .drawerToggle { display: inline-flex; width: 38px; height: 38px; margin-right: -3px; }
@@ -1094,8 +1121,9 @@ input[type=range]::-moz-range-thumb {
      out at once; this makes the losing case visible rather than clipped. */
   position: fixed; left: -302px; top: 0; height: 100dvh; width: 302px; z-index: 40;
   overflow: hidden;
-  background: var(--glass-strong);
-  border: 0; border-right: 1px solid var(--glass-line); border-radius: 0;
+  background: var(--pop);
+  -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
+  border: 0; border-right: 1px solid var(--pop-line); border-radius: 0;
   transition: left .22s ease;
   padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
 }
@@ -1199,7 +1227,8 @@ input[type=range]::-moz-range-thumb {
   position: fixed; left: 0; top: 0; width: 100dvw; bottom: 0; z-index: 30;
   flex-direction: column; align-items: stretch; gap: 0;
   padding: calc(6px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
-  background: var(--glass-strong);
+  background: var(--pop);
+  -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
   border-top: 0;
 }
 .app.narrow.sheet-open.has-stage .bar {

@@ -36,6 +36,7 @@ export const ES: Record<string, string> = {
   "재생 중인 항목 없음": "No hay nada sonando",
   "재생 / 일시정지": "Reproducir / pausar",
   "불러오는 중…": "Cargando…",
+  "전체 보기": "Ver todo",
   "관심 없음으로 표시하고 건너뜁니다.": "Marcado como no interesado y omitido.",
   "셔플을 켰습니다.": "Reproducción aleatoria activada.",
   "셔플을 껐습니다.": "Reproducción aleatoria desactivada.",

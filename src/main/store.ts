@@ -58,6 +58,31 @@ export function setStoredTheme(theme: 'light' | 'dark'): void {
 }
 
 /**
+ * Whether the sidebar's playlists are folded away.
+ *
+ * Its own key rather than a field of the state above, because it is a fact
+ * about this browser's sidebar and not about what is playing — and because the
+ * state blob is written on every tick of the queue, which is a lot of writing
+ * for a triangle. Open is the default: a reader who has never touched it should
+ * see their lists.
+ */
+const PLAYLISTS_KEY = 'oc-easy-mode:side-playlists'
+
+export function playlistsFolded(): boolean {
+  try {
+    return localStorage.getItem(PLAYLISTS_KEY) === 'folded'
+  } catch {
+    return false
+  }
+}
+
+export function foldPlaylists(folded: boolean): void {
+  try {
+    localStorage.setItem(PLAYLISTS_KEY, folded ? 'folded' : 'open')
+  } catch {}
+}
+
+/**
  * Whether the mode should be in dark theme.
  * Explicit user selection in RenewTube wins and survives reloads.
  * Fallbacks follow YouTube's root attribute and system preference.

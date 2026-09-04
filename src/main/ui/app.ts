@@ -12,7 +12,7 @@ import { thumbnail } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { getStoredTheme, setStoredTheme, youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
+import { foldPlaylists, getStoredTheme, playlistsFolded, setStoredTheme, youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
@@ -233,6 +233,97 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     )
   }
 
+  /** One destination in the column. */
+  function navButton(item: { view: View; label: string; icon: Parameters<typeof icon>[0] }): HTMLElement {
+    return h(
+      'button',
+      {
+        class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
+        'data-nav': '',
+        onclick: () => {
+          closeDrawer()
+          ctx.go(item.view)
+        },
+      },
+      icon(item.icon, 18),
+      h('span', null, item.label),
+    )
+  }
+
+  /**
+   * 내 재생목록, and the lists inside it.
+   *
+   * Opening it asks YouTube for the lists again rather than showing whatever
+   * was fetched at mount: making a playlist elsewhere, or deleting one, should
+   * be visible the moment the branch is opened rather than after a reload.
+   * The refresh redraws this column when it lands, so the fold does not wait
+   * on the network to open.
+   */
+  function playlistBranch(item: { view: View; label: string; icon: Parameters<typeof icon>[0] }): Array<HTMLElement | false> {
+    // An empty branch is not a branch. Signed out, or on an account with no
+    // lists of its own, folding a nothing open to show one line that says
+    // 전체 보기 reads as a stray heading — measured on the phone, and it is
+    // what the drawer looked like. With nothing to hold, the line goes back to
+    // being a destination: it opens the screen, which is where a list gets
+    // made.
+    const empty = ctx.playlists.length === 0
+    const folded = empty || playlistsFolded()
+    const head = h(
+      'button',
+      {
+        class: nameOf(item.view) === nameOf(ctx.view) ? 'nav branch on' : 'nav branch',
+        'data-nav': '',
+        'aria-expanded': empty ? undefined : String(!folded),
+        onclick: () => {
+          if (empty) {
+            closeDrawer()
+            ctx.go(item.view)
+            void ctx.refreshPlaylists().catch(() => {})
+            return
+          }
+          foldPlaylists(!folded)
+          drawSide()
+          if (folded) void ctx.refreshPlaylists().catch(() => {})
+        },
+      },
+      icon(item.icon, 18),
+      h('span', null, item.label),
+      !empty && h('span', { class: folded ? 'chev' : 'chev open' }, icon('down', 16)),
+    )
+    if (folded) return [head]
+    return [
+      head,
+      ...ctx.playlists.slice(0, 30).map((p) =>
+        h(
+          'button',
+          {
+            class: 'nav pl',
+            'data-nav': '',
+            title: p.title,
+            onclick: () => {
+              closeDrawer()
+              ctx.go({ kind: 'playlist', id: p.id, title: p.title })
+            },
+          },
+          p.title,
+        ),
+      ),
+      h(
+        'button',
+        {
+          class: 'nav pl all',
+          'data-nav': '',
+          onclick: () => {
+            closeDrawer()
+            ctx.go(item.view)
+          },
+        },
+        t('전체 보기'),
+        icon('back', 14),
+      ),
+    ]
+  }
+
   function drawSide(): void {
     replace(
       side,
@@ -271,36 +362,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         { class: 'sideScroll' },
         NAV.map((item) => [
           item.section && h('h4', null, item.section),
-          h(
-            'button',
-            {
-              class: nameOf(item.view) === nameOf(ctx.view) ? 'nav on' : 'nav',
-              'data-nav': '',
-              onclick: () => {
-                closeDrawer()
-                ctx.go(item.view)
-              },
-            },
-            icon(item.icon, 18),
-            h('span', null, item.label),
-          ),
+          // 내 재생목록 is a section, not a destination. It used to be both: a
+          // line that opened a screen, and under it the same lists again as a
+          // flat run of entries with a heading of their own — the same thing
+          // said twice, and unbounded, which on an account with many lists is
+          // most of the column. It folds now, it remembers, and the way to the
+          // screen is the last line inside it.
+          nameOf(item.view) === 'playlists' ? playlistBranch(item) : navButton(item),
         ]),
-        ctx.playlists.length > 0 && h('h4', null, t('재생목록')),
-        ctx.playlists.slice(0, 30).map((p) =>
-          h(
-            'button',
-            {
-              class: 'nav pl',
-              'data-nav': '',
-              title: p.title,
-              onclick: () => {
-                closeDrawer()
-                ctx.go({ kind: 'playlist', id: p.id, title: p.title })
-              },
-            },
-            p.title,
-          ),
-        ),
         h('div', { class: 'spacer' }),
         // The theme lives in the header on a phone; here it is one more line.
         !narrowNow() && themeButton(false),

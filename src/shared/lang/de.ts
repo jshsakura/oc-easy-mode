@@ -36,6 +36,7 @@ export const DE: Record<string, string> = {
   "재생 중인 항목 없음": "Nichts läuft",
   "재생 / 일시정지": "Wiedergabe / Pause",
   "불러오는 중…": "Wird geladen…",
+  "전체 보기": "Alle ansehen",
   "관심 없음으로 표시하고 건너뜁니다.": "Als uninteressant markiert und übersprungen.",
   "셔플을 켰습니다.": "Zufallswiedergabe an.",
   "셔플을 껐습니다.": "Zufallswiedergabe aus.",
