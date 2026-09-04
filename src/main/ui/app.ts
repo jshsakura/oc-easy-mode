@@ -20,6 +20,7 @@ import { clock, explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu, toast, type MenuItem } from './overlay.ts'
 import { installRemote } from './remote.ts'
 import { installKeys } from './keys.ts'
+import { closeChannels } from './channels.ts'
 import { render } from './views.ts'
 import { closeSearch, openSearch } from './search.ts'
 
@@ -1192,6 +1193,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       // Escape listener are module state, and left open across a re-entry it
       // kept every shortcut and the twice-to-leave dead.
       closeSearch()
+      closeChannels()
       themeWatch.disconnect()
       window.removeEventListener('resize', onResize)
       document.removeEventListener('keydown', onEscape)

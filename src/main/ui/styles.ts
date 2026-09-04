@@ -1489,4 +1489,14 @@ input[type=range]::-moz-range-thumb {
 }
 /* The way out of the filter sits at the far end from the way into it. */
 .channelActions .ghost { margin-right: auto; }
+
+/* An outlined button: the real word inside, kept invisible, plus the room the
+   glyph beside it will take, so the box is exactly as wide as the button that
+   replaces it in any language. */
+.skBtn { pointer-events: none; }
+.skBtn > span { visibility: hidden; }
+.skBtnIcon { width: 16px; height: 16px; flex: none; }
+/* A bar that sits in a line of text rather than replacing it, so the line
+   keeps the height the font gives it. */
+.skLine { display: inline-block; vertical-align: middle; }
 `

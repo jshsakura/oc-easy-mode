@@ -67,6 +67,21 @@ export function applyFilter(tracks: Track[], filter: string[]): Track[] {
  * dialog is open, and a checklist drawn out here would otherwise let a space
  * pause the music behind it.
  */
+/** The one checklist that can be open, and the way to close it. */
+let closeOpen: (() => void) | null = null
+
+/**
+ * Closes it if it is open.
+ *
+ * Called when the mode is left. The hold on the dialog count and the Escape
+ * listener are module state, and a checklist still open when the app came down
+ * kept both: on the way back in every shortcut was dead and Escape twice no
+ * longer left, with nothing on screen to explain why.
+ */
+export function closeChannels(): void {
+  closeOpen?.()
+}
+
 export function chooseChannels(
   root: ShadowRoot,
   channels: Channel[],
@@ -80,6 +95,7 @@ export function chooseChannels(
     const done = (v: string[] | null) => {
       if (closed) return
       closed = true
+      closeOpen = null
       release()
       document.removeEventListener('keydown', onEscape, true)
       scrim.remove()
@@ -181,5 +197,8 @@ export function chooseChannels(
 
     root.appendChild(scrim)
     document.addEventListener('keydown', onEscape, true)
+    // Dismissed, not chosen: the caller is waiting on a promise and the mode
+    // going down is not an answer.
+    closeOpen = () => done(null)
   })
 }
