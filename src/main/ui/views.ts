@@ -10,6 +10,7 @@ import { explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
 import { removeFromPlaylistNow, row, startRadio } from './rows.ts'
 import { applyFilter, channelsOf, chooseChannels } from './channels.ts'
+import { makeSortable } from './sortable.ts'
 
 /**
  * Which render is the one on screen.
@@ -792,6 +793,46 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       }
     }
 
+    const mine =
+      ctx.playlists.some((p) => p.id === id) || tracks.some((track) => track.setVideoId !== undefined)
+    /**
+     * Moves a row one place, on the screen first and then at YouTube.
+     *
+     * The list is reordered before the request goes out, because a row that
+     * sits still for a round trip reads as a press that did not land. If the
+     * answer is a refusal the order is put back exactly as it was, so a
+     * failure leaves the screen telling the truth rather than showing an
+     * order the account does not have.
+     */
+    const moveTo = async (track: Track, to: number): Promise<void> => {
+      const from = tracks.indexOf(track)
+      if (from < 0 || to < 0 || to >= tracks.length || from === to) return
+      // The handle YouTube needs to name this slot. A row without one is not
+      // a row of ours to move, and the menu is not offered on those lists.
+      const slot = track.setVideoId
+      if (!slot) return
+      const before = tracks.slice()
+      tracks.splice(from, 1)
+      tracks.splice(to, 0, track)
+      draw()
+      // YouTube places a row *after* another one, so a move is named by the
+      // row it should follow. Dropping at the top has nothing to follow.
+      const after = to > 0 ? tracks[to - 1]?.setVideoId : undefined
+      try {
+        await api.movePlaylistTrack(ctx.cfg, id, slot, after)
+      } catch (err) {
+        tracks.splice(0, tracks.length, ...before)
+        draw()
+        ctx.say(`${t('순서를 바꾸지 못했습니다.')} ${explain(err)}`, true)
+      }
+    }
+
+    /** The same move, named by position, which is what a drop gives. */
+    const moveRowTo = (from: number, to: number): Promise<void> => {
+      const track = tracks[from]
+      return track ? moveTo(track, to) : Promise.resolve()
+    }
+
     const draw = () => {
       if (tracks.length === 0) {
         body.className = ''
@@ -821,40 +862,6 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       // nobody here owns: 151 tracks, not one setVideoId between them. That
       // answers the question per row and keeps working when the reader's own
       // playlists have not been fetched, which our first test quietly needs.
-      const mine =
-        ctx.playlists.some((p) => p.id === id) || tracks.some((track) => track.setVideoId !== undefined)
-      /**
-       * Moves a row one place, on the screen first and then at YouTube.
-       *
-       * The list is reordered before the request goes out, because a row that
-       * sits still for a round trip reads as a press that did not land. If the
-       * answer is a refusal the order is put back exactly as it was, so a
-       * failure leaves the screen telling the truth rather than showing an
-       * order the account does not have.
-       */
-      const moveTo = async (track: Track, to: number): Promise<void> => {
-        const from = tracks.indexOf(track)
-        if (from < 0 || to < 0 || to >= tracks.length || from === to) return
-        // The handle YouTube needs to name this slot. A row without one is not
-        // a row of ours to move, and the menu is not offered on those lists.
-        const slot = track.setVideoId
-        if (!slot) return
-        const before = tracks.slice()
-        tracks.splice(from, 1)
-        tracks.splice(to, 0, track)
-        draw()
-        // YouTube places a row *after* another one, so a move is named by the
-        // row it should follow. Dropping at the top has nothing to follow.
-        const after = to > 0 ? tracks[to - 1]?.setVideoId : undefined
-        try {
-          await api.movePlaylistTrack(ctx.cfg, id, slot, after)
-        } catch (err) {
-          tracks.splice(0, tracks.length, ...before)
-          draw()
-          ctx.say(`${t('순서를 바꾸지 못했습니다.')} ${explain(err)}`, true)
-        }
-      }
-
       layout(ctx, body, tracks, (track) => ({
         extra: mine
           ? () => {
@@ -887,6 +894,11 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
     if (tracks.length > 0) {
       draw()
       relayoutOnModeChange(ctx, body, draw)
+      // Only a list of one's own can be reordered, for the same reason only
+      // one of them can have rows taken out.
+      if (mine) {
+        makeSortable(body, { rowSelector: '.row', onMove: (from, to) => void moveRowTo(from, to) })
+      }
     }
   } catch (err) {
     if (!current(token)) return
@@ -945,6 +957,7 @@ function recent(ctx: Ctx, main: HTMLElement): void {
 
 function queue(ctx: Ctx, main: HTMLElement): void {
   const q = ctx.engine.state.queue
+  let queueRows: HTMLElement | undefined
   replace(
     main,
     h('h2', null, t('대기열')),
@@ -972,7 +985,7 @@ function queue(ctx: Ctx, main: HTMLElement): void {
     ),
     q.length === 0
       ? nothing(t('대기열이 비어 있습니다.'), 'queue')
-      : h(
+      : (queueRows = h(
           'div',
           { class: 'rows' },
           // Headed, because a queue's whole job is to answer two questions —
@@ -1019,8 +1032,20 @@ function queue(ctx: Ctx, main: HTMLElement): void {
               ],
             }),
           ]),
-        ),
+        )),
   )
+  // Dragging, on the list rather than in the row: only two screens can be
+  // reordered and the rows are shared by half a dozen. The menu above does the
+  // same thing for anyone without a pointer to hold down.
+  if (queueRows) {
+    makeSortable(queueRows, {
+      rowSelector: '.row',
+      onMove: (from, to) => {
+        ctx.engine.moveTrack(from, to)
+        ctx.reload()
+      },
+    })
+  }
 }
 
 export type { View }

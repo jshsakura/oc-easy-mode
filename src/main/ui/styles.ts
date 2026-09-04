@@ -1519,4 +1519,31 @@ input[type=range]::-moz-range-thumb {
 /* A bar that sits in a line of text rather than replacing it, so the line
    keeps the height the font gives it. */
 .skLine { display: inline-block; vertical-align: middle; }
+
+/* ── Dragging a row ───────────────────────────────────────────────────────
+   Kept at the end of the file, with the other late blocks, so two branches
+   editing this stylesheet meet in as few places as possible. */
+
+/* The list holds the drop line, which is placed against its own box. */
+.rows.sorting { position: relative; }
+/* While a row is being carried, the finger is not scrolling and not swiping.
+   Set only during the drag: a list that never scrolls is worse than one that
+   cannot be reordered. */
+.rows.sorting { touch-action: none; }
+/* Lifted, by a shadow and nothing else. It does not grow, tilt or glow: the
+   row is the same row and the only thing that has changed is that it is in
+   the hand. */
+.row.dragging {
+  position: relative; z-index: 3;
+  background: var(--card); box-shadow: var(--shadow);
+  border-radius: var(--radius-md);
+}
+/* Where it lands. One line at the boundary rather than a tint on a row: a
+   filled row says "this one is chosen", and the question being answered is
+   where the carried row goes. */
+.dropLine {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--primary); border-radius: 2px;
+  pointer-events: none;
+}
 `

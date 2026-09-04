@@ -170,3 +170,54 @@ test('a move names the slot, and the row it should follow', async () => {
     await h.close()
   }
 })
+
+test('a queue row can be dragged to a new place', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    const over = h.page.locator('oc-easy-mode-overlay')
+    await expect(ui.locator('.app')).toBeVisible()
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    await over.locator('.searchbox input').fill('lofi')
+    await over.locator('.searchbox input').press('Enter')
+    await expect(over.locator('.rows .row:not([aria-hidden])').first()).toBeVisible()
+    await over.locator('.rows .row:not([aria-hidden])').first().click()
+
+    await ui.locator('.nav', { hasText: '대기열' }).click()
+    await expect(ui.locator('.rows .row').first()).toBeVisible()
+    const before = await queueState(h.page)
+    test.skip(before.ids.length < 4, 'needs a queue of at least four')
+
+    // Carry the fourth row up into the top half of the second.
+    //
+    // The half matters: a drop is decided against the middle of the row under
+    // the pointer, so finishing on that middle exactly is a drop *below* it,
+    // and the row lands one place further down than the reader meant. Aiming
+    // at the upper quarter is what a person does when they mean "above this".
+    const rows = ui.locator('.rows .row')
+    const fourth = (await rows.nth(3).boundingBox())!
+    const second = (await rows.nth(1).boundingBox())!
+    const startY = fourth.y + fourth.height / 2
+    const endY = second.y + second.height / 4
+    const x = fourth.x + fourth.width / 2
+    await h.page.mouse.move(x, startY)
+    await h.page.mouse.down()
+    for (let i = 1; i <= 6; i++) {
+      await h.page.mouse.move(x, startY + ((endY - startY) * i) / 6, { steps: 2 })
+    }
+    // The line says where it will land before it lands.
+    await expect(ui.locator('.dropLine')).toHaveCount(1)
+    await h.page.mouse.up()
+
+    await expect
+      .poll(() => queueState(h.page).then((q) => q.ids[1]))
+      .toBe(before.ids[3])
+    const after = await queueState(h.page)
+    expect(after.ids).toHaveLength(before.ids.length)
+    // Still the same track playing, and still playing it.
+    expect(after.ids[after.index]).toBe(before.ids[before.index])
+    expect(await h.page.evaluate(() => !document.querySelector('video')?.paused)).toBe(true)
+  } finally {
+    await h.close()
+  }
+})
