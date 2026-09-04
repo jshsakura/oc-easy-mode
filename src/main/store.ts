@@ -4,6 +4,7 @@
 // synchronously at boot, before the bridge to the other world is up, and it
 // belongs to this origin anyway.
 
+import type { Lang } from '../shared/i18n.ts'
 import type { Track } from './parse.ts'
 import { narrowNow } from './ui/device.ts'
 
@@ -26,7 +27,7 @@ export interface Persisted {
   /** Remembered so a reload comes back the way it was left. */
   theme: Theme
   /** null follows YouTube's interface language. */
-  lang: 'ko' | 'en' | null
+  lang: Lang | null
   queue: Track[]
   index: number
   repeat: Repeat

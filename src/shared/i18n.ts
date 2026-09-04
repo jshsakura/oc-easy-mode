@@ -1,126 +1,99 @@
-// Korean and English, keyed by the Korean.
+// The UI's words, keyed by the Korean.
 //
 // The key *is* the Korean string, so a call site reads as the sentence it
-// renders and a missing translation falls back to Korean rather than to a
-// bare key. Adding a language means adding a column, never touching a view.
+// renders and a missing translation falls back to something readable rather
+// than to a bare identifier. Adding a language means adding a table in
+// `lang/`, never touching a view.
 //
 // Which language: whatever the reader chose, else what YouTube itself is set
 // to (its own `hl`), else the browser's. YouTube's own setting comes first
-// because this UI stands in front of YouTube — reading one language on the
+// because this UI stands in front of YouTube, and reading one language on the
 // page and another over it is worse than either.
 
-export type Lang = 'ko' | 'en'
+import { EN } from './lang/en.ts'
+import { JA } from './lang/ja.ts'
+import { ZH_CN } from './lang/zh-cn.ts'
+import { ZH_TW } from './lang/zh-tw.ts'
+import { ES } from './lang/es.ts'
+import { PT_BR } from './lang/pt-br.ts'
+import { FR } from './lang/fr.ts'
+import { DE } from './lang/de.ts'
+import { RU } from './lang/ru.ts'
+import { VI } from './lang/vi.ts'
+import { ID } from './lang/id.ts'
+import { TH } from './lang/th.ts'
+import { HI } from './lang/hi.ts'
 
-const EN: Record<string, string> = {
-  // Navigation
-  '탐색': 'Explore',
-  '검색': 'Search',
-  '홈': 'Home',
-  '구독': 'Subscriptions',
-  '시청 기록': 'History',
-  '내 재생목록': 'Playlists',
-  '대기열': 'Queue',
-  '지금 재생 중': 'Now playing',
-  '다음 재생': 'Up next',
-  '정지': 'Stop',
-  '재생목록': 'Playlists',
-  '음악': 'Music',
-  '영상': 'Video',
-  '영상 모드': 'Video mode',
-  '내 라이브러리': 'Your library',
-  '닫기': 'Close',
-  '내리기': 'Collapse',
-  'RenewTube 종료': 'Exit RenewTube',
-  '좋아요': 'Like',
-  '관심 없음': 'Not interested',
-  '관심 없음 취소': 'Undo not interested',
-  '평가는 유튜브에 로그인해야 누를 수 있습니다.': 'Signing in to YouTube is what lets you rate a track.',
-  '좋아요 취소': 'Remove like',
-  '좋아요는 유튜브에 로그인해야 누를 수 있습니다.': 'Signing in to YouTube is what lets you like a track.',
-  '메뉴': 'Menu',
-  '테마': 'Theme',
-  '밝게': 'Light',
-  '어둡게': 'Dark',
+/**
+ * The languages this UI speaks.
+ *
+ * These are BCP-47 tags, so they can be handed to `Intl` as they are. Korean
+ * has no table: it is what the keys already say.
+ *
+ * Right-to-left languages are deliberately absent. The layout has never been
+ * checked mirrored, and a half-mirrored screen is worse than an English one.
+ */
+export type Lang = 'ko' | 'en' | 'ja' | 'zh-CN' | 'zh-TW' | 'es' | 'pt-BR' | 'fr' | 'de' | 'ru' | 'vi' | 'id' | 'th' | 'hi'
 
-  // Transport
-  '재생 중인 항목 없음': 'Nothing playing',
-  '재생 / 일시정지': 'Play / pause',
-  '불러오는 중…': 'Loading…',
-  '이전': 'Previous',
-  '다음': 'Next',
-  '셔플': 'Shuffle',
-  '반복': 'Repeat',
-  '반복 안 함': 'Repeat off',
-  '전체 반복': 'Repeat all',
-  '한 곡 반복': 'Repeat one',
-  '음소거': 'Mute',
-  '화면 위치': 'Video position',
-  '화면 보기': 'Show video',
-  '가사': 'Lyrics',
-  '가사를 찾지 못했습니다.': 'No lyrics for this one.',
-  '크게 보기': 'Large',
-  '구석에 두기': 'Corner',
-  '소리만 듣기': 'Audio only',
+const TABLES: Record<Exclude<Lang, 'ko'>, Record<string, string>> = {
+  en: EN,
+  ja: JA,
+  'zh-CN': ZH_CN,
+  'zh-TW': ZH_TW,
+  es: ES,
+  'pt-BR': PT_BR,
+  fr: FR,
+  de: DE,
+  ru: RU,
+  vi: VI,
+  id: ID,
+  th: TH,
+  hi: HI,
+}
 
-  // Lists and actions
-  '노래, 영상, 채널 검색': 'Search songs, videos, channels',
-  '무엇을 들을까요?': 'What would you like to hear?',
-  '결과가 없습니다.': 'No results.',
-  '보여줄 것이 없습니다.': 'Nothing to show.',
-  '전체 재생': 'Play all',
-  '대기열에 추가': 'Add to queue',
-  '재생목록에 추가': 'Add to playlist',
-  '더 보기': 'Show more',
-  '재생': 'Play',
-  '셔플 재생': 'Shuffle play',
-  '라디오': 'Radio',
-  '새 재생목록': 'New playlist',
-  '재생목록이 없습니다.': 'No playlists.',
-  '비어 있는 재생목록입니다.': 'This playlist is empty.',
-  '재생목록 삭제': 'Delete playlist',
-  '유튜브에서 열기': 'Open on YouTube',
-  '비우기': 'Clear',
-  '재생목록으로 저장': 'Save as playlist',
-  '대기열이 비어 있습니다.': 'The queue is empty.',
-  '대기열에서 빼기': 'Remove from queue',
-  '더보기': 'More',
-  '지금 재생': 'Play now',
-  '다음에 재생': 'Play next',
-  '이 곡으로 라디오': 'Start radio',
-  '이 재생목록에서 제거': 'Remove from this playlist',
-  '재생할 수 없음': 'Unavailable',
-  '재생할 수 없는 항목입니다.': 'This item cannot be played.',
-  '라디오를 만드는 중…': 'Building a radio…',
-  '만들기': 'Create',
-  '취소': 'Cancel',
-  '삭제': 'Delete',
-  '빼기': 'Remove',
-  '대기열을 비울까요?': 'Empty the queue?',
-  '새 재생목록 이름': 'New playlist name',
-  '새 재생목록 만들기': 'Create a playlist',
+const ALL = ['ko', ...Object.keys(TABLES)] as Lang[]
 
-  // Messages
-  '유튜브에 로그인해야 볼 수 있는 내용입니다.': 'Sign in to YouTube to see this.',
-  '유튜브 응답이 예상과 달랐습니다. 잠시 후 다시 시도해 주세요.':
-    'YouTube answered in an unexpected shape. Please try again shortly.',
-  '유튜브에서 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.':
-    'Could not load from YouTube. Please try again shortly.',
-  '다음에 재생합니다.': 'Playing next.',
-  '대기열에 넣었습니다.': 'Added to the queue.',
-  '재생목록에서 뺐습니다.': 'Removed from the playlist.',
-  '삭제했습니다.': 'Deleted.',
-  '유튜브 플레이어를 찾지 못했습니다. 항목을 고르면 열립니다.':
-    'No YouTube player here yet. Choosing something will open one.',
-  '이 곡으로는 라디오를 만들 수 없습니다.': 'No radio can be built from this track.',
+function isLang(v: string | null): v is Lang {
+  return v !== null && (ALL as string[]).includes(v)
+}
+
+/**
+ * Reads a locale tag as one of ours.
+ *
+ * Matched on the prefix, because `hl` arrives in more shapes than it has
+ * meanings: `en`, `en-GB`, `en_US`, `pt-PT`. Two of them need more than the
+ * prefix:
+ *
+ * - **Chinese is chosen by script, not by country.** `zh-TW`, `zh-HK`,
+ *   `zh-MO` and anything carrying `Hant` are the traditional table; every
+ *   other `zh`, including bare `zh` and `zh-Hans-*`, is the simplified one.
+ *   Matching `zh` on the prefix alone would hand Taiwan simplified characters.
+ * - **Portuguese has one table here and it is the Brazilian one.** European
+ *   Portuguese is close enough to read, and far closer than English is.
+ *
+ * Anything else with no table is English, which is the one language the rest
+ * of the world is most likely to have in common with this UI.
+ */
+function fromTag(raw: string): Lang | undefined {
+  const tag = raw.toLowerCase().replace(/_/g, '-')
+  if (tag.startsWith('zh')) {
+    const traditional = tag.includes('hant') || /-(tw|hk|mo)\b/.test(tag)
+    return traditional ? 'zh-TW' : 'zh-CN'
+  }
+  if (tag.startsWith('pt')) return 'pt-BR'
+  // `in` and `iw` are the codes Java and older browsers still emit for
+  // Indonesian and Hebrew; only the first of those has a table here.
+  if (tag.startsWith('in')) return 'id'
+  const base = tag.split('-')[0] ?? ''
+  return ALL.find((l) => l === base)
 }
 
 let lang: Lang = 'ko'
 
 /** `hl` is YouTube's own interface language, read from the page's config. */
 export function pickLang(chosen: string | null, youtubeHl: string | undefined): Lang {
-  if (chosen === 'ko' || chosen === 'en') return chosen
-  const from = youtubeHl ?? navigator.language ?? ''
-  return from.toLowerCase().startsWith('ko') ? 'ko' : 'en'
+  if (isLang(chosen)) return chosen
+  return fromTag(youtubeHl ?? navigator.language ?? '') ?? 'en'
 }
 
 export function setLang(next: Lang): void {
@@ -131,16 +104,78 @@ export function getLang(): Lang {
   return lang
 }
 
-/** The Korean is the key; English is a lookup away; anything else is Korean. */
+/**
+ * The Korean is the key; every other language is a lookup away.
+ *
+ * A key the chosen language has not translated falls through to English
+ * before it falls through to Korean, because a reader who picked Thai is far
+ * more likely to read English than Hangul.
+ */
 export function t(ko: string): string {
-  return lang === 'en' ? (EN[ko] ?? ko) : ko
+  if (lang === 'ko') return ko
+  return TABLES[lang][ko] ?? EN[ko] ?? ko
+}
+
+/** How a counter reads, per plural category. `{n}` is the number. */
+type Forms = { one?: string; few?: string; many?: string; other: string }
+
+/**
+ * The two counters, in every language.
+ *
+ * Kept here rather than in the tables because these are not sentences: they
+ * are a shape with a number in it, and the number decides which shape. The
+ * categories are the ones `Intl.PluralRules` returns for that language, so
+ * Russian gets its three and English its two without either being hand-rolled.
+ */
+const COUNTERS: Record<Lang, Record<string, Forms>> = {
+  ko: { 곡: { other: '{n}곡' }, 개: { other: '{n}개' } },
+  en: {
+    곡: { one: '{n} track', other: '{n} tracks' },
+    개: { one: '{n} item', other: '{n} items' },
+  },
+  ja: { 곡: { other: '{n}曲' }, 개: { other: '{n}件' } },
+  'zh-CN': { 곡: { other: '{n} 首' }, 개: { other: '{n} 项' } },
+  'zh-TW': { 곡: { other: '{n} 首' }, 개: { other: '{n} 項' } },
+  es: {
+    곡: { one: '{n} canción', other: '{n} canciones' },
+    개: { one: '{n} elemento', other: '{n} elementos' },
+  },
+  'pt-BR': {
+    곡: { one: '{n} faixa', other: '{n} faixas' },
+    개: { one: '{n} item', other: '{n} itens' },
+  },
+  fr: {
+    곡: { one: '{n} titre', other: '{n} titres' },
+    개: { one: '{n} élément', other: '{n} éléments' },
+  },
+  de: {
+    곡: { one: '{n} Titel', other: '{n} Titel' },
+    개: { one: '{n} Element', other: '{n} Elemente' },
+  },
+  ru: {
+    곡: { one: '{n} трек', few: '{n} трека', many: '{n} треков', other: '{n} трека' },
+    개: { one: '{n} элемент', few: '{n} элемента', many: '{n} элементов', other: '{n} элемента' },
+  },
+  vi: { 곡: { other: '{n} bài' }, 개: { other: '{n} mục' } },
+  id: { 곡: { other: '{n} lagu' }, 개: { other: '{n} item' } },
+  th: { 곡: { other: '{n} เพลง' }, 개: { other: '{n} รายการ' } },
+  hi: {
+    곡: { one: '{n} गाना', other: '{n} गाने' },
+    개: { one: '{n} आइटम', other: '{n} आइटम' },
+  },
 }
 
 /** For the few strings that carry a number. */
 export function tn(ko: string, n: number): string {
-  const table: Record<string, string> = {
-    '곡': lang === 'en' ? `${n} tracks` : `${n}곡`,
-    '개': lang === 'en' ? `${n} items` : `${n}개`,
+  const forms = COUNTERS[lang][ko] ?? COUNTERS.en[ko]
+  if (!forms) return `${n}`
+  let category: 'one' | 'few' | 'many' | 'other' = 'other'
+  try {
+    const picked = new Intl.PluralRules(lang).select(n)
+    if (picked === 'one' || picked === 'few' || picked === 'many') category = picked
+  } catch {
+    // A runtime without plural data for this language keeps the plural form,
+    // which is the one that is right for every count but 1.
   }
-  return table[ko] ?? `${n}`
+  return (forms[category] ?? forms.other).replace('{n}', String(n))
 }
