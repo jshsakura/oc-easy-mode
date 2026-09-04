@@ -373,6 +373,22 @@ export class Engine {
     }
   }
 
+  /**
+   * Whether sound is off, however this device manages it.
+   *
+   * Asked of the player rather than inferred from the stored volume, because
+   * on a device that refuses volumes the stored number never moves and the bar
+   * would go on drawing a speaker over a muted track.
+   */
+  get muted(): boolean {
+    if (this.state.volume === 0) return true
+    try {
+      return this.player?.isMuted() === true
+    } catch {
+      return false
+    }
+  }
+
   private applyVolume(): void {
     const p = this.player
     if (!p) return
@@ -537,13 +553,33 @@ export class Engine {
    * followed by hunting for the level again.
    */
   private beforeMute = 0
+  /**
+   * Muting is a flag, not a volume of zero.
+   *
+   * It *was* a volume of zero, which works on a desktop and does exactly
+   * nothing on an iPhone: that device refuses a volume from script and
+   * refuses it silently, so the button was pressed, the state said 0, and the
+   * sound carried on. The muted flag is a different permission and iOS does
+   * honour it. So the flag is what mutes, and the volume follows only where
+   * the volume means anything — a device that ignores it must keep its stored
+   * value, or unmuting would have nothing to go back to.
+   */
   toggleMute(): void {
-    if (this.state.volume > 0) {
-      this.beforeMute = this.state.volume
-      this.setVolume(0)
+    const p = this.player
+    if (this.muted) {
+      p?.unMute()
+      if (this.state.volume === 0) this.state.volume = this.beforeMute || 100
+      this.applyVolume()
     } else {
-      this.setVolume(this.beforeMute || 100)
+      if (this.state.volume > 0) this.beforeMute = this.state.volume
+      p?.mute()
+      // Straight at the element as well: a player build whose mute() is a
+      // no-op still owns a media element, and `muted` is settable everywhere.
+      const el = this.videoEl()
+      if (el) el.muted = true
+      if (this.volumeSettable !== false) this.state.volume = 0
     }
+    this.changed()
   }
 
   private ended(): void {

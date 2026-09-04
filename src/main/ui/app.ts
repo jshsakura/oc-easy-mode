@@ -459,6 +459,24 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   })
 
   /**
+   * The two things the overflow menu was hiding, as buttons of their own.
+   *
+   * Only on a phone, and only in the opened player — where the volume slider
+   * used to be, and it went because the device it was drawn on refuses to be
+   * set from script. The room it leaves is better spent on the controls that
+   * were two presses away behind ⋯, which is where the menu goes on that
+   * screen: with both of its items promoted it has nothing left to show.
+   *
+   * Speed wears its own value rather than a glyph. There is no icon in this
+   * set that reads as speed, and `next` — the one the menu uses — is the skip
+   * button sitting two places along in the same row.
+   */
+  const speedButton = h('button', { class: 'sp', 'data-nav': '', title: t('재생 속도') }, '1x')
+  speedButton.addEventListener('click', showSpeedMenu)
+  const sleepButton = h('button', { class: 'sl', 'data-nav': '', title: t('수면 예약') }, icon('moon', 18))
+  sleepButton.addEventListener('click', showSleepMenu)
+
+  /**
    * The picture, turned on and off where you are watching.
    *
    * It was a switch in the sidebar, which is the wrong place for it: the
@@ -693,7 +711,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       h('div', { class: 'seek' }, elapsed, seek, total),
     ),
     lyricsPane,
-    h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, moreButton, muteButton, volume),
+    h('div', { class: 'right' }, lyricsButton, videoButton, queueButton, speedButton, sleepButton, moreButton, muteButton, volume),
   )
 
   function setSheet(open: boolean): void {
@@ -730,7 +748,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     repeatButton.classList.toggle('on', engine.state.repeat !== 'off')
     replace(repeatButton, icon(engine.state.repeat === 'one' ? 'repeatOne' : 'repeat', 18))
     repeatButton.title = { off: t('반복 안 함'), all: t('전체 반복'), one: t('한 곡 반복') }[engine.state.repeat]
-    replace(muteButton, icon(engine.state.volume === 0 ? 'mute' : 'volume', 18))
+    replace(muteButton, icon(engine.muted ? 'mute' : 'volume', 18))
+    speedButton.textContent = engine.state.rate === 1 ? '1x' : `${engine.state.rate}x`
+    speedButton.classList.toggle('on', engine.state.rate !== 1)
+    sleepButton.classList.toggle('on', engine.sleep !== undefined)
     // The thumb as well as the track. Only the fill was being set, so muting
     // with the m key left the slider sitting at 100 with the sound off — the
     // one place a person looks to find out how loud it is.

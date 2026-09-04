@@ -503,7 +503,9 @@ input { font: inherit; color: inherit; }
 }
 .card:hover .tileAdd, .tile:hover .tileAdd,
 .card:focus-within .tileAdd, .tile:focus-within .tileAdd { opacity: 1; }
-.tileAdd:hover { background: oklch(0 0 0 / 75%); }
+@media (hover: hover) {
+  .tileAdd:hover { background: oklch(0 0 0 / 75%); }
+}
 @media (hover: none) { .tileAdd { opacity: 1; } }
 
 .card .cover, .tile .cover {
@@ -680,7 +682,14 @@ input { font: inherit; color: inherit; }
   color: var(--muted-foreground);
   transition: background var(--ease), color var(--ease);
 }
-.rate:hover { background: var(--hover); color: var(--foreground); }
+/* Only where a pointer exists. A tap leaves :hover stuck on the last thing
+   touched until something else is touched, so the wash this paints stayed on
+   좋아요 after every press and read as a state the button was in. Reported
+   exactly that way. The press already has :active, and the opinion itself has
+   .on; hover is the one of the three a phone cannot honestly have. */
+@media (hover: hover) {
+  .rate:hover { background: var(--hover); color: var(--foreground); }
+}
 .rate:disabled { opacity: .35; pointer-events: none; }
 /* Lit apart, because they mean opposite things: approval takes the accent, and
    "not this one" takes the colour nothing else in the bar uses.
@@ -1232,4 +1241,28 @@ input[type=range]::-moz-range-thumb {
   .modal { width: calc(100vw - 28px); }
   .toasts { bottom: 108px; }
 }
+
+/* ── What a phone gets instead of a volume slider ──────────────────────────
+   Last in the file on purpose: these override the narrow rules above at equal
+   specificity, and only where there is no pointer.
+
+   The slider goes because on the device this row is drawn on it cannot work —
+   iOS refuses a volume from script and says nothing — and a control that
+   cannot move is worse than no control. The room goes to the two actions that
+   were behind ⋯, which then has nothing left to open. Mute stays: the muted
+   flag is a different permission and that one is honoured. */
+@media (hover: none) {
+  .app.narrow.sheet-open .right .vol { display: none; }
+  .app.narrow.sheet-open .right .sp,
+  .app.narrow.sheet-open .right .sl { display: inline-flex; }
+  .app.narrow.sheet-open .right .mr { display: none; }
+  /* A finger, on the row that now has six things in it. */
+  .app.narrow.sheet-open .right button { width: 40px; height: 40px; }
+  .app.narrow.sheet-open .right button svg { width: 19px; height: 19px; }
+}
+/* Off everywhere else: a desktop keeps the menu, which is where these two have
+   always lived and where there is no shortage of room. */
+.right .sp, .right .sl { display: none; }
+/* The speed button is a word, not a glyph. */
+.right .sp { font-size: 12.5px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 `
