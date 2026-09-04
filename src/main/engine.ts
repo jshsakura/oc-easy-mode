@@ -19,6 +19,17 @@ import { load, markArrival, remember, save, setQuickOn, takeArrival, type Mode, 
  */
 const AD_SETTLE_MS = 1500
 
+/**
+ * How long a load may sit unstarted, with the element already playing it,
+ * before we hand the player the same video again.
+ *
+ * Long enough that an ordinary slow load is never interrupted; short enough
+ * that the stuck state is not something anyone sits through. Measured: the
+ * stuck state never clears on its own, so the only cost of the wait is how
+ * long the speed control stays dead.
+ */
+const STUCK_UNSTARTED_MS = 2000
+
 export type Listener = () => void
 
 /**
@@ -66,11 +77,35 @@ export class Engine {
    *  the player is underway on that very id. Guards against a stale ENDED,
    *  and doubles as "show a wait" for the transport in the meantime. */
   private loading: string | undefined
+  /** Counts loads, so "once per load" survives loading the same id twice. */
+  private loadSeq = 0
+  /** When the current load was asked for, for the stuck-unstarted check. */
+  private loadAskedAt = 0
+  /**
+   * What we have already re-pushed for: the load, paired with the speed that
+   * was wanted at the time. One re-push per load, and one more if a speed is
+   * chosen afterwards that the stuck player refuses — which is the only
+   * moment the cost of a re-push buys anything.
+   */
+  private repushedFor = ''
+  /** The id of the last load we asked for. Outlives `loading`, which the
+   *  advert shortcut below clears early and, as measured, wrongly. */
+  private loadedId: string | undefined
+  /**
+   * Whether the listener pressed mute.
+   *
+   * Not the player's mute and not a volume of zero: the page arrives with a
+   * mute of its own, and reading that back as ours is what silenced people
+   * who had never asked for silence.
+   */
+  private userMuted = false
   /** When the current continuous wait began; undefined while not waiting. */
   private bufferingSince: number | undefined
   /** YouTube's own volume and mute, as they were before we wrote ours over them. */
   private pageVolume: number | undefined
   private pageMuted: boolean | undefined
+  /** Whether the page was running its player inline, so it can go back to it. */
+  private pageInline: boolean | undefined
   /**
    * Whether this device lets script set the volume at all.
    *
@@ -115,10 +150,28 @@ export class Engine {
     // which is heard as the sound jumping the moment the app goes away.
     try {
       this.pageVolume = player.getVolume()
-      this.pageMuted = player.isMuted()
+      // A mute is only worth remembering if it was somebody's choice. YouTube
+      // mutes for reasons of its own — an inline feed preview, an autoplay it
+      // is only allowed to start silent — and the player will say so when
+      // asked. Recording one of those as "how the reader left it" is what
+      // made leaving the app turn the sound off.
+      const notOurs = player.isMutedByMutedAutoplay?.() === true || player.isInline?.() === true
+      this.pageMuted = notOurs ? false : player.isMuted()
     } catch {
       this.pageVolume = undefined
       this.pageMuted = undefined
+    }
+    // Out of preview and into a real player. A player running as the feed's
+    // inline preview carries YouTube's own constraints with it, and the app is
+    // about to hand it the whole screen. Both calls are optional: measured on
+    // the live player they exist, but a build without them is not a failure.
+    try {
+      this.pageInline = player.isInline?.()
+      player.setInlinePreview?.(false)
+      player.setInline?.(false)
+    } catch {
+      // A build that will not leave preview still plays; nothing here depends
+      // on the promotion having worked.
     }
     player.addEventListener('onStateChange', this.onStateChange)
     disableAutonav()
@@ -136,18 +189,32 @@ export class Engine {
   detach(): void {
     if (this.player) this.player.removeEventListener('onStateChange', this.onStateChange)
     this.audio.release()
-    // Handed back exactly as it was found, volume and mute both. Wrapped
-    // because a player being torn down is allowed to have stopped answering,
-    // and a throw here would take the rest of the exit with it.
+    // Handed back as it was found, with one deliberate exception below.
+    // Wrapped because a player being torn down is allowed to have stopped
+    // answering, and a throw here would take the rest of the exit with it.
     try {
       if (this.pageVolume !== undefined) this.player?.setVolume(this.pageVolume)
-      if (this.pageMuted === true) this.player?.mute()
-      else if (this.pageMuted === false) this.player?.unMute()
+      // The mute goes back only if it was there when we arrived *and* the
+      // reader is leaving muted. Anything else would be imposing a silence
+      // nobody asked for: someone who spent the session listening and then
+      // closed the app used to land back on YouTube with the sound off,
+      // because the page had happened to be muted when we found it.
+      if (this.pageMuted === true && this.muted) this.player?.mute()
+      else this.player?.unMute()
     } catch {
       // The page keeps whatever it has; nothing else here depends on this.
     }
+    // And back into preview if that is how the page was running, for the same
+    // reason the volume goes back: the feed's player is the feed's, and one
+    // left promoted is one the feed no longer sizes the way it means to.
+    try {
+      if (this.pageInline === true) this.player?.setInline?.(true)
+    } catch {
+      // Nothing after this depends on the demotion having worked.
+    }
     this.pageVolume = undefined
     this.pageMuted = undefined
+    this.pageInline = undefined
     this.boundVideo?.removeEventListener('ended', this.onElementEnded)
     this.boundVideo = null
     this.player = null
@@ -384,6 +451,48 @@ export class Engine {
       // its own list of levels, so the smallest one has to be read again.
       this.applyQuality()
     }
+    // A load that never starts, on a player that says nothing is wrong.
+    //
+    // Measured 2026-09-04 against live YouTube: after loadVideoById the player
+    // can sit at Unstarted indefinitely while its element plays the requested
+    // video underneath it — paused=false, currentTime climbing 0.4s to 4.9s,
+    // getVideoData().video_id matching what we asked for. Nine seconds never
+    // shook it loose. In that state setPlaybackRate does not move
+    // getPlaybackRate off 1, and seekTo, playVideo and pause-then-play all do
+    // nothing; writing element.playbackRate survived twice in five tries.
+    // Handing the player the same id again cleared it every time.
+    //
+    // The condition is keyed on the id and nothing else, because the two
+    // obvious gates both lie here. `adShowing()` is **true** for the whole of
+    // this state — the player wears `ad-showing` and `.video-ads` holds a
+    // child — while no advert plays at all: no ad renderer, and the real
+    // video's clock running underneath. That false advert also trips the
+    // shortcut above, so `loading` is already cleared by the time we look.
+    // Hence `loadedId`, which outlives it.
+    //
+    // A genuine advert is excluded by the same id test rather than by asking
+    // whether one is showing: during a real advert the player answers with
+    // the advert's id, not the track's, which is the very thing the shortcut
+    // above exists to cope with.
+    //
+    // Once per load, and only once the element has been playing the right
+    // video for a moment, so an ordinary slow load is left alone.
+    if (
+      this.loadedId !== undefined &&
+      s === State.Unstarted &&
+      this.repushedFor !== `${this.loadSeq}:${this.state.rate}` &&
+      Date.now() - this.loadAskedAt > STUCK_UNSTARTED_MS &&
+      this.sounding() &&
+      p.getVideoData()?.video_id === this.loadedId
+    ) {
+      this.repushedFor = `${this.loadSeq}:${this.state.rate}`
+      // Put the pending flag back, so the landing path above does the rest:
+      // it is what applies the rate and re-reads the quality levels, and the
+      // whole point of getting unstuck is that those calls start working.
+      this.loading = this.loadedId
+      p.loadVideoById({ videoId: this.loadedId, startSeconds: this.videoEl()?.currentTime ?? 0 })
+      p.playVideo()
+    }
     // The rate is re-asserted, not set. YouTube's player drops it back to 1 at
     // moments of its own choosing — a new video becoming ready, a quality
     // change — and applying it once at any single point loses that race
@@ -397,6 +506,10 @@ export class Engine {
       } catch {
         // A player build without the getter keeps whatever rate it has.
       }
+      // The element is asked separately: where the player's getter lies, this
+      // is the one that says whether the sound is actually at that speed.
+      const rel = this.videoEl()
+      if (rel && rel.playbackRate !== this.state.rate) this.applyRate()
     }
     // The pin is re-asserted the same way, and **only in music mode**. Video
     // mode is the absence of a pin: re-stating a ceiling twice a second would
@@ -507,51 +620,68 @@ export class Engine {
   }
 
   /**
-   * Whether sound is off, however this device manages it.
+   * Whether sound is off because we turned it off.
    *
-   * Asked of the player rather than inferred from the stored volume, because
-   * on a device that refuses volumes the stored number never moves and the bar
-   * would go on drawing a speaker over a muted track.
-   */
-  /**
-   * Ours to say. It used to ask the player as well, and the player says
-   * "muted" whenever YouTube starts a track muted on its own — which on a
-   * phone is every track that starts without a press — so the bar showed a
-   * mute nobody had asked for and syncMute() then kept it. The volume is the
-   * one truth: zero is muted, anything else is not, and the element is made
-   * to agree.
+   * This used to ask the player, so that a device which refuses volumes still
+   * drew the right glyph. The trouble is that the player's mute is not always
+   * ours: with "피드에서 재생" on, YouTube is already running a muted preview
+   * before we attach, and an iPhone's autoplay is only allowed muted at all.
+   * Reading either back as our own state put a muted speaker in front of
+   * someone who had pressed nothing, and left them no way out of it.
+   *
+   * So the flag comes first and the stored volume second, and the page's own
+   * mute is not consulted. `syncMute` is what makes the player agree.
    */
   get muted(): boolean {
-    return this.state.volume === 0
+    return this.userMuted || this.state.volume === 0
   }
 
   private applyVolume(): void {
     const p = this.player
     if (!p) return
     p.setVolume(this.state.volume)
-    if (this.state.volume > 0 && p.isMuted()) p.unMute()
     this.syncMute()
   }
 
   /**
-   * The element's mute follows ours.
+   * The player and its element are made to agree with us, both ways.
    *
    * On an iPhone the page's own autoplay is allowed only muted, and it mutes
    * the *element* while the player's API goes on answering "not muted". So
    * the bar said playing, the mute glyph said sound, and nothing came out
-   * (2026-09-04, "재생중이라고 나오는데 소리가 안 나는"). Set on every press
-   * that starts sound and on every tick, since a press is where the platform
-   * lets script change it and a tick is where a later mute would be noticed.
+   * (2026-09-04, "재생중이라고 나오는데 소리가 안 나는").
+   *
+   * The other half of the same report is the feed's inline preview. With
+   * "피드에서 재생" switched on, YouTube already has a muted player running
+   * when we arrive, and the mute survived attaching, so pressing our mute
+   * button could not undo a mute nobody here had set. Taking the player's
+   * mute as an input is what made that unreachable: on a build whose mute()
+   * is a no-op the answer never changed, so we read back "not muted" and
+   * dutifully unmuted the element the listener had just silenced.
+   *
+   * Now it is one-way. `userMuted` and a volume of zero are the only things
+   * that mute, and anything the page muted for a preview or an autoplay is
+   * undone. Called on every press that starts sound and on every tick, since
+   * a press is where the platform lets script change it and a tick is where a
+   * later mute would be noticed.
    */
   private syncMute(): void {
-    const want = this.state.volume === 0
-    const p = this.player
-    try {
-      if (!want && p?.isMuted()) p.unMute()
-      if (want && p && !p.isMuted()) p.mute()
-    } catch {}
     const el = this.videoEl()
-    if (el && el.muted !== want) el.muted = want
+    if (this.muted) {
+      try {
+        if (this.player?.isMuted() !== true) this.player?.mute()
+      } catch {
+        // No mute on this build; the element below is the control that counts.
+      }
+      if (el && !el.muted) el.muted = true
+      return
+    }
+    try {
+      if (this.player?.isMuted() === true) this.player.unMute()
+    } catch {
+      // Same: the element is what actually carries the sound.
+    }
+    if (el?.muted) el.muted = false
   }
 
   // ── Speed ─────────────────────────────────────────────────────────────────
@@ -568,6 +698,18 @@ export class Engine {
     } catch {
       // A player build that does not take the rate keeps the one it has.
     }
+    // And straight at the element, because the player is not always listening.
+    //
+    // Measured 2026-09-04: in the stuck state described in tick(), the player
+    // ignores setPlaybackRate and getPlaybackRate goes on answering 1 — but
+    // the element takes the rate and *means* it. Re-asserted twice a second
+    // from tick(), the clock advanced 1.49 seconds per wall second against a
+    // chosen 1.5, over fourteen checks. So the sound really is at the speed
+    // that was asked for, whatever the player says about it. Writing it once
+    // is not enough on its own: YouTube puts it back to 1 within a second,
+    // which the re-assertion undoes on the next tick.
+    const el = this.videoEl()
+    if (el && el.playbackRate !== this.state.rate) el.playbackRate = this.state.rate
   }
 
   // ── Quality ───────────────────────────────────────────────────────────────
@@ -715,6 +857,9 @@ export class Engine {
     const track = this.current
     if (!track) return
     this.loading = track.videoId
+    this.loadedId = track.videoId
+    this.loadSeq += 1
+    this.loadAskedAt = Date.now()
     this.wantPaused = false
     this.endedFor = undefined
     remember(track)
@@ -723,6 +868,9 @@ export class Engine {
       this.player.loadVideoById(track.videoId)
       this.player.playVideo()
       this.applyRate()
+      // Pressing a track is asking to hear it. If the page handed us a player
+      // it had muted for its own preview, that mute goes now.
+      this.syncMute()
     } else {
       setQuickOn(true)
       markArrival(track.videoId)
@@ -795,19 +943,18 @@ export class Engine {
    * value, or unmuting would have nothing to go back to.
    */
   toggleMute(): void {
-    const p = this.player
     if (this.muted) {
-      p?.unMute()
+      this.userMuted = false
       if (this.state.volume === 0) this.state.volume = this.beforeMute || 100
       this.applyVolume()
     } else {
+      this.userMuted = true
       if (this.state.volume > 0) this.beforeMute = this.state.volume
-      p?.mute()
-      // Straight at the element as well: a player build whose mute() is a
-      // no-op still owns a media element, and `muted` is settable everywhere.
-      const el = this.videoEl()
-      if (el) el.muted = true
+      // The volume follows only where the volume means anything. A device
+      // that ignores it must keep its stored value, or unmuting would have
+      // nothing to go back to; the flag is what silences it there.
       if (this.volumeSettable !== false) this.state.volume = 0
+      this.syncMute()
     }
     this.changed()
   }
@@ -981,6 +1128,10 @@ export class Engine {
     this.state.mode = mode
     // The mode is the switch. Nobody has to find a setting for this.
     this.applyQuality()
+    // Music mode is chosen in order to listen. A page that was running a
+    // muted feed preview before we arrived would otherwise carry that mute
+    // into it, so unless the listener muted it themselves, it comes off.
+    if (mode === 'music') this.syncMute()
     this.changed()
   }
 
