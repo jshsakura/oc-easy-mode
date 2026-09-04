@@ -800,10 +800,12 @@ input { font: inherit; color: inherit; }
    the button takes a fill as well, and the glyph pops once as it lands. The
    call to YouTube still happens afterwards and still puts this back if it is
    refused; this is only about the press being seen. */
-.rate.on { background: var(--secondary); }
+/* Lit is the filled glyph and nothing else. The tinted box behind a lit
+   heart read as a button stuck down (2026-09-04, "배경은 클릭 효과에만");
+   the box appears only while it is being pressed. */
 .rate.up.on { color: var(--primary); }
 .rate.down.on { color: var(--destructive); }
-.rate:active { transform: scale(.92); }
+.rate:active { transform: scale(.92); background: var(--secondary); }
 .rate.on > svg { animation: pop .24s ease; }
 @keyframes pop { 0% { transform: scale(.82); } 60% { transform: scale(1.16); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .rate.on > svg { animation: none; } }
