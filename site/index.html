@@ -367,42 +367,42 @@ svg {
 .showcase-card {
   border: 1px solid var(--border);
   background-color: var(--surface);
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
-  padding: 10px;
-  box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.08), 0 0 1px 1px var(--border);
+  padding: 0;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
 :root[data-theme='dark'] .showcase-card {
   background: #171722;
   border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
 }
 
 .showcase-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-4px);
   border-color: var(--accent);
-  box-shadow: 0 24px 50px -12px rgba(126, 77, 197, 0.22), 0 0 0 1px var(--accent);
+  box-shadow: 0 20px 40px -12px rgba(126, 77, 197, 0.18);
 }
 
 .showcase-card img {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 10px;
+  border-radius: 13px 13px 0 0;
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .showcase-card:hover img {
-  transform: scale(1.008);
+  transform: scale(1.005);
 }
 
 .showcase-caption {
-  margin: 10px -10px -10px;
-  padding: 14px 20px;
+  margin: 0;
+  padding: 12px 18px;
   border-top: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-muted);
   text-align: center;
   background: var(--surface);
@@ -458,18 +458,18 @@ section + section {
 /* 기능 6가지 격자 */
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 16px;
 }
 
 .feature-item {
   position: relative;
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 16px;
-  padding: 28px 24px;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
 }
@@ -477,26 +477,26 @@ section + section {
 :root[data-theme='dark'] .feature-item {
   background: linear-gradient(180deg, #181824 0%, #13131b 100%);
   border-color: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
 }
 
 .feature-item:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
   border-color: var(--accent);
-  box-shadow: 0 16px 36px -10px rgba(126, 77, 197, 0.18), 0 0 0 1px var(--accent);
+  box-shadow: 0 12px 28px -8px rgba(126, 77, 197, 0.16);
 }
 
 :root[data-theme='dark'] .feature-item:hover {
   border-color: var(--accent);
-  box-shadow: 0 16px 40px -10px rgba(157, 110, 224, 0.25), 0 0 0 1px var(--accent);
+  box-shadow: 0 12px 30px -8px rgba(157, 110, 224, 0.22);
 }
 
 .feature-item h3 {
-  font-size: 18px;
+  font-size: 16.5px;
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.015em;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: var(--text);
   transition: color 0.2s ease;
 }
@@ -506,9 +506,9 @@ section + section {
 }
 
 .feature-item p {
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--text-muted);
-  line-height: 1.65;
+  line-height: 1.6;
   word-break: keep-all;
   margin: 0;
 }
@@ -516,40 +516,40 @@ section + section {
 /* 설치 방법 */
 .install-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: 16px;
 }
 
 .install-card {
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 16px;
-  padding: 32px 26px;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 12px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 :root[data-theme='dark'] .install-card {
   background: linear-gradient(180deg, #181824 0%, #13131b 100%);
   border-color: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
 }
 
 .install-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   border-color: var(--accent);
-  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--accent);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.08);
 }
 
 :root[data-theme='dark'] .install-card:hover {
-  box-shadow: 0 16px 40px -10px rgba(157, 110, 224, 0.2), 0 0 0 1px var(--accent);
+  box-shadow: 0 12px 30px -8px rgba(157, 110, 224, 0.2);
 }
 
 .install-card h3 {
-  font-size: 19px;
+  font-size: 17.5px;
   font-weight: 700;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
   letter-spacing: -0.015em;
 }
@@ -623,45 +623,45 @@ code {
 .notice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-  gap: 24px;
+  gap: 16px;
 }
 
 .notice-item {
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 16px;
-  padding: 26px 24px;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 12px;
+  padding: 18px 18px;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 :root[data-theme='dark'] .notice-item {
   background: linear-gradient(180deg, #181824 0%, #13131b 100%);
   border-color: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
 }
 
 .notice-item:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   border-color: var(--accent);
-  box-shadow: 0 14px 32px -8px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--accent);
+  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.08);
 }
 
 :root[data-theme='dark'] .notice-item:hover {
-  box-shadow: 0 14px 36px -8px rgba(157, 110, 224, 0.2), 0 0 0 1px var(--accent);
+  box-shadow: 0 10px 26px -6px rgba(157, 110, 224, 0.2);
 }
 
 .notice-item dt {
-  font-size: 16.5px;
+  font-size: 15.5px;
   font-weight: 700;
   line-height: 1.35;
-  min-height: calc(16.5px * 1.35 * 2);
-  margin-bottom: 8px;
+  min-height: calc(15.5px * 1.35 * 2);
+  margin-bottom: 6px;
   color: var(--text);
 }
 
 .notice-item dd {
-  font-size: 14.5px;
+  font-size: 13.5px;
   color: var(--text-muted);
   line-height: 1.6;
   word-break: keep-all;
@@ -686,13 +686,13 @@ kbd {
 }
 
 .icon-badge {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   background: linear-gradient(135deg, rgba(126, 77, 197, 0.12) 0%, rgba(157, 110, 224, 0.04) 100%);
   border: 1px solid rgba(126, 77, 197, 0.2);
   color: var(--accent);
