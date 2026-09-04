@@ -226,8 +226,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     { open: () => ctx.search(), label: t('검색'), icon: 'search' },
     { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
     { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
-    { view: { kind: 'recent' }, label: t('최근 감상'), icon: 'history', section: t('내 라이브러리') },
-    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history' },
+    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history', section: t('내 라이브러리') },
     // 대기열 above 내 재생목록, by the user's word (2026-09-04): what is
     // playing next is reached for more often than what has been kept.
     { view: { kind: 'queue' }, label: t('대기열'), icon: 'queue' },
@@ -1276,8 +1275,6 @@ function titleOf(view: View): string {
       return t('구독')
     case 'history':
       return t('시청 기록')
-    case 'recent':
-      return t('최근 감상')
     case 'playlists':
       return t('내 재생목록')
     case 'queue':
@@ -1303,10 +1300,14 @@ function viewFromName(name: string): View {
     case 'home':
     case 'subs':
     case 'history':
-    case 'recent':
     case 'playlists':
     case 'queue':
       return { kind: name }
+    // 최근 감상 was its own screen until 시청 기록 absorbed it. A browser that
+    // was last left there has this name written down, and dropping it would
+    // land that reload on 둘러보기 instead of the screen it means.
+    case 'recent':
+      return { kind: 'history' }
     default:
       return { kind: 'explore' }
   }

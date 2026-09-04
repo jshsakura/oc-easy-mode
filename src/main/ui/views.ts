@@ -6,7 +6,7 @@ import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
 import { forgetHistory, history, setSubsFilter, subsFilter} from '../store.ts'
 import { art, h, icon, replace } from './dom.ts'
-import { explain, type Ctx, type View } from './ctx.ts'
+import { explain, isSignedOut, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
 import { removeFromPlaylistNow, row, startRadio } from './rows.ts'
 import { applyFilter, channelsOf, chooseChannels } from './channels.ts'
@@ -45,9 +45,7 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
     case 'subs':
       return listFeed(ctx, main, t('구독'), 'FEsubscriptions')
     case 'history':
-      return listFeed(ctx, main, t('시청 기록'), 'FEhistory')
-    case 'recent':
-      return recent(ctx, main)
+      return watched(ctx, main)
     case 'playlists':
       return playlists(ctx, main)
     case 'playlist':
@@ -68,16 +66,33 @@ export function nothing(text: string, glyph: Parameters<typeof icon>[0] = 'note'
 }
 
 /**
+ * Several lists as one, one row per video, the earlier list winning.
+ *
+ * The lists handed here are each already newest first, so keeping the first
+ * copy of a video keeps the whole thing newest first as well.
+ */
+function mergeById(...lists: Track[][]): Track[] {
+  const seen = new Set<string>()
+  const out: Track[] = []
+  for (const track of lists.flat()) {
+    if (seen.has(track.videoId)) continue
+    seen.add(track.videoId)
+    out.push(track)
+  }
+  return out
+}
+
+/**
  * A list that can ask YouTube for more of itself.
  *
  * The whole list, not just the visible page, is what a row plays from — asking
  * for more mid-listen should extend the queue you would have got, not start a
  * different one — so the array is held here and the play handler closes over it.
  */
-function listOf(ctx: Ctx, first: api.Page, shape: Shape = feedShape(ctx)): HTMLElement {
+function listOf(ctx: Ctx, first: api.Page, shape: Shape = feedShape(ctx), lead: Track[] = []): HTMLElement {
   const rows = h('div', { class: 'rows' })
   let page = first
-  let all = first.tracks
+  let all = mergeById(lead, first.tracks)
 
   const more = h('button', { class: 'btn ghost', 'data-nav': '', style: 'margin: 16px auto 0; display: flex' }, t('더 보기'))
   more.addEventListener('click', async () => {
@@ -92,7 +107,9 @@ function listOf(ctx: Ctx, first: api.Page, shape: Shape = feedShape(ctx)): HTMLE
     rows.append(...waiting)
     try {
       const next = await api.more(ctx.cfg, page)
-      all = all.concat(next.tracks)
+      // Through the same sieve as the first page: a video already standing
+      // above, because this browser played it, must not arrive again below.
+      all = mergeById(all, next.tracks)
       page = next
       // draw() replaces the whole container, skeletons included.
       draw()
@@ -906,51 +923,87 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
   }
 }
 
-// ── Recently played ────────────────────────────────────────────────────────
+// ── 시청 기록 ──────────────────────────────────────────────────────────────
+
+/** No feed at all, in the shape a feed has. */
+const NO_FEED: api.Page = { tracks: [], shelves: [], endpoint: 'browse' }
 
 /**
- * The last fifty things this browser played.
+ * One history: YouTube's, and this browser's own.
  *
- * YouTube's own 시청 기록 needs a session, so signed out that screen is a dead
- * end — and signed out is exactly when someone has no other way back to the
- * song they heard yesterday. This is kept here instead, in this origin's own
- * storage, and never leaves the browser.
+ * These were two lines in the column, 최근 감상 and 시청 기록, saying nearly
+ * the same word. YouTube's one needs a session and answers a signed-out
+ * browser with 200 and an empty body, so for half the readers it was a dead
+ * end standing next to a live screen. They are one screen now.
+ *
+ * The local half leads. What this browser played last is the most recent thing
+ * there is to show, it is the half that works with no session at all, and it
+ * never leaves this origin's storage. YouTube's rows follow, minus the videos
+ * already standing above them.
+ *
+ * 기록 지우기 clears the local half only. The rest of the list belongs to the
+ * account, and a button here that quietly reached into it would be doing more
+ * than it says.
  */
-function recent(ctx: Ctx, main: HTMLElement): void {
-  const list = history()
-  const body = h('div', { class: 'rows' })
-  replace(
-    main,
-    h('h2', null, t('최근 감상')),
-    list.length === 0
-      ? nothing(t('아직 들은 것이 없습니다.'), 'history')
-      : [
-          h(
-            'div',
-            { class: 'toolbar' },
-            h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(list, 0) }, icon('play', 16), t('전체 재생')),
-            h(
-              'button',
-              {
-                class: 'btn ghost',
-                'data-nav': '',
-                onclick: async () => {
-                  if (!(await confirm(ctx.overlay, t('최근 감상 기록을 지울까요?')))) return
-                  forgetHistory()
-                  ctx.reload()
-                },
-              },
-              icon('trash', 16),
-              t('기록 지우기'),
-            ),
-          ),
-          body,
-        ],
-  )
-  if (list.length === 0) return
-  const draw = () => layout(ctx, body, list, (track) => ({ quick: addQuick(ctx, track) }))
-  draw()
-  relayoutOnModeChange(ctx, body, draw)
+async function watched(ctx: Ctx, main: HTMLElement): Promise<void> {
+  const token = generation
+  const title = t('시청 기록')
+  const mine = history()
+
+  const draw = (page: api.Page): void => {
+    const list = mergeById(mine, page.tracks)
+    if (list.length === 0) {
+      return replace(main, h('h2', null, title), nothing(t('아직 들은 것이 없습니다.'), 'history'))
+    }
+    replace(
+      main,
+      h('h2', null, title),
+      h(
+        'div',
+        { class: 'toolbar' },
+        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(list, 0) }, icon('play', 16), t('전체 재생')),
+        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(list); ctx.say(`${tn('개', list.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
+        // Only when there is a local half to clear, so the button never asks a
+        // question it cannot act on.
+        mine.length > 0 && h(
+          'button',
+          {
+            class: 'btn ghost',
+            'data-nav': '',
+            onclick: async () => {
+              if (!(await confirm(ctx.overlay, t('최근 감상 기록을 지울까요?')))) return
+              forgetHistory()
+              ctx.reload()
+            },
+          },
+          icon('trash', 16),
+          t('기록 지우기'),
+        ),
+      ),
+      listOf(ctx, page, feedShape(ctx, 'FEhistory'), mine),
+      page.shelves.map((shelf) => shelfRow(ctx, shelf)),
+    )
+  }
+
+  // The local half is already in hand, so it goes up now rather than behind an
+  // outline of rows nobody is waiting for. Only an empty one waits.
+  if (mine.length > 0) draw(NO_FEED)
+  else replace(main, h('h2', null, title), skToolbar(t('전체 재생'), t('대기열에 추가')), skFeed(ctx, 'FEhistory'))
+
+  try {
+    const page = await api.feed(ctx.cfg, 'FEhistory')
+    if (!current(token)) return
+    draw(page)
+  } catch (err) {
+    if (!current(token)) return
+    // What is on screen is already a true answer, so nothing is said over it.
+    if (mine.length > 0) return
+    // Signed out this feed comes back empty and api.feed calls that an auth
+    // error. With nothing local either the screen is simply empty, which is
+    // what it is, rather than broken.
+    if (isSignedOut(err)) return draw(NO_FEED)
+    replace(main, h('h2', null, title), h('div', { class: 'err' }, explain(err)))
+  }
 }
 
 // ── Queue ──────────────────────────────────────────────────────────────────

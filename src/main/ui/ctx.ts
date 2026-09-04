@@ -11,7 +11,6 @@ export type View =
   | { kind: 'home' }
   | { kind: 'subs' }
   | { kind: 'history' }
-  | { kind: 'recent' }
   | { kind: 'playlists' }
   | { kind: 'playlist'; id: string; title: string }
   | { kind: 'queue' }
@@ -44,6 +43,17 @@ export function clock(seconds: number): string {
   const hrs = Math.floor(seconds / 3600)
   const mm = hrs > 0 ? String(m).padStart(2, '0') : String(m)
   return `${hrs > 0 ? `${hrs}:` : ''}${mm}:${String(s).padStart(2, '0')}`
+}
+
+/**
+ * Whether InnerTube refused for want of a session rather than failing.
+ *
+ * A personal feed answers a signed-out browser with 200 and an empty body, and
+ * api.feed turns that into this. A screen that has something of its own to
+ * show should show it instead of an error nobody can act on.
+ */
+export function isSignedOut(err: unknown): boolean {
+  return (err as { kind?: string } | null)?.kind === 'auth'
 }
 
 /** Turns whatever InnerTube threw into something worth showing a person. */
