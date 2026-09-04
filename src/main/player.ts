@@ -48,6 +48,18 @@ export interface YtPlayer extends HTMLElement {
   isMuted(): boolean
   mute(): void
   unMute(): void
+  /**
+   * YouTube's own account of *why* it is muted, and whether it is running as
+   * an inline preview. Measured 2026-09-04: both exist on the live player,
+   * alongside setInline, setInlinePreview, setSize and setInternalSize. On a
+   * signed-out watch page they answer false, so the feed-preview case they
+   * describe could not be reproduced here; they are declared optional and
+   * called defensively for that reason.
+   */
+  isMutedByMutedAutoplay?(): boolean
+  isInline?(): boolean
+  setInline?(inline: boolean): void
+  setInlinePreview?(preview: boolean): void
   addEventListener(name: string, fn: (...args: unknown[]) => void): void
   removeEventListener(name: string, fn: (...args: unknown[]) => void): void
 }
