@@ -10,7 +10,7 @@
 //
 // The cure is one line per dialog in mountApp's destroy, and it is the kind of
 // line that is easy to forget when the fourth dialog is written. So all three
-// are checked here, through one helper, and a fourth belongs in the list.
+// are checked here, through one helper, and the next one belongs in the list.
 //
 // The mode is switched the way the toolbar switch does it: a set-config
 // message to the isolated world. That is the honest path and, unlike a reload,
@@ -118,6 +118,20 @@ test('the search panel does not outlive the mode', async () => {
       const ui = app(page)
       await ui.locator('.nav', { hasText: '검색' }).click()
       await expect(page.locator('oc-easy-mode-overlay').locator('.modal.search')).toBeVisible()
+    })
+  } finally {
+    await h.close()
+  }
+})
+
+test('the settings sheet does not outlive the mode', async () => {
+  const h = await open('https://www.youtube.com/', false)
+  try {
+    await enterThroughConfig(h.page)
+    await survivesReentry(h.page, async (page) => {
+      const over = page.locator('oc-easy-mode-overlay')
+      await app(page).locator('.sideHead .gear').click()
+      await expect(over.locator('.modal.settings')).toBeVisible()
     })
   } finally {
     await h.close()
