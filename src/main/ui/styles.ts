@@ -1299,9 +1299,11 @@ input[type=range]::-moz-range-thumb {
   -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
   border-top: 0;
 }
-.app.narrow.sheet-open.has-stage .bar {
-  top: calc(var(--top-all) + var(--stage-h));
-  padding-top: 6px;
+/* The picture sits in the opened player where the artwork is, at the width
+   the artwork has, 16:9. The stage across the top is for the lists. */
+.app.narrow.sheet-open.slot-in-sheet .slot.stage {
+  position: static; width: 100%; height: auto; aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg); margin: 6px 0 26px; box-shadow: var(--shadow);
 }
 .app.narrow.sheet-open .sheetClose {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1320,8 +1322,8 @@ input[type=range]::-moz-range-thumb {
   width: min(70vw, 300px); height: auto; aspect-ratio: 1;
   border-radius: var(--radius-lg); box-shadow: var(--shadow); margin: 6px 0 26px;
 }
-/* The picture is already on screen above; a cover under it would be a second
-   answer to the same question. */
+/* The picture stands where the cover would; a cover under it would be a
+   second answer to the same question. */
 .app.narrow.sheet-open.has-stage .bar .now .thumb { display: none; }
 
 /* With the words open they are what the pane is for: the artwork steps aside
@@ -1570,21 +1572,38 @@ input[type=range]::-moz-range-thumb {
 .skLine { display: inline-block; vertical-align: middle; }
 
 /* ── Lists as cards ──────────────────────────────────────────────────────── */
-/* A track list on a screen is one card, not rows floating on the pane: asked
-   for on 2026-09-04, "목록마다 카드처럼 좀 묶어두지". The panel inside the
-   search dialog stays bare, since that panel is already the card. The playing
-   row steps one tone further than it did, because the card has taken the tone
-   it used to stand on. */
-.main .rows {
+/* Every track is a card of its own, and the one playing is the card the eye
+   goes to. One card around the whole list was the first reading of "목록마다
+   카드처럼" and the wrong one: "곡당 목록 카드, 지금 재생 중의 아름다운 카드"
+   (2026-09-04). The search panel's rows stay bare; that panel is the card. */
+.main .rows { gap: 6px; }
+.main .rows .row {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 6px;
+  border-radius: var(--radius-lg); padding: 9px 10px;
 }
-.main .rows .row.now { background: var(--secondary-hover); }
-.main .rows > .queueMark { padding: 0 8px; }
-.main .rows > .queueMark:first-child { margin-top: 10px; }
+/* The playing card: taller, its artwork larger, its title heavier, and the
+   artwork itself washed across the card behind the words, blurred to colour.
+   No gradient of ours; the picture is the colour. */
+.main .rows .row.now {
+  position: relative; isolation: isolate; overflow: hidden;
+  padding: 14px 12px; border-color: color-mix(in srgb, var(--foreground) 28%, var(--border));
+  background: color-mix(in srgb, var(--card) 80%, var(--foreground) 6%);
+}
+.main .rows .row.now::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--art, none) center / cover no-repeat;
+  filter: blur(40px) saturate(150%); opacity: .38; transform: scale(1.4);
+}
+.main .rows .row.now .thumb { width: 60px; height: 60px; border-radius: var(--radius-md); box-shadow: var(--shadow); }
+.main .rows .row.now .rowInner { grid-template-columns: 24px 60px 1fr auto; }
+.main .rows .row.now .title { font-size: 15px; font-weight: 600; white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.main .rows .row.now .by { font-size: 13px; }
+.main .rows > .queueMark { padding: 0 4px; }
+.main .rows > .queueMark:first-child { margin-top: 4px; }
 .main .rows > .btn.ghost { margin-bottom: 8px; }
 .main .rows > .empty { padding: 40px 0; }
-.app.narrow .main .rows { padding: 4px; }
+.app.narrow .main .rows .row { padding: 8px 8px; }
+.app.narrow .main .rows .row.now { padding: 12px 10px; }
 
 /* ── Glass, with something behind it ─────────────────────────────────────── */
 /* Translucency is invisible over a flat ground. What the panes are glass over

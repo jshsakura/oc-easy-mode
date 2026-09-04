@@ -414,8 +414,29 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     slot.className = `slot ${layout}`
     app.classList.toggle('has-stage', layout === 'stage')
     app.classList.toggle('has-corner', layout === 'corner')
-    shell.place(layout === 'hidden' ? null : slot)
+    seatSlot()
     drawBar()
+  }
+
+  /**
+   * Where the picture's slot lives: in the app's grid, or inside the opened
+   * player where the artwork would be.
+   *
+   * A phone's opened player with the picture on used to push itself down
+   * under a stage across the top of the screen, and the picture there was
+   * squashed and cut. The reader wanted it back where the artwork is, which
+   * is where a picture of the thing playing belongs (2026-09-04). The slot is
+   * moved, not rebuilt, and the shell measures it wherever it stands.
+   */
+  function seatSlot(): void {
+    const inSheet = app.classList.contains('narrow') && app.classList.contains('sheet-open') && engine.state.video === 'stage'
+    if (inSheet) {
+      if (slot.parentElement !== now) now.insertBefore(slot, nowThumb)
+    } else if (slot.parentElement !== app) {
+      app.insertBefore(slot, bar)
+    }
+    app.classList.toggle('slot-in-sheet', inSheet)
+    shell.place(engine.state.video === 'hidden' ? null : slot)
   }
 
   // ── Player bar ───────────────────────────────────────────────────────────
@@ -903,6 +924,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       shell.cover(false)
     }
     app.classList.toggle('sheet-open', open)
+    seatSlot()
     // The heart moves rather than being restyled where it stands.
     //
     // In the bar, `.now` is a row and the heart sits after the title, which is
