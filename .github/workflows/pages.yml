@@ -1,4 +1,4 @@
-# site/ 를 GitHub Pages 로 올린다 — https://jshsakura.github.io/oc-easy-mode/
+# site/ 를 GitHub Pages 로 올린다 — https://jshsakura.github.io/renewtube/
 #
 # **여기서 직접 빌드해서 zip 을 함께 올린다.** 형제 저장소(oc-youtube-music)는
 # 일부러 반대로 한다 — 거기서는 다운로드 버튼이 최신 릴리스의 자산을 그대로
@@ -50,7 +50,7 @@ jobs:
           cp -R site/. _site/
 
           version=$(node -p "require('./package.json').version")
-          name="oc-easy-mode-$version.zip"
+          name="renewtube-$version.zip"
 
           # dist/ 안에서 압축한다. 최상위가 dist 폴더인 zip 은 manifest 없는
           # 확장으로 읽히고, 브라우저는 그 이유도 고칠 방법도 알려주지 않는다.

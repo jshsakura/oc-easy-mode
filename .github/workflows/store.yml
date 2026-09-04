@@ -44,7 +44,7 @@ jobs:
         run: |
           set -e
           v="$(printf '%s' "$TAG" | tr '.' '_')"
-          asset="oc-easy-mode-$v.zip"
+          asset="renewtube-$v.zip"
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$asset"
           ls -lh "$asset"
           unzip -l "$asset"

@@ -1,8 +1,8 @@
 {
-  "name": "oc-easy-mode-storybook",
+  "name": "renewtube-storybook",
   "private": true,
   "type": "module",
-  "description": "Design workbench for the oc-easy-mode extension UI. Renders the real STYLES string and the real DOM helpers, so design iteration here is iteration on the shipped product.",
+  "description": "Design workbench for the RenewTube extension UI. Renders the real STYLES string and the real DOM helpers, so design iteration here is iteration on the shipped product.",
   "scripts": {
     "dev": "storybook dev -p 6006",
     "build": "storybook build",

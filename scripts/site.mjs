@@ -24,7 +24,7 @@ const { version } = require(join(root, 'package.json'))
 // filename survives a local download and then turns into percent-encoded noise
 // in a URL, an install dialog and a bug report. The name people read is in the
 // page; the name the file carries is for machines.
-const SLUG = 'oc-easy-mode'
+const SLUG = 'renewtube'
 
 const PORT = Number(process.env.PORT ?? 4173)
 
