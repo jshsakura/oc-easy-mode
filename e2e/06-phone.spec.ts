@@ -87,7 +87,7 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     expect(top.y).toBe(0)
     expect(Math.round(top.width)).toBe(Math.round(app.width))
     // The header names the screen, and it is the only place that name appears.
-    await expect(ui.locator('.top .name')).toHaveText('둘러보기')
+    await expect(ui.locator('.top .name')).toHaveText('탐색')
     await expect(ui.locator('.main > h2')).toBeHidden()
 
     // Its button opens the drawer, and choosing a destination closes it.

@@ -286,7 +286,7 @@ test('a screen you have left does not come back over the one you chose', async (
     // is the louder half of the same bug: "가져오지 못했습니다" written over a
     // queue that arrived perfectly well.
     for (let i = 0; i < 2; i++) {
-      await ui.locator('.nav', { hasText: '둘러보기' }).click()
+      await ui.locator('.nav', { hasText: '탐색' }).click()
       await h.page.waitForTimeout(120)
       await ui.locator('.nav', { hasText: '대기열' }).click()
       // Long enough for the abandoned fetch to arrive if it were going to.

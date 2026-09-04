@@ -452,6 +452,20 @@ input { font: inherit; color: inherit; }
   background: var(--card); color: var(--card-foreground); transition: background var(--ease);
 }
 .card:active, .tile:active, .card:focus-visible, .tile:focus-visible { background: var(--secondary-hover); }
+/* Top-right of the artwork, where a card's own play button is not. Always
+   visible on touch — a card has no hover to wait for. */
+.tileAdd {
+  position: absolute; right: 6px; top: 6px; z-index: 2;
+  width: 30px; height: 30px; border-radius: var(--radius-md);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: oklch(0 0 0 / 55%); color: #fff; cursor: pointer;
+  opacity: 0; transition: opacity var(--ease), background var(--ease);
+}
+.card:hover .tileAdd, .tile:hover .tileAdd,
+.card:focus-within .tileAdd, .tile:focus-within .tileAdd { opacity: 1; }
+.tileAdd:hover { background: oklch(0 0 0 / 75%); }
+@media (hover: none) { .tileAdd { opacity: 1; } }
+
 .card .cover, .tile .cover {
   position: relative; aspect-ratio: 1; border-radius: var(--radius-md);
   background: var(--secondary) center/cover;
@@ -497,9 +511,24 @@ input { font: inherit; color: inherit; }
 }
 .card .s, .tile .s { margin-top: 2px; padding: 0 10px 10px; color: var(--muted-foreground); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+
 .shelf { margin-bottom: 36px; }
 .shelf h3 { margin: 0 0 14px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
-.shelfRow { display: flex; gap: 16px; overflow-x: auto; padding: 0 0 12px; scroll-snap-type: x proximity; }
+/* A shelf that runs off the edge should look like it runs off the edge.
+   It was clipping a card in half against a hard border, which reads as broken
+   rather than as "there is more this way" — the complaint, in one word, was
+   구리다. The mask fades the last centimetre out, and disappears once the row
+   is scrolled to its end so nothing is faded that cannot be reached. */
+.shelfRow {
+  display: flex; gap: 16px; overflow-x: auto; padding: 0 0 12px;
+  scroll-snap-type: x proximity; scroll-padding-left: 0;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent 100%);
+}
+.shelfRow::-webkit-scrollbar { height: 0; }
+/* Scrolled to the end there is nothing beyond, so nothing fades. */
+.shelfRow:not(:hover) { scroll-behavior: smooth; }
 .tile { width: 176px; flex: none; scroll-snap-align: start; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: 28px 16px; }
 .grid .tile { width: auto; }
@@ -546,18 +575,23 @@ input { font: inherit; color: inherit; }
 }
 .bar .now { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: hidden; }
 .bar .now .nowText { min-width: 0; }
-/* Never squeezed by a long title: the text is what gives way, the heart is a
-   fixed target. Filled, it takes the accent — the one place in the bar that
-   says something about the song rather than about playback. */
-.bar .now .heart {
-  flex: none; width: 34px; height: 34px; border-radius: var(--radius-md);
+/* The pair travels together: YouTube keeps one rating per track, so these two
+   are one control and are never separated. Never squeezed by a long title
+   either — the text is what gives way. */
+.bar .now .rate-box { display: flex; flex: none; gap: 2px; }
+.ctl .rate-box { display: flex; gap: 2px; }
+.rate {
+  width: 34px; height: 34px; border-radius: var(--radius-md);
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--muted-foreground);
   transition: background var(--ease), color var(--ease);
 }
-.bar .now .heart:hover { background: var(--hover); color: var(--foreground); }
-.bar .now .heart.on { color: var(--primary); }
-.bar .now .heart:disabled { opacity: .35; pointer-events: none; }
+.rate:hover { background: var(--hover); color: var(--foreground); }
+.rate:disabled { opacity: .35; pointer-events: none; }
+/* Lit apart, because they mean opposite things: approval takes the accent, and
+   "not this one" takes the colour nothing else in the bar uses. */
+.rate.up.on { color: var(--primary); }
+.rate.down.on { color: var(--destructive); }
 .bar .now .thumb {
   width: 56px; height: 56px; flex: none; border-radius: var(--radius-md);
   background: var(--secondary) center/cover;

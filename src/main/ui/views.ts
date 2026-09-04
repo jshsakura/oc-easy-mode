@@ -4,7 +4,7 @@
 import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
-import { forgetHistory, history, lastPlaylist } from '../store.ts'
+import { forgetHistory, history } from '../store.ts'
 import { h, icon, replace } from './dom.ts'
 import { explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
@@ -15,7 +15,7 @@ import { removeFromPlaylistNow, row, startRadio } from './rows.ts'
  *
  * Every screen here draws a skeleton, waits for YouTube, and then writes the
  * answer into `main`. Nothing stopped a *slow* screen from writing its answer
- * after the reader had already moved on: open 둘러보기, press 대기열 before it
+ * after the reader had already moved on: open 탐색, press 대기열 before it
  * lands, and the queue is drawn — and then the explore fetch finishes and puts
  * itself, or its error, on top of it. The reader sees a screen they left, or
  * "가져오지 못했습니다" over a queue that arrived perfectly well.
@@ -271,6 +271,8 @@ function tile(opts: {
   /** Drawn on the artwork: a running time, a track count. */
   badge?: string
   square?: boolean
+  /** The one-press action, drawn on the artwork. Cards had none. */
+  quick?: { icon: Parameters<typeof icon>[0]; title: string; run(): void }
   onOpen(): void
 }): HTMLElement {
   return h(
@@ -282,6 +284,28 @@ function tile(opts: {
       !opts.cover && icon('note', 26),
       opts.badge && h('span', { class: 'badge' }, opts.badge),
       h('span', { class: 'play' }, icon('play', 20)),
+      // On the artwork, because a card has no spare row and this is the thing
+      // the product is for. Without it, filing a track was possible from a
+      // list and impossible from a card — which is every shelf on 탐색 and
+      // every screen in 영상 mode.
+      opts.quick &&
+        (() => {
+          const b = h(
+            'span',
+            { class: 'tileAdd', role: 'button', tabindex: '0', title: opts.quick!.title, 'aria-label': opts.quick!.title },
+            icon(opts.quick!.icon, 16),
+          )
+          const go = (ev: Event) => {
+            ev.stopPropagation()
+            ev.preventDefault()
+            opts.quick!.run()
+          }
+          b.addEventListener('click', go)
+          b.addEventListener('keydown', (ev) => {
+            if ((ev as KeyboardEvent).key === 'Enter' || (ev as KeyboardEvent).key === ' ') go(ev)
+          })
+          return b
+        })(),
     ),
     h('div', { class: 't', title: opts.title }, opts.title),
     h('div', { class: 's' }, opts.sub),
@@ -295,6 +319,7 @@ function trackTile(ctx: Ctx, list: Track[], i: number): HTMLElement {
     title: track.title,
     sub: track.byline,
     badge: track.duration,
+    quick: { icon: 'plus', title: t('재생목록에 넣기'), run: () => void ctx.addToPlaylist([track]) },
     onOpen: () => ctx.engine.play(list, i),
   })
 }
@@ -333,18 +358,19 @@ function shelfRow(ctx: Ctx, shelf: Shelf): HTMLElement {
  * still says where.
  */
 function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['quick'] {
-  const last = lastPlaylist()
   return {
     icon: 'plus',
-    title: last ? `'${last.title}'에 넣기` : t('재생목록에 넣기'),
-    run: () => {
-      const to = lastPlaylist()
-      if (!to) return void ctx.addToPlaylist([track])
-      void api
-        .addToPlaylist(ctx.cfg, to.id, [track.videoId])
-        .then(() => ctx.say(`'${to.title}'에 넣었습니다.`))
-        .catch((err: unknown) => ctx.say(explain(err), true))
-    },
+    title: t('재생목록에 넣기'),
+    // Opens the picker rather than filing silently.
+    //
+    // It used to drop the track into whichever list was used last, which is
+    // one press and the wrong one: on somebody else's playlist — where most
+    // collecting actually happens — the whole point is choosing *which* of
+    // your lists this belongs in, or making a new one for it. The picker is
+    // also the only place a playlist can be created, so hiding it behind the
+    // last choice made "start a new list from this song" unreachable from the
+    // song.
+    run: () => void ctx.addToPlaylist([track]),
   }
 }
 
@@ -352,22 +378,22 @@ function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['quick'] {
 
 async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
   const token = generation
-  replace(main, h('h2', null, t('둘러보기')), skShelf(), skShelf())
+  replace(main, h('h2', null, t('탐색')), skShelf(), skShelf())
   try {
     const page = await api.explore(ctx.cfg)
     if (!current(token)) return
     if (page.shelves.length === 0 && page.tracks.length === 0) {
-      return replace(main, h('h2', null, t('둘러보기')), nothing(t('보여줄 것이 없습니다.'), 'radio'))
+      return replace(main, h('h2', null, t('탐색')), nothing(t('보여줄 것이 없습니다.'), 'radio'))
     }
     replace(
       main,
-      h('h2', null, t('둘러보기')),
+      h('h2', null, t('탐색')),
       page.shelves.map((shelf) => shelfRow(ctx, shelf)),
       page.shelves.length === 0 && h('div', { class: 'grid' }, page.tracks.map((_, i) => trackTile(ctx, page.tracks, i))),
     )
   } catch (err) {
     if (!current(token)) return
-    replace(main, h('h2', null, t('둘러보기')), h('div', { class: 'err' }, explain(err)))
+    replace(main, h('h2', null, t('탐색')), h('div', { class: 'err' }, explain(err)))
   }
 }
 
@@ -430,7 +456,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
     if (page.tracks.length === 0) {
       // A dead end otherwise, and 영상 mode lands here on purpose: YouTube's
       // home is empty until it knows you, so a session with no watch history
-      // gets this screen and nothing to press. 둘러보기 always has something.
+      // gets this screen and nothing to press. 탐색 always has something.
       return replace(
         main,
         h('h2', null, title),
@@ -438,7 +464,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
         h(
           'div',
           { class: 'toolbar', style: 'justify-content: center' },
-          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('둘러보기')),
+          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('탐색')),
           h('button', { class: 'btn', 'data-nav': '', onclick: () => ctx.go({ kind: 'search', query: '' }) }, icon('search', 16), t('검색')),
         ),
       )
@@ -623,7 +649,7 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
         else renumber()
       }
       // **Only a playlist of one's own can have things taken out of it.**
-      // 둘러보기 opens YouTube's own editorial playlists, and the row button
+      // 탐색 opens YouTube's own editorial playlists, and the row button
       // was offered there too — pressing it asked YouTube to edit a list
       // belonging to someone else, which it refuses, and the reader got a red
       // toast for pressing a button we drew. Reported from a phone, on a
@@ -642,7 +668,9 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       layout(ctx, body, tracks, (track) => ({
         quick: mine
           ? {
-              icon: 'close',
+              // A bin, not a cross. A cross is what closes things; taking a
+              // track out of a playlist is a deletion and should look like one.
+              icon: 'trash',
               title: t('이 재생목록에서 빼기'),
               run: (rowEl) => void removeFromPlaylistNow(ctx, id, track, rowEl, gone(track)),
             }

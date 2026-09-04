@@ -5,12 +5,12 @@ import { app, open } from './fixture.ts'
 
 const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
 
-test('둘러보기 comes back as titled shelves, signed out', async () => {
+test('탐색 comes back as titled shelves, signed out', async () => {
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
-    await ui.locator('.nav', { hasText: '둘러보기' }).click()
+    await ui.locator('.nav', { hasText: '탐색' }).click()
 
     const shelves = ui.locator('.shelf:not([aria-hidden])')
     await expect(shelves.first()).toBeVisible()
@@ -28,7 +28,7 @@ test('opening a shelf card opens that playlist', async () => {
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
-    await ui.locator('.nav', { hasText: '둘러보기' }).click()
+    await ui.locator('.nav', { hasText: '탐색' }).click()
     const card = ui.locator('.shelf .tile:not([aria-hidden])').first()
     await expect(card).toBeVisible()
     const name = (await card.locator('.t').textContent())?.trim() ?? ''
@@ -100,7 +100,7 @@ test('left from the first card reaches the sidebar', async () => {
   try {
     const ui = app(h.page)
     await expect(ui.locator('.app')).toBeVisible()
-    await ui.locator('.nav', { hasText: '둘러보기' }).click()
+    await ui.locator('.nav', { hasText: '탐색' }).click()
     // Wait for the shelves to settle: focusing an element that a redraw is
     // about to replace loses the focus and the press with it.
     //

@@ -13,7 +13,7 @@ export type Lang = 'ko' | 'en'
 
 const EN: Record<string, string> = {
   // Navigation
-  '둘러보기': 'Explore',
+  '탐색': 'Explore',
   '검색': 'Search',
   '홈': 'Home',
   '구독': 'Subscriptions',
@@ -33,6 +33,9 @@ const EN: Record<string, string> = {
   'RenewTube 종료': 'Exit RenewTube',
   '이지 모드 종료': 'Exit RenewTube',
   '좋아요': 'Like',
+  '관심 없음': 'Not interested',
+  '관심 없음 취소': 'Undo not interested',
+  '평가는 유튜브에 로그인해야 누를 수 있습니다.': 'Signing in to YouTube is what lets you rate a track.',
   '좋아요 취소': 'Remove like',
   '좋아요는 유튜브에 로그인해야 누를 수 있습니다.': 'Signing in to YouTube is what lets you like a track.',
   '메뉴': 'Menu',

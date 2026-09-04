@@ -188,7 +188,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // rather than a menu to glance at. The first four are YouTube's own screens;
   // the last three are the listener's, and a heading says which is which.
   const NAV: Array<{ view: View; label: string; icon: Parameters<typeof icon>[0]; section?: string }> = [
-    { view: { kind: 'explore' }, label: t('둘러보기'), icon: 'radio' },
+    { view: { kind: 'explore' }, label: t('탐색'), icon: 'radio' },
     { view: { kind: 'search', query: '' }, label: t('검색'), icon: 'search' },
     { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
     { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
@@ -563,74 +563,92 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
    * about *this song*, not about playback, and that row is already full on a
    * phone.
    */
-  const heartButton = h('button', { class: 'heart', 'data-nav': '', title: t('좋아요') }, icon('heart', 18))
-  /** The track the heart currently describes, and what it found. */
-  let heartOf = ''
-  let liked = false
+  const upButton = h('button', { class: 'rate up', 'data-nav': '', title: t('좋아요') }, icon('thumbUp', 18))
+  const downButton = h('button', { class: 'rate down', 'data-nav': '', title: t('관심 없음') }, icon('thumbDown', 18))
+  const rateBox = h('div', { class: 'rate-box' }, upButton, downButton)
+  /** The track the two buttons describe, and what YouTube said about it. */
+  let ratedOf = ''
+  let rating: api.LikeStatus = 'none'
 
-  function drawHeart(): void {
-    replace(heartButton, icon(liked ? 'heartFill' : 'heart', 18))
-    heartButton.classList.toggle('on', liked)
-    heartButton.title = liked ? t('좋아요 취소') : t('좋아요')
-    heartButton.disabled = !engine.current
+  function drawRating(): void {
+    upButton.classList.toggle('on', rating === 'like')
+    downButton.classList.toggle('on', rating === 'dislike')
+    upButton.title = rating === 'like' ? t('좋아요 취소') : t('좋아요')
+    downButton.title = rating === 'dislike' ? t('관심 없음 취소') : t('관심 없음')
+    upButton.disabled = !engine.current
+    downButton.disabled = !engine.current
   }
 
   /**
-   * Asks YouTube whether this track is liked, once per track.
+   * Asks YouTube what this listener already thinks of the track, once per track.
    *
-   * A failure leaves the heart empty and says nothing. Signed out, the answer
-   * is a truthful "not liked" rather than an error, and someone who is only
+   * A failure leaves both buttons unlit and says nothing. Signed out the answer
+   * is a truthful "no opinion" rather than an error, and someone who is only
    * listening should not be told about it.
    */
-  function loadHeart(): void {
+  function loadRating(): void {
     const track = engine.current
     if (!track) {
-      heartOf = ''
-      liked = false
-      return drawHeart()
+      ratedOf = ''
+      rating = 'none'
+      return drawRating()
     }
-    if (heartOf === track.videoId) return
-    heartOf = track.videoId
-    liked = false
-    drawHeart()
+    if (ratedOf === track.videoId) return
+    ratedOf = track.videoId
+    rating = 'none'
+    drawRating()
     void api
       .likeStatus(ctx.cfg, track.videoId)
       .then((status) => {
         // The track may have moved on while we were asking.
-        if (heartOf !== engine.current?.videoId) return
-        liked = status === 'like'
-        drawHeart()
+        if (ratedOf !== engine.current?.videoId) return
+        rating = status
+        drawRating()
       })
       .catch(() => {
-        /* an empty heart is the honest default */
+        /* no opinion is the honest default */
       })
   }
 
-  heartButton.addEventListener('click', (ev) => {
+  /**
+   * One rating per video, which is YouTube's own rule: liking something that
+   * was disliked clears the dislike, and there is one call to clear either.
+   * Pressing the lit one is how you take it back.
+   */
+  const setRating = (ev: Event, wanted: api.LikeStatus): void => {
     // The bar's track is a button of its own on a phone — it opens the player.
     ev.stopPropagation()
     const track = engine.current
     if (!track) return
-    // Filled before YouTube answers, because a heart that waits for the
-    // network reads as a heart that did not take the press. Put back if the
-    // write is refused.
-    const wanted = !liked
-    liked = wanted
-    drawHeart()
-    const done = wanted ? api.like(ctx.cfg, track.videoId) : api.unlike(ctx.cfg, track.videoId)
+    const was = rating
+    const next = rating === wanted ? 'none' : wanted
+    // Lit before YouTube answers, because a button that waits for the network
+    // reads as a button that did not take the press. Put back if refused.
+    rating = next
+    drawRating()
+    const done =
+      next === 'like'
+        ? api.like(ctx.cfg, track.videoId)
+        : next === 'dislike'
+          ? api.dislike(ctx.cfg, track.videoId)
+          : api.unlike(ctx.cfg, track.videoId)
     void done.catch((err: unknown) => {
-      if (heartOf === track.videoId) {
-        liked = !wanted
-        drawHeart()
+      if (ratedOf === track.videoId) {
+        rating = was
+        drawRating()
       }
       // explain()'s auth line is written for a screen you cannot see. This is
       // a thing you cannot *do*, which wants different words.
       const kind = (err as { kind?: string } | null)?.kind
-      toast(shell.overlay, kind === 'auth' ? t('좋아요는 유튜브에 로그인해야 누를 수 있습니다.') : explain(err), true)
+      toast(shell.overlay, kind === 'auth' ? t('평가는 유튜브에 로그인해야 누를 수 있습니다.') : explain(err), true)
     })
-  })
+  }
 
-  const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy), heartButton)
+  upButton.addEventListener('click', (ev) => setRating(ev, 'like'))
+  downButton.addEventListener('click', (ev) => setRating(ev, 'dislike'))
+
+  const ctl = h('div', { class: 'ctl' }, shuffleButton, prevButton, playButton, nextButton, repeatButton)
+  const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy), rateBox)
   // The track itself is the handle: a phone opens the player by tapping what
   // is playing, which is what every music app has taught. It is a button on a
   // narrow screen only — on a desktop the bar is already showing everything,
@@ -645,7 +663,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     h(
       'div',
       { class: 'center' },
-      h('div', { class: 'ctl' }, shuffleButton, prevButton, playButton, nextButton, repeatButton),
+      ctl,
       h('div', { class: 'seek' }, elapsed, seek, total),
     ),
     lyricsPane,
@@ -654,6 +672,17 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   function setSheet(open: boolean): void {
     app.classList.toggle('sheet-open', open)
+    // The heart moves rather than being restyled where it stands.
+    //
+    // In the bar, `.now` is a row and the heart sits after the title, which is
+    // where a heart goes. Opened, `.now` becomes a column — artwork, title,
+    // artist — and a third child in that stack is a heart floating on its own
+    // in the middle of the screen with a band of nothing under it. Reported
+    // exactly that way. The one row of buttons the opened player shows is the
+    // transport, so that is where it belongs, at the left where nothing else
+    // is competing for the thumb.
+    if (open) ctl.prepend(rateBox)
+    else now.append(rateBox)
     if (!open) {
       app.classList.remove('lyrics-open')
       lyricsButton.classList.remove('on')
@@ -686,7 +715,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     videoButton.title = where === 'hidden' ? t('화면 보기') : where === 'stage' ? t('크게 보기') : t('구석에 두기')
     prevButton.disabled = engine.state.queue.length === 0
     nextButton.disabled = engine.state.queue.length === 0
-    loadHeart()
+    loadRating()
     // Lit while either of the things behind it is doing something, because a
     // player running at 1.5x with a timer armed should say so somewhere.
     const armed = engine.state.rate !== 1 || engine.sleep !== undefined
@@ -927,7 +956,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 function titleOf(view: View): string {
   switch (view.kind) {
     case 'explore':
-      return t('둘러보기')
+      return t('탐색')
     case 'search':
       return t('검색')
     case 'home':

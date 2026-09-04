@@ -413,7 +413,7 @@ export async function likeStatus(cfg: YtCfg, videoId: string): Promise<LikeStatu
  * Failures are thrown, never swallowed. This changes something on the account,
  * and a heart that silently did nothing is worse than an error.
  */
-async function rate(cfg: YtCfg, endpoint: 'like/like' | 'like/removelike', videoId: string): Promise<void> {
+async function rate(cfg: YtCfg, endpoint: 'like/like' | 'like/dislike' | 'like/removelike', videoId: string): Promise<void> {
   try {
     await call(cfg, endpoint, { target: { videoId } })
   } catch (err) {
@@ -430,6 +430,18 @@ export async function like(cfg: YtCfg, videoId: string): Promise<void> {
 
 export async function unlike(cfg: YtCfg, videoId: string): Promise<void> {
   await rate(cfg, 'like/removelike', videoId)
+}
+
+/**
+ * Thumbs down.
+ *
+ * Not a way of complaining: on a player that spends its time in mixes and
+ * radio, this is how a listener says "do not play me this again", and it is
+ * what shapes what YouTube offers next. `removelike` clears it, the same call
+ * that clears a like — YouTube keeps one rating per video, not two.
+ */
+export async function dislike(cfg: YtCfg, videoId: string): Promise<void> {
+  await rate(cfg, 'like/dislike', videoId)
 }
 
 /** The feeds the page itself shows: home, subscriptions, history. Signed-in only for the last two. */
@@ -486,7 +498,7 @@ const MUSIC_CHANNEL = 'UC-9-kyTW8ZkZNDHQJ6FgpwQ'
  *
  * It refuses with a 200 and a "Premium only in your area" panel rather than an
  * error, and it will keep refusing for as long as the page is open, so there is
- * no sense paying a round trip for it every time 둘러보기 is opened. Reset by a
+ * no sense paying a round trip for it every time 탐색 is opened. Reset by a
  * page load, which is also the only thing that could change the answer.
  */
 let musicRefused = false
