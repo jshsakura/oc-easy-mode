@@ -799,6 +799,8 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 
   /** What the volume control was last told to do, so the bar is not restyled twice a second. */
   let volumeShown: boolean | undefined
+  /** Which of the three faces the play button is wearing, for the same reason. */
+  let playGlyph: 'wait' | 'pause' | 'play' | undefined
 
   function drawTick(): void {
     const p = engine.position
@@ -822,12 +824,17 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     // a track that was in fact loading — and often playing a second later, so
     // the one glyph meant two opposite things. A ring turning inside the
     // button says the only true thing: it is coming. Pressing it still halts.
-    if (p.buffering || p.stalled) {
-      replace(playButton, h('span', { class: 'spin' }))
-      playButton.title = t('불러오는 중…')
-    } else {
-      replace(playButton, icon(p.playing ? 'pause' : 'play', 20))
-      playButton.title = t('재생 / 일시정지')
+    //
+    // **Redrawn only when it changes.** This function runs twice a second, and
+    // it used to replace the button's contents every time — which is nothing
+    // to a static glyph and fatal to a turning one: the ring was rebuilt every
+    // 500ms and its rotation started again from zero, so it turned in visible
+    // jerks rather than smoothly. Reported as 부드럽지 않게 빙빙 돈다.
+    const want = p.buffering || p.stalled ? 'wait' : p.playing ? 'pause' : 'play'
+    if (want !== playGlyph) {
+      playGlyph = want
+      replace(playButton, want === 'wait' ? h('span', { class: 'spin' }) : icon(want, 20))
+      playButton.title = want === 'wait' ? t('불러오는 중…') : t('재생 / 일시정지')
     }
     total.textContent = clock(p.duration)
     if (!scrubbing) {

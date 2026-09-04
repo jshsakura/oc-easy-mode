@@ -643,11 +643,17 @@ input { font: inherit; color: inherit; }
 .app.has-corner .main { padding-bottom: 220px; }
 
 /* A wait, drawn inside the button that is waiting. currentColor, so it reads
-   on the light disc of the big button and on the bare ones either side. */
+   on the light disc of the big button and on the bare ones either side.
+   The quarter that fades rather than a hard gap: a ring with one transparent
+   side has a seam, and a seam at this diameter reads as a stutter even while
+   the rotation is perfectly even. */
 .spin {
   display: block; width: 18px; height: 18px; border-radius: 50%;
-  border: 2px solid currentColor; border-top-color: transparent;
-  animation: spin .8s linear infinite;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-right-color: color-mix(in oklab, currentColor 45%, transparent);
+  animation: spin .9s linear infinite;
+  will-change: transform;
 }
 /* The opened player draws the same button at 48px, and an 18px ring inside it
    reads as a speck rather than as a wait. */
@@ -674,7 +680,10 @@ input { font: inherit; color: inherit; }
 /* The pair travels together: YouTube keeps one rating per track, so these two
    are one control and are never separated. Never squeezed by a long title
    either — the text is what gives way. */
-.bar .now .rate-box { display: flex; flex: none; gap: 2px; }
+/* The pair sits between the title and the transport, and at 2px apart in a
+   34px box it read as one crowded lump on a phone. Now that only the chosen
+   one stays lit there is room to give it. */
+.bar .now .rate-box { display: flex; flex: none; gap: 6px; margin-left: 6px; }
 .ctl .rate-box { display: flex; gap: 2px; }
 .rate {
   width: 34px; height: 34px; border-radius: var(--radius-md);
@@ -1266,6 +1275,14 @@ input[type=range]::-moz-range-thumb {
   .app.narrow.sheet-open .right button { width: 40px; height: 40px; }
   .app.narrow.sheet-open .right button svg { width: 19px; height: 19px; }
 }
+
+/* The closed bar has no room for an opinion, and it was taking the room from
+   the title. Measured on a 390px phone: .now is 234 wide, the pair took 90 of
+   it, and the title was left 80 and cut at 112. There is nowhere to float them
+   either — the bar is 66px tall with a 42px row in it, and its top-right
+   corner is the video button. So they wait in the opened player, which is one
+   press away and where they are already drawn at 40px. */
+.app.narrow:not(.sheet-open) .bar .now .rate-box { display: none; }
 /* Off everywhere else: a desktop keeps the menu, which is where these two have
    always lived and where there is no shortage of room. */
 .right .sp, .right .sl { display: none; }
