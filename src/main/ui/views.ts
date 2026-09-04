@@ -292,7 +292,13 @@ function tile(opts: {
         (() => {
           const b = h(
             'span',
-            { class: 'tileAdd', role: 'button', tabindex: '0', title: opts.quick!.title, 'aria-label': opts.quick!.title },
+            // data-nav, or the arrow keys never reach it. It has a tabindex,
+            // which is what lights it up when the card takes focus — and then
+            // Enter activated the *card*, because remote.ts only moves to and
+            // only presses [data-nav]. So the + appeared to be the thing being
+            // pressed while the card underneath replaced the queue with the
+            // whole shelf. Measured 2026-09-04.
+            { class: 'tileAdd', role: 'button', tabindex: '0', 'data-nav': '', title: opts.quick!.title, 'aria-label': opts.quick!.title },
             icon(opts.quick!.icon, 16),
           )
           const go = (ev: Event) => {
