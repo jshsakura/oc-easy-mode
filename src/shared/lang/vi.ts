@@ -118,4 +118,11 @@ export const VI: Record<string, string> = {
   "이 곡 끝나고 정지": "Dừng sau bài này",
   "이 곡까지": "đến hết bài",
   "이 곡이 끝나면 멈춥니다.": "Sẽ dừng khi bài này kết thúc.",
+  "채널": "Kênh",
+  "볼 채널 고르기": "Chọn kênh để xem",
+  "전체 선택": "Chọn tất cả",
+  "필터 해제": "Bỏ bộ lọc",
+  "적용": "Áp dụng",
+  "고른 채널의 영상이 없습니다.": "Không có gì từ các kênh bạn đã chọn.",
+  "채널을 찾지 못했습니다.": "Không tìm thấy kênh nào.",
 }

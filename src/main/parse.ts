@@ -62,6 +62,14 @@ export interface Track {
   /** Identifies this track's slot in a playlist; needed to remove it. */
   setVideoId?: string
   /**
+   * The channel that published it, as a `UC…` id, when the row says.
+   *
+   * The byline is a name and names are not identity: two channels may share
+   * one, and a channel may rename itself between two screens. Anything that
+   * has to remember a channel remembers this instead.
+   */
+  channelId?: string
+  /**
    * Which playlist this row was taken from, stamped by the screen that drew it.
    *
    * The queue is a flat list of tracks and knows nothing about where each one
@@ -113,6 +121,41 @@ function pickThumb(node: unknown): string | undefined {
     }
   }
   return best?.url
+}
+
+/**
+ * The channel a row belongs to.
+ *
+ * **Asked of the byline first, and only then of the row at large.** Measured
+ * 2026-09-04 over a live search and a live channel browse: every one of 24
+ * `videoRenderer` rows carries exactly one `UC…` id and it is the owner, but
+ * of 86 `lockupViewModel` rows, 70 carry none and one carries three. A blind
+ * search for the first id in the row would be right most of the time and
+ * quietly wrong on the rest, which for a filter means hiding somebody else's
+ * videos.
+ *
+ * So the byline, where the owner's name is, is asked first; then the avatar,
+ * which is where the 2025 row keeps it; and only then the row itself, and
+ * there only when the row names exactly one channel. Ambiguity returns
+ * nothing, because a filter that cannot say whose video this is should say so
+ * rather than guess.
+ */
+function channelIdOf(item: Json): string | undefined {
+  const fromBrowse = (node: unknown): string[] =>
+    collect(node, 'browseEndpoint')
+      .map((e) => (isObject(e) && typeof e.browseId === 'string' ? e.browseId : ''))
+      .filter((id) => id.startsWith('UC'))
+
+  for (const key of ['ownerText', 'shortBylineText', 'longBylineText']) {
+    const hit = fromBrowse(item[key])[0]
+    if (hit) return hit
+  }
+  const avatar = findFirst(item, 'decoratedAvatarViewModel')
+  const fromAvatar = fromBrowse(avatar)[0]
+  if (fromAvatar) return fromAvatar
+
+  const all = [...new Set(fromBrowse(item))]
+  return all.length === 1 ? all[0] : undefined
 }
 
 /** The medium thumbnail for any video, without asking the API for it. */
@@ -173,6 +216,7 @@ function tracksFromVideoRenderers(root: unknown, key: string): Track[] {
       byline: text(item.ownerText) || text(item.shortBylineText) || text(item.longBylineText),
       duration: text(item.lengthText),
       setVideoId: typeof item.setVideoId === 'string' ? item.setVideoId : setVideoIdOf(item),
+      channelId: channelIdOf(item),
       unavailable: item.isPlayable === false,
     })
   }
@@ -245,6 +289,7 @@ function tracksFromLockups(root: unknown): Track[] {
       byline: lockupRows(item)[0] ?? '',
       duration: lockupBadge(item),
       setVideoId: setVideoIdOf(item),
+      channelId: channelIdOf(item),
       unavailable: false,
     })
   }

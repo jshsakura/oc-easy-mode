@@ -118,4 +118,11 @@ export const FR: Record<string, string> = {
   "이 곡 끝나고 정지": "Arrêter après ce titre",
   "이 곡까지": "jusqu'à la fin du titre",
   "이 곡이 끝나면 멈춥니다.": "S'arrêtera à la fin de ce titre.",
+  "채널": "Chaînes",
+  "볼 채널 고르기": "Choisir les chaînes à afficher",
+  "전체 선택": "Tout sélectionner",
+  "필터 해제": "Retirer le filtre",
+  "적용": "Appliquer",
+  "고른 채널의 영상이 없습니다.": "Rien des chaînes que vous avez choisies.",
+  "채널을 찾지 못했습니다.": "Aucune chaîne trouvée.",
 }

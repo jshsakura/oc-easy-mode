@@ -264,3 +264,45 @@ export function setQuickOn(on: boolean): void {
     // See save().
   }
 }
+
+// ── The subscription filter ────────────────────────────────────────────────
+//
+// 구독 is every channel at once, and a feed of forty channels is not a feed
+// anyone reads: the two they came for are somewhere in it. This is which
+// channels that screen is allowed to show.
+//
+// **Channels are kept by id, never by name.** A byline is a display name: two
+// channels may share one, and a channel may rename itself between one visit
+// and the next. A filter that remembered names would start hiding a stranger.
+//
+// The list is an allow list, and an empty one means no filter at all rather
+// than an empty screen: it is the state everybody starts in, and it has to be
+// the harmless one. The prefix and the shape follow the other keys here; the
+// identifier stays oc-easy-mode whatever the product is called, because it is
+// an address in somebody's browser and not a name.
+
+const SUBS_FILTER_KEY = 'oc-easy-mode:subs-filter'
+
+/** The channels 구독 may show. Empty means all of them. */
+export function subsFilter(): string[] {
+  try {
+    const raw = localStorage.getItem(SUBS_FILTER_KEY)
+    if (!raw) return []
+    const got = JSON.parse(raw) as unknown
+    if (!Array.isArray(got)) return []
+    return [...new Set(got.filter((v): v is string => typeof v === 'string' && v.startsWith('UC')))]
+  } catch {
+    return []
+  }
+}
+
+export function setSubsFilter(ids: string[]): void {
+  try {
+    const keep = [...new Set(ids.filter((id) => id.startsWith('UC')))]
+    if (keep.length === 0) localStorage.removeItem(SUBS_FILTER_KEY)
+    else localStorage.setItem(SUBS_FILTER_KEY, JSON.stringify(keep))
+  } catch {
+    // A browser that refuses storage keeps the filter for this page only,
+    // which is better than refusing to filter.
+  }
+}

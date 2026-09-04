@@ -118,4 +118,11 @@ export const ID: Record<string, string> = {
   "이 곡 끝나고 정지": "Berhenti setelah lagu ini",
   "이 곡까지": "sampai lagu ini selesai",
   "이 곡이 끝나면 멈춥니다.": "Akan berhenti saat lagu ini selesai.",
+  "채널": "Kanal",
+  "볼 채널 고르기": "Pilih kanal yang ditampilkan",
+  "전체 선택": "Pilih semua",
+  "필터 해제": "Hapus filter",
+  "적용": "Terapkan",
+  "고른 채널의 영상이 없습니다.": "Tidak ada dari kanal yang Anda pilih.",
+  "채널을 찾지 못했습니다.": "Kanal tidak ditemukan.",
 }

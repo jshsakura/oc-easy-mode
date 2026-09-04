@@ -175,7 +175,7 @@ export interface Choice {
  * cross, nothing to do but choose. So the heading is a band with a close button
  * in it, the same shape the opened player uses.
  */
-function modalHead(title: string, close: () => void): HTMLElement {
+export function modalHead(title: string, close: () => void): HTMLElement {
   return h(
     'div',
     { class: 'modalHead' },
@@ -198,7 +198,7 @@ function modalHead(title: string, close: () => void): HTMLElement {
  * being asked. Decided by narrowNow() rather than a width of our own, so the
  * dialog can never disagree with the layout it is drawn over.
  */
-function modalClass(): string {
+export function modalClass(): string {
   return narrowNow() ? 'modal full' : 'modal'
 }
 
