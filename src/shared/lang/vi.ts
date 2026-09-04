@@ -134,4 +134,7 @@ export const VI: Record<string, string> = {
   "이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.": "Trình duyệt này không dùng được bộ chỉnh âm.",
   "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "Khi bật, âm thanh đi qua tiện ích này. Ở trình duyệt bị mất tiếng, nó sẽ tự tắt.",
   "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "Không có âm thanh nên đã tắt bộ chỉnh âm. Đang tải lại.",
+  "위로": "Lên trên",
+  "아래로": "Xuống dưới",
+  "순서를 바꾸지 못했습니다.": "Không thể sắp xếp lại.",
 }

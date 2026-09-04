@@ -823,7 +823,51 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
       // playlists have not been fetched, which our first test quietly needs.
       const mine =
         ctx.playlists.some((p) => p.id === id) || tracks.some((track) => track.setVideoId !== undefined)
+      /**
+       * Moves a row one place, on the screen first and then at YouTube.
+       *
+       * The list is reordered before the request goes out, because a row that
+       * sits still for a round trip reads as a press that did not land. If the
+       * answer is a refusal the order is put back exactly as it was, so a
+       * failure leaves the screen telling the truth rather than showing an
+       * order the account does not have.
+       */
+      const moveTo = async (track: Track, to: number): Promise<void> => {
+        const from = tracks.indexOf(track)
+        if (from < 0 || to < 0 || to >= tracks.length || from === to) return
+        // The handle YouTube needs to name this slot. A row without one is not
+        // a row of ours to move, and the menu is not offered on those lists.
+        const slot = track.setVideoId
+        if (!slot) return
+        const before = tracks.slice()
+        tracks.splice(from, 1)
+        tracks.splice(to, 0, track)
+        draw()
+        // YouTube places a row *after* another one, so a move is named by the
+        // row it should follow. Dropping at the top has nothing to follow.
+        const after = to > 0 ? tracks[to - 1]?.setVideoId : undefined
+        try {
+          await api.movePlaylistTrack(ctx.cfg, id, slot, after)
+        } catch (err) {
+          tracks.splice(0, tracks.length, ...before)
+          draw()
+          ctx.say(`${t('순서를 바꾸지 못했습니다.')} ${explain(err)}`, true)
+        }
+      }
+
       layout(ctx, body, tracks, (track) => ({
+        extra: mine
+          ? () => {
+              const at = tracks.indexOf(track)
+              return [
+                '-',
+                ...(at > 0 ? [{ label: t('위로'), icon: 'up' as const, onSelect: () => void moveTo(track, at - 1) }] : []),
+                ...(at < tracks.length - 1
+                  ? [{ label: t('아래로'), icon: 'down' as const, onSelect: () => void moveTo(track, at + 1) }]
+                  : []),
+              ]
+            }
+          : undefined,
         quick: mine
           ? {
               // A bin, not a cross. A cross is what closes things; taking a
@@ -952,7 +996,17 @@ function queue(ctx: Ctx, main: HTMLElement): void {
                   ctx.reload()
                 },
               },
+              // Reordering has to be reachable without a drag. A remote has
+              // no pointer to hold down, and a rule of this UI is that
+              // nothing is drag-only or hover-only.
               extra: () => [
+                '-',
+                ...(i > 0
+                  ? [{ label: t('위로'), icon: 'up' as const, onSelect: () => { ctx.engine.moveTrack(i, i - 1); ctx.reload() } }]
+                  : []),
+                ...(i < q.length - 1
+                  ? [{ label: t('아래로'), icon: 'down' as const, onSelect: () => { ctx.engine.moveTrack(i, i + 1); ctx.reload() } }]
+                  : []),
                 '-',
                 {
                   label: t('대기열에서 빼기'),

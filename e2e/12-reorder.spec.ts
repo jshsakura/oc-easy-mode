@@ -1,0 +1,172 @@
+// Reordering: the rule that keeps the music playing, and the request that
+// asks YouTube to do the same to a playlist.
+//
+// The drag itself is asserted on the screen; these are the two pieces
+// underneath it that can be checked without one.
+
+import { expect, test } from '@playwright/test'
+import { build } from 'esbuild'
+import { resolve } from 'node:path'
+import { app, open } from './fixture.ts'
+import { movedIndex } from '../src/main/engine.ts'
+
+// ── Where the playing track ends up ────────────────────────────────────────
+//
+// A queue may hold the same video twice, so this cannot be recovered after the
+// fact by searching for the track: the index has to be carried through the
+// move. Checked against an actual array move rather than against worked
+// examples, because the off-by-one lives in the cases nobody thinks to write.
+
+test('the index follows its own track through every possible move', () => {
+  const wrong: string[] = []
+  let checked = 0
+  for (let len = 1; len <= 8; len++) {
+    const base = Array.from({ length: len }, (_, i) => i)
+    for (let current = 0; current < len; current++) {
+      for (let from = 0; from < len; from++) {
+        for (let to = 0; to < len; to++) {
+          if (from === to) continue
+          const q = base.slice()
+          const playing = q[current]
+          const [lifted] = q.splice(from, 1)
+          q.splice(to, 0, lifted!)
+          const got = movedIndex(current, from, to)
+          checked += 1
+          if (q[got] !== playing) wrong.push(`len=${len} current=${current} ${from}->${to}: ${got} holds ${q[got]}, wanted ${playing}`)
+        }
+      }
+    }
+  }
+  expect(wrong.slice(0, 5)).toEqual([])
+  expect(checked).toBeGreaterThan(600)
+})
+
+test('an empty queue has no index to move', () => {
+  // -1 is "nothing is playing", and it stays that whatever the list does.
+  expect(movedIndex(-1, 0, 3)).toBe(-1)
+})
+
+test('the moved row is the one that lands where it was dropped', () => {
+  expect(movedIndex(2, 2, 0)).toBe(0)
+  expect(movedIndex(0, 0, 4)).toBe(4)
+})
+
+// ── And on the screen ──────────────────────────────────────────────────────
+
+const WATCH = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+
+const titles = (page: import('@playwright/test').Page) =>
+  app(page).locator('.rows .row .title').allTextContents()
+
+const queueState = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}')
+    return { index: s.index as number, ids: (s.queue ?? []).map((t: { videoId: string }) => t.videoId) as string[] }
+  })
+
+test('a queue row moves, and the music does not stop', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+    const over = h.page.locator('oc-easy-mode-overlay')
+    await ui.locator('.nav', { hasText: '검색' }).click()
+    await expect(over.locator('.modal.search')).toBeVisible()
+    await over.locator('.searchbox input').fill('lofi')
+    await over.locator('.searchbox input').press('Enter')
+    await expect(over.locator('.rows .row:not([aria-hidden])').first()).toBeVisible()
+    await over.locator('.rows .row:not([aria-hidden])').first().click()
+
+    await ui.locator('.nav', { hasText: '대기열' }).click()
+    await expect(ui.locator('.rows .row').first()).toBeVisible()
+    const before = await queueState(h.page)
+    test.skip(before.ids.length < 3, 'needs a queue of at least three')
+
+    // The third row goes up one, through the menu, which is the path a remote
+    // takes and the one that works without a pointer.
+    const third = ui.locator('.rows .row').nth(2)
+    await third.locator('.more').first().click()
+    await over.locator('.menu button', { hasText: '위로' }).click()
+
+    await expect
+      .poll(() => queueState(h.page).then((q) => q.ids.join(',')))
+      .toBe([...before.ids.slice(0, 1), before.ids[2], before.ids[1], ...before.ids.slice(3)].join(','))
+
+    // The row that was playing is still the row that is playing.
+    const after = await queueState(h.page)
+    expect(after.ids[after.index]).toBe(before.ids[before.index])
+    // And the player was never asked to load anything.
+    expect(await h.page.evaluate(() => !document.querySelector('video')?.paused)).toBe(true)
+  } finally {
+    await h.close()
+  }
+})
+
+// ── What we ask YouTube for ────────────────────────────────────────────────
+//
+// **The playlist half cannot be driven from here.** Moving a row needs a
+// setVideoId, the handle a slot only has on a list you own, and this browser
+// has no session: measured on two public lists, 151 tracks and not one
+// setVideoId between them. So there is no honest fixture of that screen, and
+// what is checked instead is the request itself, with the real function called
+// against a held fetch. Whether YouTube accepts the body needs an account.
+
+test('a move names the slot, and the row it should follow', async () => {
+  const built = await build({
+    stdin: {
+      contents: `export { movePlaylistTrack } from '${resolve(import.meta.dirname, '../src/main/api.ts')}'
+                 export { readYtCfg } from '${resolve(import.meta.dirname, '../src/main/ytcfg.ts')}'`,
+      resolveDir: resolve(import.meta.dirname, '..'),
+      loader: 'ts',
+    },
+    bundle: true, format: 'iife', globalName: '__mv', write: false, target: 'es2022',
+  })
+
+  const h = await open('https://www.youtube.com/')
+  try {
+    await h.page.evaluate(built.outputFiles[0]!.text)
+    const sent = await h.page.evaluate(async () => {
+      const { movePlaylistTrack, readYtCfg } = (window as unknown as {
+        __mv: {
+          movePlaylistTrack(cfg: unknown, id: string, slot: string, after?: string): Promise<void>
+          readYtCfg(): unknown
+        }
+      }).__mv
+      const cfg = readYtCfg()
+      const bodies: string[] = []
+      const real = window.fetch.bind(window)
+      window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        if (url.includes('/youtubei/v1/browse/edit_playlist')) {
+          bodies.push(String(init?.body ?? ''))
+          return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+        }
+        return real(input as RequestInfo, init)
+      }) as typeof fetch
+      try {
+        await movePlaylistTrack(cfg, 'PL_test', 'SLOT_MOVED', 'SLOT_ABOVE')
+        await movePlaylistTrack(cfg, 'PL_test', 'SLOT_MOVED', undefined)
+      } finally {
+        window.fetch = real
+      }
+      return bodies.map((b) => JSON.parse(b) as { playlistId: string; actions: Array<Record<string, string>> })
+    })
+
+    expect(sent).toHaveLength(2)
+    // Placed after another row, which is the only kind of move YouTube has.
+    expect(sent[0]!.playlistId).toBe('PL_test')
+    expect(sent[0]!.actions[0]).toEqual({
+      action: 'ACTION_MOVE_VIDEO_AFTER',
+      setVideoId: 'SLOT_MOVED',
+      movedSetVideoIdPredecessor: 'SLOT_ABOVE',
+    })
+    // Dropped at the top: there is nothing to follow, and the field is left
+    // out rather than sent empty.
+    expect(sent[1]!.actions[0]).toEqual({
+      action: 'ACTION_MOVE_VIDEO_AFTER',
+      setVideoId: 'SLOT_MOVED',
+    })
+  } finally {
+    await h.close()
+  }
+})

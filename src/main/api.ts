@@ -302,6 +302,40 @@ export async function addToPlaylist(cfg: YtCfg, playlistId: string, videoIds: st
   })
 }
 
+/**
+ * Moves one track within a playlist.
+ *
+ * YouTube has no "move to position": a row is placed *after* another one, so a
+ * move is named by the row it should follow. `after` is that row's
+ * `setVideoId`, and leaving it out means the top of the list.
+ *
+ * Both ids are `setVideoId`, not `videoId`, because they name slots rather
+ * than videos: a playlist may hold the same video twice, and moving one copy
+ * must not move the other.
+ *
+ * **Unverified against a signed-in account.** This browser has no session, and
+ * the endpoint refuses without one, so what is checked is the request this
+ * sends and what the screen does when the answer is a failure. Whether YouTube
+ * accepts the body needs a real account.
+ */
+export async function movePlaylistTrack(
+  cfg: YtCfg,
+  playlistId: string,
+  setVideoId: string,
+  after: string | undefined,
+): Promise<void> {
+  await call(cfg, 'browse/edit_playlist', {
+    playlistId,
+    actions: [
+      {
+        action: 'ACTION_MOVE_VIDEO_AFTER',
+        setVideoId,
+        ...(after ? { movedSetVideoIdPredecessor: after } : {}),
+      },
+    ],
+  })
+}
+
 /** Removes one slot when the row said which, otherwise every copy of the video. */
 export async function removeFromPlaylist(cfg: YtCfg, playlistId: string, track: Track): Promise<void> {
   const action = track.setVideoId

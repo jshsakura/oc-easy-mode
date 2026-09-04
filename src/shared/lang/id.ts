@@ -134,4 +134,7 @@ export const ID: Record<string, string> = {
   "이 브라우저에서는 이퀄라이저를 쓸 수 없습니다.": "Equalizer tidak bisa dipakai di browser ini.",
   "켜면 소리가 이 확장을 거쳐 나옵니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.": "Saat aktif, suara melewati ekstensi ini. Di browser yang jadi hening, ia mati sendiri.",
   "소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.": "Tidak ada suara, equalizer dimatikan. Memuat ulang.",
+  "위로": "Naikkan",
+  "아래로": "Turunkan",
+  "순서를 바꾸지 못했습니다.": "Gagal mengubah urutan.",
 }
