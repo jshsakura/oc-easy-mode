@@ -31,12 +31,14 @@ RenewTube는 사용자의 개인 식별 정보, 시청 기록, 검색 기록, IP
 ### 3. 네트워크 통신 방식
 RenewTube는 자체적인 백엔드 서버를 운영하지 않습니다.
 - **유튜브와의 직접 통신:** 확장이 동작하는 동안 발생하는 모든 영상 탐색, 검색, 스트리밍 요청은 브라우저에서 유튜브 공식 서버(`youtube.com`, `googlevideo.com`)로 직접 전송됩니다. 이는 사용자가 일반 웹 브라우저로 유튜브를 이용할 때와 완전히 동일하며, RenewTube가 중간에서 가로채거나 중계하지 않습니다.
+- **가사 조회(`lrclib.net`):** 가사를 켜면 지금 재생 중인 곡의 **제목과 아티스트명**이 공개 가사 데이터베이스인 `lrclib.net` 으로 전송됩니다. 가사를 켤 때만 요청하며 계정 정보나 식별자는 함께 보내지 않습니다. 유튜브 자막에서 가사를 찾은 경우에는 이 요청이 발생하지 않습니다.
+- **썸네일 이미지(`i.ytimg.com`):** 목록과 재생 막대의 앨범 그림은 유튜브의 이미지 서버에서 직접 내려받습니다.
 - **외부 추적 차단:** 광고 서버, 마케팅 분석 도구, 외부 통계 수집 서버로의 어떠한 네트워크 요청도 발생하지 않습니다.
 
 ### 4. 요청 권한 및 필요 이유
 확장 프로그램 매니페스트(`manifest.json`)에 정의된 권한의 용도는 다음과 같습니다.
 - `storage`: 사용자의 플레이어 설정(재생 모드, 음량, 테마 등)을 기기 로컬에 저장하고 유지하기 위해 사용합니다.
-- 호스트 권한 (`https://*.youtube.com/*`): 유튜브 웹사이트 화면 위에서 RenewTube 전용 플레이어 셸 인터페이스를 렌더링하고 조작하기 위해 필요합니다. 유튜브 이외의 사이트에는 접근 권한이 없습니다.
+- 호스트 권한 (`https://*.youtube.com/*`): 유튜브 웹사이트 화면 위에서 RenewTube 전용 플레이어 셸 인터페이스를 렌더링하고 조작하기 위해 필요합니다. 유튜브 이외의 웹페이지에서는 이 확장이 실행되지 않습니다. 다만 가사를 켜면 위의 `lrclib.net` 요청이 발생합니다.
 
 ### 5. 제3자 서비스
 - **YouTube (Google LLC):** RenewTube는 유튜브의 공식 웹 인터페이스 위에서 동작하는 확장 프로그램입니다. 따라서 영상 재생 및 유튜브 계정 로그인 정보는 Google/YouTube의 자체 개인정보 처리방침을 따릅니다. 확장은 사용자의 구글 계정 비밀번호나 민감한 로그인 정보에 절대 접근할 수 없습니다.
@@ -82,12 +84,14 @@ Clearing your browser cache or removing the extension completely deletes this da
 ### 3. Network Communications
 RenewTube does not operate any backend server.
 - **Direct YouTube Communication:** All video browsing, searching, and media streaming requests are sent directly from your browser to official YouTube servers (`youtube.com`, `googlevideo.com`). This behavior is identical to browsing YouTube normally. RenewTube never proxies or intercepts your requests.
+- **Lyrics lookup (`lrclib.net`):** With lyrics turned on, the **title and artist** of the track being played are sent to `lrclib.net`, a public lyrics database. The request is made only while lyrics are open and carries no account information or identifier. No request is made when the words are found in YouTube's own captions.
+- **Thumbnails (`i.ytimg.com`):** Artwork in the lists and in the player bar is loaded directly from YouTube's image servers.
 - **Zero Third-Party Telemetry:** The extension makes no calls to analytics providers, advertisers, or third-party tracking services.
 
 ### 4. Permissions and Justifications
 RenewTube requests only the permissions strictly required to operate:
 - `storage`: Used solely to save and retrieve your preferences (theme, volume, mode) locally on your device.
-- Host permissions (`https://*.youtube.com/*`): Required to inject and display RenewTube's clean player interface on YouTube web pages. It has no access to any other websites.
+- Host permissions (`https://*.youtube.com/*`): Required to inject and display RenewTube's clean player interface on YouTube web pages. The extension runs on no other web page; lyrics, when turned on, make the `lrclib.net` request described above.
 
 ### 5. Third-Party Services
 - **YouTube (Google LLC):** Because RenewTube operates directly on YouTube web pages, video playback and authentication are subject to Google/YouTube's privacy policy. The extension cannot access your Google password or credentials.

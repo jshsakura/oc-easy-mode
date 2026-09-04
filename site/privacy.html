@@ -296,18 +296,21 @@
     </p>
     <ul>
       <li><b>유튜브 서버와의 직접 통신:</b> 영상 검색, 채널 목록 조회, 미디어 스트리밍은 사용자의 브라우저에서 유튜브 공식 서버(<code>youtube.com</code>, <code>googlevideo.com</code>)로 직접 전달됩니다. 이는 일반 브라우저로 유튜브를 시청할 때와 완벽히 동일하며, RenewTube가 데이터를 중계하거나 가로채지 않습니다.</li>
+      <li><b>가사 조회 (<code>lrclib.net</code>):</b> 가사를 켜면 지금 재생 중인 곡의 <b>제목과 아티스트명</b>이 공개 가사 데이터베이스인 lrclib.net으로 전송됩니다. 가사를 켤 때만 요청하며 계정 정보나 식별자는 함께 보내지 않습니다. 유튜브 자막에서 가사를 찾은 경우에는 이 요청이 발생하지 않습니다.</li>
+      <li><b>썸네일 이미지 (<code>i.ytimg.com</code>):</b> 목록과 재생 막대의 앨범 그림은 유튜브의 이미지 서버에서 직접 내려받습니다.</li>
       <li><b>외부 추적 및 광고 차단:</b> 외부 통계 분석기, 원격 텔레메트리 서버, 광고 네트워크 등으로의 통신은 1바이트도 발생하지 않습니다.</li>
     </ul>
 
     <h2>4. 요청하는 권한과 필요 이유</h2>
     <ul>
       <li><code>storage</code> — 사용자의 재생 모드, 테마, 음량 등의 환경설정을 사용자 기기 로컬에 안전하게 저장하기 위해 사용합니다.</li>
-      <li><b>호스트 권한 (<code>https://*.youtube.com/*</code>)</b> — 유튜브 웹페이지 접속 시 복잡한 화면을 심플한 플레이어 셸 구조로 재구성하고 컨트롤하기 위해 필요합니다. 유튜브 이외의 사이트에는 일절 접근하지 않습니다.</li>
+      <li><b>호스트 권한 (<code>https://*.youtube.com/*</code>)</b> — 유튜브 웹페이지 접속 시 복잡한 화면을 심플한 플레이어 셸 구조로 재구성하고 컨트롤하기 위해 필요합니다. 유튜브 이외의 웹페이지에서는 이 확장이 실행되지 않습니다. 다만 가사를 켜면 3항의 lrclib.net 요청이 발생합니다.</li>
     </ul>
 
     <h2>5. 제3자 서비스</h2>
     <p>
       RenewTube는 유튜브 웹사이트 위에서 동작하므로, 영상 스트리밍과 로그인 세션은 Google LLC의 자체 개인정보 보호정책을 따릅니다. RenewTube는 사용자의 비밀번호나 인증 정보에 절대 접근할 수 없습니다.
+      가사 기능은 공개 가사 데이터베이스인 <a href="https://lrclib.net">lrclib.net</a>을 사용하며 그 서비스의 정책이 함께 적용됩니다. 곡 제목과 아티스트명만 전달합니다.
     </p>
 
     <h2>6. 아동 보호</h2>
@@ -366,18 +369,21 @@
     </p>
     <ul>
       <li><b>Direct YouTube communication:</b> Video searches, playlist retrieval, and media playback streams are fetched directly between your browser and YouTube's official servers (<code>youtube.com</code>, <code>googlevideo.com</code>). RenewTube never proxies or intercepts your requests.</li>
+      <li><b>Lyrics lookup (<code>lrclib.net</code>):</b> With lyrics turned on, the <b>title and artist</b> of the track being played are sent to lrclib.net, a public lyrics database. The request is made only while lyrics are open and carries no account information or identifier. No request is made when the words are found in YouTube&rsquo;s own captions.</li>
+      <li><b>Thumbnails (<code>i.ytimg.com</code>):</b> Artwork in the lists and in the player bar is loaded directly from YouTube&rsquo;s image servers.</li>
       <li><b>Zero third-party trackers:</b> No telemetry, no analytics, and no advertising network requests are made.</li>
     </ul>
 
     <h2>4. Permissions and Why They Are Needed</h2>
     <ul>
       <li><code>storage</code> — To save your player preferences (mode, theme, volume) locally on your device.</li>
-      <li><b>Host permissions (<code>https://*.youtube.com/*</code>)</b> — To inject and display RenewTube's clean player interface on YouTube pages. It has no access to any other websites.</li>
+      <li><b>Host permissions (<code>https://*.youtube.com/*</code>)</b> — To inject and display RenewTube's clean player interface on YouTube pages. The extension runs on no other web page. Lyrics, when turned on, make the lrclib.net request described in section 3.</li>
     </ul>
 
     <h2>5. Third Parties</h2>
     <p>
       Because RenewTube functions entirely inside YouTube, video streaming and authentication are governed by Google/YouTube's privacy policy. RenewTube does not have access to your account password or credentials.
+      Lyrics use <a href="https://lrclib.net">lrclib.net</a>, a public lyrics database, whose own policy applies to that request. Only a track title and an artist name are sent.
     </p>
 
     <h2>6. Children</h2>
