@@ -1406,4 +1406,49 @@ input[type=range]::-moz-range-thumb {
 .right .sp, .right .sl { display: none; }
 /* The speed button is a word, not a glyph. */
 .right .sp { font-size: 12.5px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+/* ── The channel filter ───────────────────────────────────────────────────
+   Kept in one block at the end of the file so that two branches editing this
+   stylesheet at once meet in as few places as possible. */
+
+/* The count rides on the button, because a filter nobody can see reads as a
+   screen that has quietly lost things. */
+.btn.chanFilter.on { color: var(--foreground); background: var(--secondary); }
+.chanCount {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 2px;
+  border-radius: 999px; background: var(--primary); color: #fff;
+  font-size: 11px; font-weight: 600; line-height: 1;
+}
+
+/* A checklist, not a menu: the rows stay put when pressed and the tick is the
+   only thing that changes, so the eye can run down the column and see what is
+   on without re-reading the names. */
+.channelList { max-height: min(52dvh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+.channelRow {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 12px; border-radius: var(--radius-md);
+  color: var(--muted-foreground); transition: color var(--ease), background var(--ease);
+}
+.channelRow:hover { color: var(--foreground); background: var(--hover); }
+.channelRow.on { color: var(--foreground); }
+.channelName { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The box and its tick are both always drawn, and only the colour changes, so
+   the names keep one left edge and nothing twitches as things are chosen. An
+   empty box in --border was very nearly invisible against the panel, and a row
+   with no visible box does not read as something you can tick. */
+.channelTick {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 1.5px solid var(--muted-foreground); color: transparent;
+  transition: background var(--ease), border-color var(--ease), color var(--ease);
+}
+.channelRow.on .channelTick { border-color: var(--primary); background: var(--primary); color: #fff; }
+
+.channelActions {
+  display: flex; gap: 8px; align-items: center;
+  padding: 12px; border-top: 1px solid var(--glass-line);
+}
+/* The way out of the filter sits at the far end from the way into it. */
+.channelActions .ghost { margin-right: auto; }
 `

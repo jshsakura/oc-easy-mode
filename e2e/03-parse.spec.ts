@@ -32,3 +32,35 @@ test('and the ordinary rows keep what a list needs to show', () => {
   expect(first?.byline.length).toBeGreaterThan(0)
   expect(first?.duration).toMatch(/^\d+:\d{2}/)
 })
+
+// ── Channel ids ────────────────────────────────────────────────────────────
+//
+// A cut of a live search: six rows from three channels, four of them the same
+// one, which is the shape a subscription filter has to work on.
+
+const channels = read('search-channel-ids.json')
+const channelsExpected = read('search-channel-ids.expected.json') as unknown as {
+  rows: Array<{ videoId: string; byline: string; channelId: string }>
+}
+
+test('a row carries the channel that published it, not just its name', () => {
+  const got = tracks(channels)
+  expect(got.map((t) => t.videoId)).toEqual(channelsExpected.rows.map((r) => r.videoId))
+  expect(got.map((t) => t.channelId)).toEqual(channelsExpected.rows.map((r) => r.channelId))
+  // Every one of them, because a filter that silently loses the id on some
+  // rows would leak those rows past it.
+  expect(got.every((t) => (t.channelId ?? '').startsWith('UC'))).toBe(true)
+})
+
+test('and the same channel keeps one id across its rows', () => {
+  const got = tracks(channels)
+  const byName = new Map<string, Set<string>>()
+  for (const t of got) {
+    if (!t.channelId) continue
+    ;(byName.get(t.byline) ?? byName.set(t.byline, new Set()).get(t.byline)!).add(t.channelId)
+  }
+  // Names are not identity, but within one response they should agree: an id
+  // that wandered per row would put one channel into the picker several times.
+  for (const [, ids] of byName) expect(ids.size).toBe(1)
+  expect(new Set(got.map((t) => t.channelId)).size).toBe(3)
+})

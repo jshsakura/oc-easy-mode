@@ -28,6 +28,21 @@ export function overlayIsOpen(): boolean {
   return openMenu !== null || openModals > 0
 }
 
+/**
+ * Counts a dialog drawn by another file as one of the open ones, so the
+ * shortcuts, the remote and the panic key treat it the way they treat these.
+ * Returns the release, which is safe to call twice.
+ */
+export function holdModal(): () => void {
+  openModals += 1
+  let held = true
+  return () => {
+    if (!held) return
+    held = false
+    openModals -= 1
+  }
+}
+
 export function closeMenu(): void {
   releaseMenu?.()
   releaseMenu = null
@@ -160,7 +175,7 @@ export interface Choice {
  * cross, nothing to do but choose. So the heading is a band with a close button
  * in it, the same shape the opened player uses.
  */
-function modalHead(title: string, close: () => void): HTMLElement {
+export function modalHead(title: string, close: () => void): HTMLElement {
   return h(
     'div',
     { class: 'modalHead' },
@@ -183,7 +198,7 @@ function modalHead(title: string, close: () => void): HTMLElement {
  * being asked. Decided by narrowNow() rather than a width of our own, so the
  * dialog can never disagree with the layout it is drawn over.
  */
-function modalClass(): string {
+export function modalClass(): string {
   return narrowNow() ? 'modal full' : 'modal'
 }
 

@@ -4,11 +4,12 @@
 import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
-import { forgetHistory, history } from '../store.ts'
+import { forgetHistory, history, setSubsFilter, subsFilter} from '../store.ts'
 import { art, h, icon, replace } from './dom.ts'
 import { explain, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
 import { removeFromPlaylistNow, row, startRadio } from './rows.ts'
+import { applyFilter, channelsOf, chooseChannels } from './channels.ts'
 
 /**
  * Which render is the one on screen.
@@ -520,18 +521,68 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
     // too, and a video should not be on one screen twice.
     const shelved = new Set(page.shelves.flatMap((s) => s.tracks.map((tr) => tr.videoId)))
     const loose = page.tracks.filter((tr) => !shelved.has(tr.videoId))
-    const feed = loose.length > 0 ? loose : page.tracks
+    const all = loose.length > 0 ? loose : page.tracks
+
+    // **구독 only.** 홈 and 시청 기록 are not lists of channels you chose, and
+    // narrowing them by channel would be answering a question nobody asked.
+    // The channels come from the rows themselves rather than from a second
+    // request; see channels.ts.
+    const filterable = id === 'FEsubscriptions'
+    const channels = filterable ? channelsOf(all) : []
+    const chosen = filterable ? subsFilter().filter((cid) => channels.some((c) => c.id === cid)) : []
+    const feed = filterable ? applyFilter(all, chosen) : all
+
+    const openChannels = async (): Promise<void> => {
+      const picked = await chooseChannels(ctx.overlay, channels, chosen)
+      if (picked === null) return
+      setSubsFilter(picked)
+      ctx.reload()
+    }
+    const clear = (): void => {
+      setSubsFilter([])
+      ctx.reload()
+    }
+
+    const toolbar = h(
+      'div',
+      { class: 'toolbar' },
+      h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(feed, 0) }, icon('play', 16), t('전체 재생')),
+      h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(feed); ctx.say(`${tn('개', feed.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
+      // The count is on the button because a filter you cannot see is a bug
+      // report: the screen is simply missing things and nothing says why.
+      filterable && channels.length > 0 && h(
+        'button',
+        { class: chosen.length > 0 ? 'btn chanFilter on' : 'btn chanFilter', 'data-nav': '', onclick: () => void openChannels() },
+        icon('subs', 16),
+        t('채널'),
+        chosen.length > 0 && h('span', { class: 'chanCount' }, String(chosen.length)),
+      ),
+    )
+
+    // A filter that hides everything still has to leave a way back out.
+    if (feed.length === 0) {
+      return replace(
+        main,
+        h('h2', null, title),
+        toolbar,
+        nothing(t('고른 채널의 영상이 없습니다.'), 'subs'),
+        h(
+          'div',
+          { class: 'toolbar', style: 'justify-content: center' },
+          h('button', { class: 'btn primary', 'data-nav': '', onclick: clear }, t('필터 해제')),
+        ),
+      )
+    }
+
     replace(
       main,
       h('h2', null, title),
-      h(
-        'div',
-        { class: 'toolbar' },
-        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(feed, 0) }, icon('play', 16), t('전체 재생')),
-        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(feed); ctx.say(`${tn('개', feed.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
-      ),
-      loose.length > 0 && listOf(ctx, { ...page, tracks: loose }),
-      page.shelves.map((shelf) => shelfRow(ctx, shelf)),
+      toolbar,
+      feed.length > 0 && listOf(ctx, { ...page, tracks: feed }),
+      // The shelves are YouTube's own injections and carry no channel of ours
+      // to filter by, so they stand aside while a filter is on rather than
+      // sitting under a narrowed feed pretending to belong to it.
+      chosen.length === 0 && page.shelves.map((shelf) => shelfRow(ctx, shelf)),
     )
   } catch (err) {
     if (!current(token)) return

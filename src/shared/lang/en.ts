@@ -118,4 +118,11 @@ export const EN: Record<string, string> = {
   "이 곡 끝나고 정지": "Stop after this track",
   "이 곡까지": "to end of track",
   "이 곡이 끝나면 멈춥니다.": "Stops when this track ends.",
+  "채널": "Channels",
+  "볼 채널 고르기": "Choose channels to show",
+  "전체 선택": "Select all",
+  "필터 해제": "Clear filter",
+  "적용": "Apply",
+  "고른 채널의 영상이 없습니다.": "Nothing from the channels you chose.",
+  "채널을 찾지 못했습니다.": "No channels found.",
 }
