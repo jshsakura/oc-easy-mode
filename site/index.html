@@ -19,70 +19,105 @@
 
 <script>
   (() => {
-    const saved = localStorage.getItem('theme');
-    if (saved === 'light' || saved === 'dark') {
-      document.documentElement.dataset.theme = saved;
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      root.dataset.theme = savedTheme;
+    }
+    const savedLang = localStorage.getItem('lang');
+    const lang = savedLang === 'ko' || savedLang === 'en' ? savedLang : 'ko';
+    root.dataset.lang = lang;
+    root.lang = lang;
+    if (lang === 'en') {
+      document.title = 'RenewTube · A Simple, Quiet YouTube Player';
     }
   })();
 </script>
 
 <style>
+/* Paper, not pixels — 앱과 동일한 웜 페이퍼 / 더스티 바이올렛 기조 */
 :root {
-  --bg: #ffffff;
-  --surface: #f7f7f9;
-  --surface-subtle: #f0f0f4;
-  --border: #e2e2e8;
-  --text: #141418;
-  --text-muted: #5e5e6e;
-  --accent: #7e4dc5;
+  --bg: #f7f5f0;
+  --surface: rgba(251, 250, 246, 0.85);
+  --surface-card: rgba(243, 239, 232, 0.78);
+  --surface-subtle: rgba(235, 231, 222, 0.8);
+  --border: #ddd8cd;
+  --glass-line: rgba(35, 32, 25, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.65);
+  --text: #232019;
+  --text-muted: #6f6a5f;
+  --accent: #776aa6;
+  --accent-hover: #8579b2;
   --accent-contrast: #ffffff;
-  --code-bg: #eeeeF2;
+  --code-bg: #ece8df;
+  --sk-bg: #e8e4db;
+  --hover: rgba(0, 0, 0, 0.04);
   color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #141210;
+  --surface: rgba(27, 24, 21, 0.82);
+  --surface-card: rgba(34, 30, 26, 0.76);
+  --surface-subtle: rgba(42, 38, 33, 0.8);
+  --border: #322c25;
+  --glass-line: rgba(236, 231, 223, 0.09);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --text: #ece7df;
+  --text-muted: #a39c91;
+  --accent: #8578a6;
+  --accent-hover: #9286b4;
+  --accent-contrast: #141210;
+  --code-bg: #1f1b17;
+  --sk-bg: #221e1a;
+  --hover: rgba(236, 231, 223, 0.06);
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0e0e12;
-    --surface: #17171e;
-    --surface-subtle: #1e1e28;
-    --border: #2a2a38;
-    --text: #f4f4f7;
-    --text-muted: #9c9ca9;
-    --accent: #9d6ee0;
-    --accent-contrast: #ffffff;
-    --code-bg: #1f1f2a;
+    --bg: #141210;
+    --surface: rgba(27, 24, 21, 0.82);
+    --surface-card: rgba(34, 30, 26, 0.76);
+    --surface-subtle: rgba(42, 38, 33, 0.8);
+    --border: #322c25;
+    --glass-line: rgba(236, 231, 223, 0.09);
+    --glass-highlight: rgba(255, 255, 255, 0.05);
+    --text: #ece7df;
+    --text-muted: #a39c91;
+    --accent: #8578a6;
+    --accent-hover: #9286b4;
+    --accent-contrast: #141210;
+    --code-bg: #1f1b17;
+    --sk-bg: #221e1a;
+    --hover: rgba(236, 231, 223, 0.06);
     color-scheme: dark;
   }
 }
 
-:root[data-theme='dark'] {
-  --bg: #0e0e12;
-  --surface: #17171e;
-  --surface-subtle: #1e1e28;
-  --border: #2a2a38;
-  --text: #f4f4f7;
-  --text-muted: #9c9ca9;
-  --accent: #9d6ee0;
-  /* White on the purple, not near-black. The dark theme had the accent's
-     contrast colour set to the page background, which made the download
-     button read as a disabled chip. */
-  --accent-contrast: #ffffff;
-  --code-bg: #1f1f2a;
-  color-scheme: dark;
-}
-
 :root[data-theme='light'] {
-  --bg: #ffffff;
-  --surface: #f7f7f9;
-  --surface-subtle: #f0f0f4;
-  --border: #e2e2e8;
-  --text: #141418;
-  --text-muted: #5e5e6e;
-  --accent: #7e4dc5;
+  --bg: #f7f5f0;
+  --surface: rgba(251, 250, 246, 0.85);
+  --surface-card: rgba(243, 239, 232, 0.78);
+  --surface-subtle: rgba(235, 231, 222, 0.8);
+  --border: #ddd8cd;
+  --glass-line: rgba(35, 32, 25, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.65);
+  --text: #232019;
+  --text-muted: #6f6a5f;
+  --accent: #776aa6;
+  --accent-hover: #8579b2;
   --accent-contrast: #ffffff;
-  --code-bg: #eeeeF2;
+  --code-bg: #ece8df;
+  --sk-bg: #e8e4db;
+  --hover: rgba(0, 0, 0, 0.04);
   color-scheme: light;
 }
+
+/* 다국어 언어 스위칭 규칙 */
+:root[data-lang="en"] [lang="ko"] { display: none !important; }
+:root[data-lang="ko"] [lang="en"] { display: none !important; }
+:root:not([data-lang]) [lang="en"] { display: none !important; }
 
 * {
   box-sizing: border-box;
@@ -113,62 +148,53 @@ svg {
   display: block;
 }
 
-/* Vertical rhythm, in one place.
-   --band  the space above and below a full section
-   --gap   the space between a thing and the thing it belongs to
-   Every block below is written in these two, so changing the rhythm is one
-   edit and the mobile step is one override rather than five. */
 :root {
-  --band: 96px;
-  --gap: 48px;
+  --band: 84px;
+  --gap: 40px;
 }
 @media (max-width: 720px) {
-  :root { --band: 60px; --gap: 32px; }
+  :root { --band: 56px; --gap: 28px; }
 }
 
 .wrap {
   max-width: 1040px;
   margin: 0 auto;
-  /* padding-inline, not the shorthand.
-     `padding: 0 24px` also sets top and bottom to zero, and every section
-     carries this class — so a class selector was quietly overriding
-     `section { padding: var(--band) 0 }` and the sections had no vertical
-     space at all. The cards sat against the next section's label. */
   padding-inline: 24px;
 }
 
-/* 상단 일체형 배지 및 내부 테마 토글 */
+/* 상단 일체형 배지 (플로팅 아크릴 글래스 캡슐) */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 6px 4px 14px;
+  padding: 5px 8px 5px 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background-color: var(--surface);
+  background: var(--surface);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
   font-size: 13px;
   font-weight: 500;
   color: var(--accent);
   margin-bottom: 24px;
-  animation: badgeDrop 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .badge:hover {
   border-color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px -2px rgba(126, 77, 197, 0.15);
 }
 
 .badge-divider {
   width: 1px;
   height: 14px;
   background-color: var(--border);
-  margin: 0 2px;
+  margin: 0 1px;
 }
 
-.badge-theme-toggle {
-  width: 24px;
+.badge-btn {
   height: 24px;
   display: inline-flex;
   align-items: center;
@@ -178,26 +204,25 @@ svg {
   border-radius: 999px;
   color: var(--text-muted);
   cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 6px;
   transition: background-color .15s ease, color .15s ease;
 }
 
-.badge-theme-toggle:hover {
-  background-color: var(--surface-subtle);
+.badge-btn:hover {
+  background-color: var(--hover);
   color: var(--text);
 }
 
-.badge-theme-toggle svg {
+.badge-btn svg {
   width: 14px;
   height: 14px;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.badge-theme-toggle:hover svg {
-  transform: rotate(25deg) scale(1.15);
-}
-
-.badge-theme-toggle:active svg {
-  transform: rotate(90deg) scale(0.9);
+.badge-btn:hover svg {
+  transform: rotate(25deg) scale(1.1);
 }
 
 :root[data-theme='dark'] .icon-sun,
@@ -229,47 +254,45 @@ svg {
 .hero {
   position: relative;
   text-align: center;
-  padding: calc(var(--band) - 12px) 0 var(--gap);
+  padding: calc(var(--band) - 16px) 0 var(--gap);
 }
 
-/* 은은하게 숨쉬는 배경 오라 글로우 */
+/* 무지개 없이 정갈한 단일 앰비언트 더스티 바이올렛 비네트 */
 .hero::before {
   content: '';
   position: absolute;
-  top: 10px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: min(720px, 92vw);
-  height: 340px;
-  background: radial-gradient(ellipse at center, rgba(126, 77, 197, 0.15) 0%, rgba(157, 110, 224, 0.05) 45%, transparent 72%);
-  filter: blur(44px);
+  width: min(640px, 92vw);
+  height: 300px;
+  background: radial-gradient(ellipse at center, rgba(133, 120, 166, 0.12) 0%, transparent 68%);
+  filter: blur(40px);
   pointer-events: none;
   z-index: -1;
   border-radius: 50%;
-  animation: auraPulse 8s ease-in-out infinite alternate;
 }
 
-:root[data-theme='dark'] .hero::before,
-:root:not([data-theme='light']) .hero::before {
-  background: radial-gradient(ellipse at center, rgba(157, 110, 224, 0.2) 0%, rgba(126, 77, 197, 0.07) 45%, transparent 72%);
+:root[data-theme='light'] .hero::before {
+  background: radial-gradient(ellipse at center, rgba(119, 106, 166, 0.08) 0%, transparent 68%);
 }
 
 .hero h1 {
-  font-size: clamp(32px, 5.2vw, 54px);
-  line-height: 1.15;
+  font-size: clamp(30px, 5vw, 50px);
+  line-height: 1.18;
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin-bottom: 20px;
-  animation: heroFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+  margin-bottom: 18px;
+  
 }
 
 .hero-description {
-  font-size: clamp(17px, 2.1vw, 20px);
+  font-size: clamp(16px, 2vw, 19px);
   color: var(--text-muted);
-  max-width: 720px;
-  margin: 0 auto 36px;
+  max-width: 680px;
+  margin: 0 auto 32px;
   word-break: keep-all;
-  animation: heroFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
+  
 }
 
 .button-row {
@@ -278,17 +301,17 @@ svg {
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-  animation: heroFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both;
+  
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 48px;
-  padding: 0 24px;
+  height: 44px;
+  padding: 0 20px;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
@@ -307,54 +330,52 @@ svg {
   background-color: var(--accent);
   color: var(--accent-contrast);
   border-color: var(--accent);
-  box-shadow: 0 4px 14px -2px rgba(126, 77, 197, 0.28);
+  box-shadow: 0 4px 12px -2px rgba(119, 106, 166, 0.3);
 }
 
 .btn-primary:hover {
-  opacity: 0.96;
-  box-shadow: 0 8px 24px -4px rgba(126, 77, 197, 0.45);
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 6px 18px -3px rgba(119, 106, 166, 0.4);
 }
 
 .btn-secondary {
-  background-color: var(--surface);
+  background: var(--surface);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   color: var(--text);
   border-color: var(--border);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
 }
 
 .btn-secondary:hover {
-  background-color: var(--surface-subtle);
+  background: var(--surface-subtle);
   border-color: var(--accent);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08);
 }
 
 .version-pill {
   font-size: 12px;
   font-weight: 500;
-  opacity: 0.85;
-  background-color: rgba(0, 0, 0, 0.15);
+  opacity: 0.9;
+  background-color: rgba(0, 0, 0, 0.12);
   padding: 2px 7px;
   border-radius: 999px;
   margin-left: 2px;
-  transition: background-color 0.2s ease;
 }
 
 :root[data-theme='dark'] .version-pill {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.25);
 }
 
 .hero-notice {
-  margin-top: 18px;
-  font-size: 13.5px;
+  margin-top: 16px;
+  font-size: 13px;
   color: var(--text-muted);
-  animation: heroFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.38s both;
+  
 }
 
-/* 화면 미리보기 영역 */
+/* 화면 미리보기 쇼케이스 */
 .showcase {
-  /* padding-bottom, not the shorthand. This element carries .wrap too, and
-     `padding: 0 0 …` sets padding-inline to zero — so the cards ran to both
-     edges of a phone. The same trap is written up at .wrap itself, and it was
-     walked into a second time here. */
   padding-bottom: var(--band);
 }
 
@@ -366,46 +387,64 @@ svg {
 
 .showcase-card {
   border: 1px solid var(--border);
-  background-color: var(--surface);
-  border-radius: 14px;
+  background: var(--surface);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-radius: 12px;
   overflow: hidden;
   padding: 0;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
-}
-
-:root[data-theme='dark'] .showcase-card {
-  background: #171722;
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.12), inset 0 1px 0 0 var(--glass-highlight);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .showcase-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   border-color: var(--accent);
-  box-shadow: 0 20px 40px -12px rgba(126, 77, 197, 0.18);
+  box-shadow: 0 16px 36px -10px rgba(119, 106, 166, 0.2), inset 0 1px 0 0 var(--glass-highlight);
+}
+
+/* 이미지 컨테이너 및 로딩 펄스 스켈레톤 */
+.showcase-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: var(--sk-bg);
+  overflow: hidden;
+  border-radius: 11px 11px 0 0;
+}
+
+.showcase-media.loading {
+  animation: skPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 .showcase-card img {
   display: block;
   width: 100%;
-  height: auto;
-  border-radius: 13px 13px 0 0;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .showcase-card:hover img {
-  transform: scale(1.005);
+  transform: scale(1.004);
 }
 
 .showcase-caption {
   margin: 0;
   padding: 12px 18px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--glass-line);
   font-size: 13.5px;
   color: var(--text-muted);
   text-align: center;
   background: var(--surface);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   transition: color 0.2s ease;
 }
 
@@ -413,12 +452,8 @@ svg {
   color: var(--text);
 }
 
-/* A grid item's automatic minimum size is its content, so a long word or a
-   wide child pushes the track wider than the container and the last column
-   runs off the edge. Every grid child here is allowed to be narrower. */
 .feature-grid > *, .install-grid > *, .notice-grid > *, .showcase-grid > * { min-width: 0; }
 
-/* 본문 구역 공통 */
 section {
   padding: var(--band) 0;
 }
@@ -432,67 +467,58 @@ section + section {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--accent);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .section-title {
-  font-size: clamp(26px, 3.2vw, 36px);
-  line-height: 1.2;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.22;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .section-description {
-  font-size: 16.5px;
+  font-size: 15px;
   color: var(--text-muted);
-  max-width: 680px;
-  margin-bottom: 44px;
+  max-width: 640px;
+  margin-bottom: 24px;
   word-break: keep-all;
 }
 
-/* 기능 6가지 격자 */
+/* 기능 6가지 격자 — 글래스모피즘 카드 */
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .feature-item {
   position: relative;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--glass-line);
+  background: var(--surface-card);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-radius: 11px;
+  padding: 18px;
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
 }
 
-:root[data-theme='dark'] .feature-item {
-  background: linear-gradient(180deg, #181824 0%, #13131b 100%);
-  border-color: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
-}
-
 .feature-item:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 0 12px 28px -8px rgba(126, 77, 197, 0.16);
-}
-
-:root[data-theme='dark'] .feature-item:hover {
-  border-color: var(--accent);
-  box-shadow: 0 12px 30px -8px rgba(157, 110, 224, 0.22);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(119, 106, 166, 0.18);
 }
 
 .feature-item h3 {
-  font-size: 16.5px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.015em;
@@ -506,7 +532,7 @@ section + section {
 }
 
 .feature-item p {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-muted);
   line-height: 1.6;
   word-break: keep-all;
@@ -517,145 +543,93 @@ section + section {
 .install-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .install-card {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 22px 20px;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--glass-line);
+  background: var(--surface-card);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-radius: 11px;
+  padding: 20px 18px;
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-:root[data-theme='dark'] .install-card {
-  background: linear-gradient(180deg, #181824 0%, #13131b 100%);
-  border-color: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
-}
-
 .install-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.08);
-}
-
-:root[data-theme='dark'] .install-card:hover {
-  box-shadow: 0 12px 30px -8px rgba(157, 110, 224, 0.2);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(119, 106, 166, 0.18);
 }
 
 .install-card h3 {
-  font-size: 17.5px;
+  font-size: 16.5px;
   font-weight: 700;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--glass-line);
   letter-spacing: -0.015em;
 }
 
 .step-list {
-  list-style: none;
-  counter-reset: step;
+  padding-left: 20px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
 }
 
 .step-list li {
-  position: relative;
-  padding-left: 36px;
-  margin-bottom: 14px;
-  font-size: 15px;
-  color: var(--text-muted);
-  line-height: 1.6;
   word-break: keep-all;
-  transition: transform 0.18s ease;
-}
-
-.step-list li:hover {
-  transform: translateX(3px);
-}
-
-.step-list li:last-child {
-  margin-bottom: 0;
-}
-
-.step-list li::before {
-  counter-increment: step;
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 2px;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background-color: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent);
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.step-list li:hover::before {
-  transform: scale(1.12);
-  background-color: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-contrast);
 }
 
 .step-list strong {
   color: var(--text);
+  font-weight: 600;
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 13.5px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background-color: var(--code-bg);
+  border: 1px solid var(--glass-line);
   padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid var(--border);
-  background-color: var(--code-bg);
   color: var(--text);
 }
 
-/* 유의 사항 4가지 */
+/* 유의사항 */
 .notice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .notice-item {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 18px 18px;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--glass-line);
+  background: var(--surface-card);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-radius: 11px;
+  padding: 16px 16px;
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 2px 6px -2px rgba(0, 0, 0, 0.04);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-:root[data-theme='dark'] .notice-item {
-  background: linear-gradient(180deg, #181824 0%, #13131b 100%);
-  border-color: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.35);
-}
-
 .notice-item:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.08);
-}
-
-:root[data-theme='dark'] .notice-item:hover {
-  box-shadow: 0 10px 26px -6px rgba(157, 110, 224, 0.2);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight), 0 8px 20px -6px rgba(119, 106, 166, 0.18);
 }
 
 .notice-item dt {
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.35;
-  min-height: calc(15.5px * 1.35 * 2);
   margin-bottom: 6px;
   color: var(--text);
 }
@@ -668,69 +642,61 @@ code {
 }
 
 kbd {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12.5px;
-  padding: 2px 6px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  background-color: var(--surface);
   border: 1px solid var(--border);
-  background-color: var(--code-bg);
+  box-shadow: 0 1px 0 var(--border);
+  padding: 1px 5px;
   border-radius: 4px;
   color: var(--text);
 }
 
-/* 아이콘 */
+/* 아이콘 및 뱃지 */
 .ico {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex: none;
   fill: currentColor;
 }
 
 .icon-badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
-  background: linear-gradient(135deg, rgba(126, 77, 197, 0.12) 0%, rgba(157, 110, 224, 0.04) 100%);
-  border: 1px solid rgba(126, 77, 197, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--glass-line);
   color: var(--accent);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-:root[data-theme='dark'] .icon-badge {
-  background: linear-gradient(135deg, rgba(157, 110, 224, 0.2) 0%, rgba(126, 77, 197, 0.06) 100%);
-  border-color: rgba(157, 110, 224, 0.3);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .feature-item:hover .icon-badge {
-  transform: scale(1.1) rotate(-4deg);
-  background-color: var(--accent);
-  color: var(--accent-contrast);
+  transform: scale(1.08);
   border-color: var(--accent);
 }
 
 .card-heading {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .card-heading .ico { color: var(--accent); }
-
-.section-label .ico { width: 15px; height: 15px; }
-
+.section-label .ico { width: 14px; height: 14px; }
 .notice-item .card-heading { align-items: flex-start; }
 .notice-item .card-heading .ico { margin-top: 1px; }
 
 /* 바닥글 */
 .footer {
-  padding: 44px 0;
-  font-size: 14px;
+  padding: 36px 0;
+  font-size: 13.5px;
   color: var(--text-muted);
+  border-top: 1px solid var(--glass-line);
 }
 
 .footer-inner {
@@ -738,13 +704,13 @@ kbd {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px;
 }
 
 .footer-links {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
 }
 
 .footer-link {
@@ -765,23 +731,16 @@ kbd {
   text-underline-offset: 3px;
 }
 
-/* 키프레임 정의 */
 @keyframes badgeDrop {
-  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  from { opacity: 0; transform: translateY(-10px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes heroFadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes auraPulse {
-  0% { transform: translateX(-50%) scale(0.95); opacity: 0.65; }
-  100% { transform: translateX(-50%) scale(1.12); opacity: 1; }
-}
-
-/* 저감 움직임 설정 지원 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -792,13 +751,6 @@ kbd {
 }
 
 @media (max-width: 720px) {
-  .nav {
-    display: none;
-  }
-  .showcase-card {
-    border-radius: 12px;
-    padding: 8px;
-  }
   .footer-inner {
     flex-direction: column;
     justify-content: center;
@@ -839,9 +791,15 @@ kbd {
   <div class="hero wrap">
     <div class="badge">
       <img src="icon-128.png" width="16" height="16" alt="RenewTube" style="border-radius: 4px;">
-      <span>RenewTube · 브라우저 확장 프로그램</span>
+      <span lang="ko">RenewTube · 브라우저 확장 프로그램</span>
+      <span lang="en">RenewTube · Browser Extension</span>
       <span class="badge-divider"></span>
-      <button class="badge-theme-toggle" id="theme-toggle" aria-label="화면 테마 전환" title="화면 테마 전환">
+      <button class="badge-btn" id="lang-toggle" aria-label="언어 전환 / Switch Language" title="한국어 / English">
+        <span lang="ko">EN</span>
+        <span lang="en">KO</span>
+      </button>
+      <span class="badge-divider"></span>
+      <button class="badge-btn" id="theme-toggle" aria-label="화면 테마 전환" title="화면 테마 전환">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-13V1h0v3zm0 19v-3 3zM4.2 5.6 2.1 3.5l1.4-1.4 2.1 2.1zM18.4 19.8l2.1 2.1 1.4-1.4-2.1-2.1zM1 13v-2h3v2zm19 0v-2h3v2zM5.6 19.8 3.5 21.9l-1.4-1.4 2.1-2.1zM19.8 5.6l-1.4-1.4 2.1-2.1 1.4 1.4z"/>
         </svg>
@@ -850,14 +808,23 @@ kbd {
         </svg>
       </button>
     </div>
-    <h1>심플하고 쉬운 유튜브 재생기</h1>
-    <p class="hero-description">유튜브 화면을 심플하고 쉬운 재생기로 완전히 바꿔 드립니다. 음악과 영상을 한자리에서 다루며, 재생과 스트림은 유튜브가 그대로 맡습니다.</p>
+
+    <h1>
+      <span lang="ko">심플하고 쉬운 유튜브 재생기</span>
+      <span lang="en">A Simple, Quiet YouTube Player</span>
+    </h1>
+    <p class="hero-description">
+      <span lang="ko">유튜브 화면을 심플하고 쉬운 재생기로 완전히 바꿔 드립니다. 음악과 영상을 한자리에서 다루며, 재생과 스트림은 유튜브가 그대로 맡습니다.</span>
+      <span lang="en">Transforms YouTube into a quiet, distraction-free player. Music and videos live in one calm space, while YouTube handles playback.</span>
+    </p>
+
     <div class="button-row">
       <a id="download" class="btn btn-primary" href="https://github.com/jshsakura/renewtube/releases">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 16 6 10l1.4-1.4L11 12.2V3h2v9.2l3.6-3.6L18 10zM5 20v-2h14v2z"/>
         </svg>
-        내려받기
+        <span lang="ko">내려받기</span>
+        <span lang="en">Download</span>
         <span id="version" class="version-pill"></span>
       </a>
       <a class="btn btn-secondary" href="https://github.com/jshsakura/renewtube">
@@ -865,104 +832,229 @@ kbd {
         GitHub
       </a>
     </div>
-    <p class="hero-notice">오리온, 크롬, 엣지 브라우저에서 모두 동일한 파일을 사용합니다.</p>
+    <p class="hero-notice">
+      <span lang="ko">오리온, 크롬, 엣지 브라우저에서 모두 동일한 파일을 사용합니다.</span>
+      <span lang="en">One package works across Orion, Chrome, Edge, and compatible browsers.</span>
+    </p>
   </div>
 
   <div id="screens" class="showcase wrap">
     <div class="showcase-grid">
       <figure class="showcase-card">
-        <img src="shot-explore.png" width="1440" height="900" alt="RenewTube 둘러보기 화면">
-        <figcaption class="showcase-caption">둘러보기 화면. 로그인하지 않으셔도 추천 선반이 풍성하게 채워집니다.</figcaption>
+        <div class="showcase-media">
+          <img src="shot-explore.png" width="1440" height="900" alt="RenewTube 둘러보기 화면 / Explore Screen" loading="eager">
+        </div>
+        <figcaption class="showcase-caption">
+          <span lang="ko">둘러보기 화면. 로그인하지 않으셔도 추천 선반이 풍성하게 채워집니다.</span>
+          <span lang="en">Explore view. Curated music shelves are filled even without signing in.</span>
+        </figcaption>
       </figure>
       <figure class="showcase-card">
-        <img src="shot-list.png" width="1440" height="900" alt="RenewTube 목록 및 대기열 화면">
-        <figcaption class="showcase-caption">대기열 및 재생목록 화면. 감상 중인 콘텐츠 목록을 직관적으로 확인하고 관리합니다.</figcaption>
+        <div class="showcase-media">
+          <img src="shot-list.png" width="1440" height="900" alt="RenewTube 목록 및 대기열 화면 / Queue & Playlist Screen" loading="lazy">
+        </div>
+        <figcaption class="showcase-caption">
+          <span lang="ko">대기열 및 재생목록 화면. 감상 중인 콘텐츠 목록을 직관적으로 확인하고 관리합니다.</span>
+          <span lang="en">Queue & playlist view. Glance at and manage what is playing right away.</span>
+        </figcaption>
       </figure>
     </div>
   </div>
 
   <section id="features" class="wrap">
-    <p class="section-label"><svg class="ico"><use href="#i-grid"/></svg>기능 안내</p>
-    <h2 class="section-title">핵심 기능 구성</h2>
-    <p class="section-description">복잡한 추천 피드 대신 정갈한 플레이어 화면을 제공합니다. 데이터와 재생은 유튜브가 그대로 맡고 화면만 바꿉니다.</p>
+    <p class="section-label">
+      <svg class="ico"><use href="#i-grid"/></svg>
+      <span lang="ko">기능 안내</span>
+      <span lang="en">Features</span>
+    </p>
+    <h2 class="section-title">
+      <span lang="ko">핵심 기능 구성</span>
+      <span lang="en">Core Experience</span>
+    </h2>
+    <p class="section-description">
+      <span lang="ko">복잡한 추천 피드 대신 정갈한 플레이어 화면을 제공합니다. 데이터와 재생은 유튜브가 그대로 맡고 화면만 바꿉니다.</span>
+      <span lang="en">Replaces algorithmic clutter with a focused player interface. YouTube handles streams; we keep the room calm.</span>
+    </p>
     <div class="feature-grid">
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-radio"/></svg></span>
-        <h3>둘러보기</h3>
-        <p>선반 형태로 구성된 첫 화면입니다. 유튜브 계정에 로그인하지 않으셔도 비어 있지 않고 음악과 영상 목록을 바로 둘러보기하실 수 있습니다.</p>
+        <h3>
+          <span lang="ko">둘러보기</span>
+          <span lang="en">Explore</span>
+        </h3>
+        <p>
+          <span lang="ko">선반 형태로 구성된 첫 화면입니다. 유튜브 계정에 로그인하지 않으셔도 비어 있지 않고 음악과 영상 목록을 바로 탐색하실 수 있습니다.</span>
+          <span lang="en">Curated shelves ready from the first second. Browse fresh music and video charts without requiring a Google sign-in.</span>
+        </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-queue"/></svg></span>
-        <h3>대기열과 재생목록</h3>
-        <p>재생 중인 대기열 목록을 자유롭게 확인하고 순서를 관리합니다. 무작위 재생, 반복 재생 기능과 함께 맞춤 재생목록을 간편하게 다룹니다.</p>
+        <h3>
+          <span lang="ko">대기열과 재생목록</span>
+          <span lang="en">Queue & Playlists</span>
+        </h3>
+        <p>
+          <span lang="ko">재생 중인 대기열 목록을 자유롭게 확인하고 순서를 관리합니다. 무작위 재생, 반복 재생 기능과 함께 맞춤 재생목록을 간편하게 다룹니다.</span>
+          <span lang="en">Easily reorder upcoming tracks, toggle shuffle and repeat, and manage custom playlists in a compact sidebar.</span>
+        </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-video"/></svg></span>
-        <h3>음악 모드와 영상 모드</h3>
-        <p>가벼운 감상을 위한 트랙 줄 목록 형태와 큼직한 화면 감상을 위한 영상 썸네일 격자 형태를 버튼 하나로 자유롭게 오가실 수 있습니다.</p>
+        <h3>
+          <span lang="ko">음악 모드와 영상 모드</span>
+          <span lang="en">Music & Video Modes</span>
+        </h3>
+        <p>
+          <span lang="ko">가벼운 감상을 위한 트랙 줄 목록 형태와 큼직한 화면 감상을 위한 영상 썸네일 격자 형태를 버튼 하나로 자유롭게 오가실 수 있습니다.</span>
+          <span lang="en">Switch instantly between a lightweight audio row list and a large thumbnail video grid with a single tap.</span>
+        </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-ban"/></svg></span>
-        <h3>쇼츠 없음</h3>
-        <p>몰입을 방해하는 세로형 쇼츠 영상을 모든 화면과 둘러보기 목록에서 완전히 제외하여 정갈한 감상 환경을 유지합니다.</p>
+        <h3>
+          <span lang="ko">쇼츠 없음</span>
+          <span lang="en">Zero Shorts</span>
+        </h3>
+        <p>
+          <span lang="ko">몰입을 방해하는 세로형 쇼츠 영상을 모든 화면과 탐색 목록에서 완전히 제외하여 정갈한 감상 환경을 유지합니다.</span>
+          <span lang="en">Short-form vertical clips are completely excluded from every shelf and search result to preserve uninterrupted listening.</span>
+        </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-dpad"/></svg></span>
-        <h3>방향키 조작</h3>
-        <p>마우스 없이도 거실 TV를 다루듯 키보드 화살표 방향키로 항목을 이동하고 실행 키를 눌러 손쉽게 제어하실 수 있습니다.</p>
+        <h3>
+          <span lang="ko">방향키 조작</span>
+          <span lang="en">Keyboard & Remote</span>
+        </h3>
+        <p>
+          <span lang="ko">마우스 없이도 거실 TV를 다루듯 키보드 화살표 방향키로 항목을 이동하고 실행 키를 눌러 손쉽게 제어하실 수 있습니다.</span>
+          <span lang="en">Navigate shelves and play controls with keyboard arrow keys and Enter, just like a calm living-room TV interface.</span>
+        </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-devices"/></svg></span>
-        <h3>데스크톱과 모바일</h3>
-        <p>오리온, 크롬, 엣지 등 데스크톱 웹 브라우저는 물론, 모바일 오리온 브라우저에서도 동일하게 작동합니다.</p>
+        <h3>
+          <span lang="ko">데스크톱과 모바일</span>
+          <span lang="en">Desktop & Mobile</span>
+        </h3>
+        <p>
+          <span lang="ko">오리온, 크롬, 엣지 등 데스크톱 웹 브라우저는 물론, 모바일 오리온 브라우저에서도 동일하게 작동합니다.</span>
+          <span lang="en">Works seamlessly on desktop browsers (Chrome, Orion, Edge) and mobile Orion on iOS & iPadOS.</span>
+        </p>
       </div>
     </div>
   </section>
 
   <section id="install" class="wrap">
-    <p class="section-label"><svg class="ico"><use href="#i-download"/></svg>설치 가이드</p>
-    <h2 class="section-title">브라우저별 설치 방법</h2>
-    <p class="section-description">내려받으신 파일을 브라우저에 등록해 주세요. 별도의 복잡한 과정 없이 1분 안에 설치하실 수 있습니다.</p>
+    <p class="section-label">
+      <svg class="ico"><use href="#i-download"/></svg>
+      <span lang="ko">설치 가이드</span>
+      <span lang="en">Installation</span>
+    </p>
+    <h2 class="section-title">
+      <span lang="ko">브라우저별 설치 방법</span>
+      <span lang="en">How to Install</span>
+    </h2>
+    <p class="section-description">
+      <span lang="ko">내려받으신 파일을 브라우저에 등록해 주세요. 별도의 복잡한 과정 없이 1분 안에 설치하실 수 있습니다.</span>
+      <span lang="en">Register the downloaded package with your browser. Setup completes in under a minute without complex configuration.</span>
+    </p>
     <div class="install-grid">
       <div class="install-card">
-        <h3 class="card-heading"><svg class="ico"><use href="#i-puzzle"/></svg>오리온 브라우저</h3>
-        <ol class="step-list">
+        <h3 class="card-heading">
+          <svg class="ico"><use href="#i-puzzle"/></svg>
+          <span lang="ko">오리온 브라우저</span>
+          <span lang="en">Orion Browser</span>
+        </h3>
+        <ol class="step-list" lang="ko">
           <li>상단의 <strong>내려받기</strong> 단추를 눌러 압축 파일(zip)을 받아 주세요.</li>
           <li>브라우저 메뉴에서 <strong>설정 → 확장</strong>으로 이동하신 후 <strong>+</strong> 단추를 눌러 해당 zip 파일을 선택해 주세요.</li>
           <li>주소 표시줄 우측의 확장 프로그램 아이콘을 눌러 켜 주시면 완료됩니다.</li>
         </ol>
+        <ol class="step-list" lang="en">
+          <li>Click the <strong>Download</strong> button above to save the zip package.</li>
+          <li>Open <strong>Settings → Extensions</strong> in Orion and tap <strong>+</strong> to select the downloaded zip file.</li>
+          <li>Click the extension icon in the toolbar to activate RenewTube.</li>
+        </ol>
       </div>
       <div class="install-card">
-        <h3 class="card-heading"><svg class="ico"><use href="#i-folder"/></svg>크롬 및 엣지 브라우저</h3>
-        <ol class="step-list">
+        <h3 class="card-heading">
+          <svg class="ico"><use href="#i-folder"/></svg>
+          <span lang="ko">크롬 및 엣지 브라우저</span>
+          <span lang="en">Chrome & Edge</span>
+        </h3>
+        <ol class="step-list" lang="ko">
           <li>내려받으신 압축 파일(zip)을 원하시는 폴더에 풀어 주세요.</li>
           <li>주소창에 <code>chrome://extensions</code> 를 입력하여 이동하신 후, 우측 상단의 <strong>개발자 모드</strong>를 켜 주세요.</li>
           <li>좌측 상단의 <strong>'압축해제된 확장 프로그램을 로드합니다'</strong> 단추를 눌러 압축을 푼 폴더를 지정해 주세요.</li>
+        </ol>
+        <ol class="step-list" lang="en">
+          <li>Unzip the downloaded package into your preferred folder.</li>
+          <li>Navigate to <code>chrome://extensions</code> in the address bar and turn on <strong>Developer mode</strong>.</li>
+          <li>Click <strong>Load unpacked</strong> at the top left and select the extracted folder.</li>
         </ol>
       </div>
     </div>
   </section>
 
   <section id="notes" class="wrap">
-    <p class="section-label"><svg class="ico"><use href="#i-info"/></svg>안내 사항</p>
-    <h2 class="section-title">이용 시 알아두실 점</h2>
-    <p class="section-description">원활하고 투명한 이용을 위해 확장의 동작 방식과 범위를 미리 안내해 드립니다.</p>
+    <p class="section-label">
+      <svg class="ico"><use href="#i-info"/></svg>
+      <span lang="ko">안내 사항</span>
+      <span lang="en">Good to Know</span>
+    </p>
+    <h2 class="section-title">
+      <span lang="ko">이용 시 알아두실 점</span>
+      <span lang="en">Design Principles & Notes</span>
+    </h2>
+    <p class="section-description">
+      <span lang="ko">원활하고 투명한 이용을 위해 확장의 동작 방식과 범위를 미리 안내해 드립니다.</span>
+      <span lang="en">Transparent details on how RenewTube operates within the browser.</span>
+    </p>
     <dl class="notice-grid">
       <div class="notice-item">
-        <dt class="card-heading"><svg class="ico"><use href="#i-exit"/></svg>Esc 두 번으로 언제든 종료</dt>
-        <dd>유튜브의 본래 구조를 훼손하지 않습니다. 키보드의 <kbd>Esc</kbd> 키를 1초 안에 두 번 누르시면 언제든지 확장을 닫고 본래의 유튜브 화면으로 즉시 되돌아옵니다.</dd>
+        <dt class="card-heading">
+          <svg class="ico"><use href="#i-exit"/></svg>
+          <span lang="ko">Esc 두 번으로 언제든 종료</span>
+          <span lang="en">Double-Esc to Exit Anytime</span>
+        </dt>
+        <dd>
+          <span lang="ko">유튜브의 본래 구조를 훼손하지 않습니다. 키보드의 <kbd>Esc</kbd> 키를 1초 안에 두 번 누르시면 언제든지 확장을 닫고 본래의 유튜브 화면으로 즉시 되돌아옵니다.</span>
+          <span lang="en">Leaves YouTube intact. Press <kbd>Esc</kbd> twice within 1 second to instantly close RenewTube and return to the standard YouTube interface.</span>
+        </dd>
       </div>
       <div class="notice-item">
-        <dt class="card-heading"><svg class="ico"><use href="#i-lock"/></svg>화면 잠금 재생은 브라우저 기능 사용</dt>
-        <dd>기기 화면이 꺼진 상태에서의 재생은 확장이 직접 제어하지 않으며, 오리온 브라우저 등이 자체적으로 지원하는 백그라운드 미디어 재생 기능을 활용합니다.</dd>
+        <dt class="card-heading">
+          <svg class="ico"><use href="#i-lock"/></svg>
+          <span lang="ko">화면 잠금 재생은 브라우저 기능 사용</span>
+          <span lang="en">Background & Screen-Off Playback</span>
+        </dt>
+        <dd>
+          <span lang="ko">기기 화면이 꺼진 상태에서의 재생은 확장이 직접 제어하지 않으며, 오리온 브라우저 등이 자체적으로 지원하는 백그라운드 미디어 재생 기능을 활용합니다.</span>
+          <span lang="en">Playback with the screen turned off relies on native browser background audio capabilities (such as Orion's background playback).</span>
+        </dd>
       </div>
       <div class="notice-item">
-        <dt class="card-heading"><svg class="ico"><use href="#i-shield"/></svg>광고 차단 없음</dt>
-        <dd>유튜브 스트림 규정을 준수하며 광고 차단 기능을 내장하지 않습니다. 기존에 사용하시던 차단 확장 프로그램이 있으실 경우 그대로 함께 켜 두시면 됩니다.</dd>
+        <dt class="card-heading">
+          <svg class="ico"><use href="#i-shield"/></svg>
+          <span lang="ko">광고 차단 없음</span>
+          <span lang="en">No Built-In Ad Blocking</span>
+        </dt>
+        <dd>
+          <span lang="ko">유튜브 스트림 규정을 준수하며 광고 차단 기능을 내장하지 않습니다. 기존에 사용하시던 차단 확장 프로그램이 있으실 경우 그대로 함께 켜 두시면 됩니다.</span>
+          <span lang="en">RenewTube complies with YouTube streaming standards and does not block ads. Dedicated content blockers can be used alongside it.</span>
+        </dd>
       </div>
       <div class="notice-item">
-        <dt class="card-heading"><svg class="ico"><use href="#i-user"/></svg>구독과 기록은 로그인 필요</dt>
-        <dd>검색과 기본 둘러보기는 로그인 없이도 자유롭게 이용하실 수 있습니다. 다만 개인 구독 채널 목록, 시청 기록 및 보관함 재생목록을 불러오시려면 유튜브 로그인이 필요합니다.</dd>
+        <dt class="card-heading">
+          <svg class="ico"><use href="#i-user"/></svg>
+          <span lang="ko">구독과 기록은 로그인 필요</span>
+          <span lang="en">Library Requires Sign-In</span>
+        </dt>
+        <dd>
+          <span lang="ko">검색과 기본 둘러보기는 로그인 없이도 자유롭게 이용하실 수 있습니다. 다만 개인 구독 채널 목록, 시청 기록 및 보관함 재생목록을 불러오시려면 유튜브 로그인이 필요합니다.</span>
+          <span lang="en">Search and explore shelves work anonymously. Personal subscriptions, watch history, and saved playlists connect via standard YouTube login.</span>
+        </dd>
       </div>
     </dl>
   </section>
@@ -970,11 +1062,15 @@ kbd {
 
 <footer class="footer">
   <div class="wrap footer-inner">
-    <p>RenewTube · 유튜브를 위한 브라우저 확장 프로그램</p>
+    <p>
+      <span lang="ko">RenewTube · 유튜브를 위한 브라우저 확장 프로그램</span>
+      <span lang="en">RenewTube · A quiet browser extension for YouTube</span>
+    </p>
     <div class="footer-links">
       <a class="footer-link" href="privacy.html">
         <svg class="ico" width="16" height="16"><use href="#i-shield"/></svg>
-        <span>개인정보 처리방침</span>
+        <span lang="ko"><span>개인정보 처리방침</span></span>
+        <span lang="en"><span>Privacy Policy</span></span>
       </a>
       <a class="footer-link" href="https://github.com/jshsakura/renewtube">
         <svg class="ico" width="16" height="16"><use href="#i-github"/></svg>
@@ -985,9 +1081,10 @@ kbd {
 </footer>
 
 <script>
-  // 테마 수동 전환 및 시스템 설정 동기화
+  // 테마 및 언어 설정 제어
   const root = document.documentElement;
   const themeButton = document.getElementById('theme-toggle');
+  const langButton = document.getElementById('lang-toggle');
 
   themeButton.addEventListener('click', () => {
     const isDark = root.dataset.theme === 'dark' ||
@@ -996,6 +1093,19 @@ kbd {
     root.dataset.theme = nextTheme;
     try {
       localStorage.setItem('theme', nextTheme);
+    } catch (e) {}
+  });
+
+  langButton.addEventListener('click', () => {
+    const current = root.dataset.lang || 'ko';
+    const next = current === 'ko' ? 'en' : 'ko';
+    root.dataset.lang = next;
+    root.lang = next;
+    document.title = next === 'en'
+      ? 'RenewTube · A Simple, Quiet YouTube Player'
+      : 'RenewTube · 심플하고 쉬운 유튜브 재생기';
+    try {
+      localStorage.setItem('lang', next);
     } catch (e) {}
   });
 
