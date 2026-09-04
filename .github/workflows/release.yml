@@ -1,0 +1,145 @@
+# Builds the zip people install and attaches it to a GitHub release.
+#
+# **This repository did not make releases before.** pages.yml says why: the
+# site builds from main and hands out whatever main is, because the audience
+# was one person who wanted the current thing. That is still true, and this
+# does not replace it — the site keeps serving main. What a release adds is a
+# *pinned* build: a zip that will still be the same bytes next month, which is
+# what a store needs and what "roll me back to the one that worked" needs.
+#
+#   oc-easy-mode-vX_Y_Z.zip   One package for Chrome, Edge and Orion.
+#
+# The version is in the filename because a fixed name is how a phone ends up
+# handing the browser a zip it downloaded weeks ago — the usual cause of
+# Orion's "Extensions Error".
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+      # 브라우저를 띄우지 않는 테스트만 돈다. 나머지는 live 유튜브에 붙으므로
+      # 여기서 돌리면 유튜브의 그날 사정이 릴리스 여부를 정하게 된다.
+      # 살아있는 유튜브에 대고 도는 검증은 사람이 돌린다.
+      - run: npx playwright test e2e/03-parse.spec.ts
+
+      # 태그와 코드가 같은 버전을 말하는지 본다.
+      #
+      # 스탬프를 찍지 않고 **검사만** 한다. 태그가 가리키는 커밋이 이미 그
+      # 버전이어야 하고, 여기서 조용히 고쳐주면 릴리스된 zip 과 저장소의 소스가
+      # 다른 것을 말하게 된다. 사람이 읽는 확장 프로그램 페이지의 버전이
+      # 그 사람이 방금 받은 것인지 판단하는 유일한 근거다.
+      - name: 태그가 package.json 과 같은 버전인가
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -e
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          man="$(node -p "require('./dist/manifest.json').version")"
+          echo "tag=$tag package.json=$pkg manifest=$man"
+          [ "$tag" = "$pkg" ] || { echo "::error::태그 $tag 와 package.json $pkg 이 다릅니다"; exit 1; }
+          [ "$tag" = "$man" ] || { echo "::error::태그 $tag 와 manifest $man 이 다릅니다"; exit 1; }
+
+      # 빌드가 조용히 반쪽이 되는 것을 막는다. 확장은 파일 하나가 빠져도
+      # "로드는 되지만 아무 일도 안 일어나는" 상태가 되고, 그건 로그가 없다.
+      # ci.yml 과 같은 검사다 — 태그를 자르는 길에서도 같은 것을 묻는다.
+      - name: 패키지에 있어야 할 것이 다 있나
+        run: |
+          set -e
+          for f in dist/manifest.json dist/main.js dist/isolated.js dist/popup.html \
+                   dist/popup.js dist/popup.css dist/icons/icon16.png \
+                   dist/icons/icon48.png dist/icons/icon128.png; do
+            test -s "$f" || { echo "빠졌습니다: $f"; exit 1; }
+          done
+          node -e '
+            const m = require("./dist/manifest.json");
+            const main = m.content_scripts?.find((c) => c.js.includes("main.js"));
+            if (main?.world !== "MAIN") throw new Error("main.js 의 world 가 MAIN 이 아닙니다");
+            const war = m.web_accessible_resources?.[0]?.resources ?? [];
+            if (!war.includes("main.js")) throw new Error("main.js 가 web_accessible_resources 에 없습니다 — 오리온에서 주입이 막힙니다");
+          '
+          echo "확인했습니다"
+
+      # 예약된 `_` 디렉터리가 섞이면 패키저가 거절할 수 있다. `_locales` 만
+      # 형식이 인정하는 예외다.
+      - name: 예약된 이름이 섞이지 않았나
+        run: |
+          ! find dist -name '_*' -not -path '*/_locales*' -print | grep . || {
+            echo "::error::예약된 _ 이름이 남아 있습니다 (위 목록)"; exit 1; }
+
+      - name: zip 으로 묶기
+        run: |
+          # 점을 언더바로. 이름 가운데의 `.` 을 확장자로 읽는 파일 선택기가 있고,
+          # 설치가 막히는 원인을 찾는 동안 변수를 하나라도 줄여둔다.
+          v="$(printf '%s' "${GITHUB_REF_NAME:-dev}" | tr '.' '_')"
+          (cd dist && zip -qr "../oc-easy-mode-$v.zip" .)
+          ls -lh ./*.zip
+          unzip -l "oc-easy-mode-$v.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oc-easy-mode
+          path: '*.zip'
+
+      - name: Release 에 첨부
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.zip'
+          # 아직 공개 프로젝트가 아니다. GitHub 이 "Latest" 로 승격해 지나가던
+          # 사람에게 완성품처럼 보이게 두지 않는다.
+          prerelease: true
+          name: '실험적 ${{ github.ref_name }}'
+          body: |
+            > **실험적 빌드입니다.** 아직 공개 프로젝트가 아니며, 이 버전이 동작한다는
+            > 보장이 없습니다. 되돌릴 이전 버전을 함께 받아두는 편이 좋습니다.
+
+            **패키지는 하나입니다.** `oc-easy-mode-…zip` 한 파일로 Chrome · Edge · Orion
+            을 모두 지원합니다. 파일 이름에 버전이 들어가 있어 어느 빌드를 받았는지
+            파일 앱에서 바로 확인할 수 있습니다.
+
+            ## 아이폰 · 아이패드 (Orion)
+
+            1. App Store 에서 **Orion Browser by Kagi** 를 설치합니다.
+            2. 위의 zip 을 받습니다.
+            3. Orion 우측 하단 **•••** → **Extensions** → **+** 로 그 zip 을 고릅니다.
+
+            설치가 **"Extensions Error / Something went wrong"** 으로 튕기면 파일 문제가
+            아닙니다. 순서대로 해보세요.
+
+            1. **파일** 앱에서 zip 을 **나의 iPhone → 다운로드**로 **복사**합니다
+               (갓 받은 파일이 기기에 완전히 안 내려와 있으면 같은 에러가 납니다)
+            2. Orion 을 앱 스위처에서 위로 밀어 **완전히 종료**합니다
+            3. Extensions 에서 **기존 것을 먼저 지웁니다** (덮어쓰기 설치는 안 됩니다)
+            4. **+** 로 그 로컬 파일을 고릅니다. 그래도 막히면 설정에서 캐시를 지웁니다
+
+            ## Chrome · Edge
+
+            1. 같은 zip 을 받아 압축을 풉니다.
+            2. `chrome://extensions` 를 엽니다.
+            3. 우측 상단 **개발자 모드**를 켭니다.
+            4. **압축해제된 확장 프로그램을 로드**를 눌러 압축 푼 폴더를 선택합니다.
+
+            **압축 푼 폴더는 지우거나 옮기지 마세요** — 크롬이 그 폴더를 계속 참조합니다.
