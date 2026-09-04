@@ -31,8 +31,15 @@ jobs:
           set -e
           for f in dist/manifest.json dist/main.js dist/isolated.js dist/popup.html \
                    dist/popup.js dist/popup.css dist/icons/icon16.png \
-                   dist/icons/icon48.png dist/icons/icon128.png; do
+                   dist/icons/icon48.png dist/icons/icon128.png \
+                   dist/_locales/en/messages.json; do
             test -s "$f" || { echo "빠졌습니다: $f"; exit 1; }
+          done
+          # 매니페스트가 __MSG_ 로 이름과 설명을 참조하므로, default_locale 의
+          # messages.json 이 빠지면 크롬이 확장을 아예 읽지 못한다. 위 목록에
+          # 그것이 들어 있는 이유다. 나머지 언어는 없어도 영어로 뜬다.
+          for d in dist/_locales/*/; do
+            test -s "$d/messages.json" || { echo "빠졌습니다: $d/messages.json"; exit 1; }
           done
           node -e '
             const m = require("./dist/manifest.json");
