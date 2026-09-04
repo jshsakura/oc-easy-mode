@@ -36,6 +36,8 @@ export const DE: Record<string, string> = {
   "재생 중인 항목 없음": "Nichts läuft",
   "재생 / 일시정지": "Wiedergabe / Pause",
   "불러오는 중…": "Wird geladen…",
+  "재생목록에서도 뺄까요? 이 선택을 기억합니다.": "Auch aus der Playlist entfernen? Diese Wahl wird gemerkt.",
+  "재생목록에서도 뺐습니다.": "Auch aus der Playlist entfernt.",
   "전체 보기": "Alle ansehen",
   "관심 없음으로 표시하고 건너뜁니다.": "Als uninteressant markiert und übersprungen.",
   "셔플을 켰습니다.": "Zufallswiedergabe an.",

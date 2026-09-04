@@ -36,6 +36,8 @@ export const ID: Record<string, string> = {
   "재생 중인 항목 없음": "Tidak ada yang diputar",
   "재생 / 일시정지": "Putar / jeda",
   "불러오는 중…": "Memuat…",
+  "재생목록에서도 뺄까요? 이 선택을 기억합니다.": "Hapus dari playlist juga? Pilihan ini akan diingat.",
+  "재생목록에서도 뺐습니다.": "Dihapus dari playlist juga.",
   "전체 보기": "Lihat semua",
   "관심 없음으로 표시하고 건너뜁니다.": "Ditandai tidak tertarik dan dilewati.",
   "셔플을 켰습니다.": "Acak diaktifkan.",

@@ -36,6 +36,8 @@ export const VI: Record<string, string> = {
   "재생 중인 항목 없음": "Không có gì đang phát",
   "재생 / 일시정지": "Phát / tạm dừng",
   "불러오는 중…": "Đang tải…",
+  "재생목록에서도 뺄까요? 이 선택을 기억합니다.": "Xoá khỏi danh sách phát luôn? Lựa chọn này sẽ được ghi nhớ.",
+  "재생목록에서도 뺐습니다.": "Đã xoá khỏi danh sách phát.",
   "전체 보기": "Xem tất cả",
   "관심 없음으로 표시하고 건너뜁니다.": "Đã đánh dấu không quan tâm và bỏ qua.",
   "셔플을 켰습니다.": "Đã bật phát ngẫu nhiên.",

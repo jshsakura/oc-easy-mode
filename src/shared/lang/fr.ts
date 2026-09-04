@@ -36,6 +36,8 @@ export const FR: Record<string, string> = {
   "재생 중인 항목 없음": "Aucune lecture",
   "재생 / 일시정지": "Lecture / pause",
   "불러오는 중…": "Chargement…",
+  "재생목록에서도 뺄까요? 이 선택을 기억합니다.": "Le retirer aussi de la playlist ? Ce choix sera retenu.",
+  "재생목록에서도 뺐습니다.": "Retiré aussi de la playlist.",
   "전체 보기": "Tout voir",
   "관심 없음으로 표시하고 건너뜁니다.": "Marqué comme sans intérêt et passé.",
   "셔플을 켰습니다.": "Lecture aléatoire activée.",

@@ -976,19 +976,40 @@ input[type=range]::-moz-range-thumb {
   -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
   border: 1px solid var(--pop-line); border-radius: var(--radius-lg); box-shadow: var(--shadow);
 }
-/* The phone form: the whole screen, no card, no corners, and the buttons at
-   the foot where a thumb is. */
+/* The phone form: a sheet at the foot of the screen, which is what every menu
+   on this device already is. It was the whole page, and that broke three ways
+   at once — it wore none of the product's shapes, it left a band of nothing
+   between four playlists and the field below them, and a full screen has no
+   outside to press, so the one way a dialog is dismissed was gone. A sheet is
+   as tall as its contents, keeps the dimmed page above it as a target, and
+   looks like the menus it sits beside. */
 .modal.full {
-  width: 100dvw; max-width: none; height: 100dvh; max-height: none;
-  border: 0; border-radius: 0;
-  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  width: 100dvw; max-width: none; height: auto; max-height: 76dvh;
+  align-self: flex-end;
+  border: 0; border-top: 1px solid var(--pop-line);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 0 0 env(safe-area-inset-bottom);
 }
-.modal.full h3 { padding: 26px 20px 14px; font-size: 20px; }
-.modal.full .list { flex: 1; padding: 0 12px 8px; }
+.modal.full .modalHead { border-bottom: 1px solid var(--border); }
+.modal.full .modalHead h3 { padding: 22px 4px 18px 20px; font-size: 19px; }
+.modal.full .modalClose { margin: 14px 8px 0 0; }
+.modal.full .list { padding: 0 12px 8px; }
 .modal.full .list button { padding: 14px 12px; font-size: 15px; }
-.modal.full .new { margin-top: auto; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); }
+.modal.full .new { padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); }
 .modal.full .new .btn { height: 44px; font-size: 15px; }
-.modal h3 { margin: 0; padding: 22px 22px 12px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+/* Title and exit on one band, with a hairline under it: the same shape the
+   opened player wears, so a dialog reads as part of the product rather than as
+   a page that arrived from somewhere else. */
+.modalHead { display: flex; align-items: flex-start; gap: 8px; flex: none; }
+.modalHead h3 { flex: 1; min-width: 0; margin: 0; padding: 22px 4px 12px 22px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.modalClose {
+  flex: none; width: 40px; height: 40px; margin: 14px 12px 0 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md); color: var(--muted-foreground);
+  transition: background var(--ease), color var(--ease);
+}
+.modalClose:hover { color: var(--foreground); }
+.modalClose:active { background: var(--hover); }
 .modal .list { overflow-y: auto; padding: 0 14px 8px; }
 .modal .list button {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -1015,13 +1036,16 @@ input[type=range]::-moz-range-thumb {
   gap: 8px; pointer-events: none;
 }
 .toast {
+  display: flex; align-items: center; gap: 10px;
   max-width: min(560px, calc(100dvw - 32px));
-  padding: 12px 18px; border-radius: var(--radius-md); font-size: 14px;
+  padding: 12px 16px; border-radius: var(--radius-md); font-size: 14px;
   background: var(--pop); color: var(--popover-foreground);
   -webkit-backdrop-filter: var(--pop-blur); backdrop-filter: var(--pop-blur);
   border: 1px solid var(--pop-line); box-shadow: var(--shadow);
 }
+.toast > svg { flex: none; color: var(--primary); }
 .toast.bad { color: var(--destructive); }
+.toast.bad > svg { color: var(--destructive); }
 
 /* ── Responsive ──────────────────────────────────────────────────────────
    Three steps, and each one gives something up rather than making everything

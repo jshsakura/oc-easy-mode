@@ -614,6 +614,11 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
   )
   try {
     const tracks = await api.playlistTracks(ctx.cfg, id)
+    // Stamped here and nowhere else: this is the one screen that knows, for
+    // certain, which list a row belongs to. It travels with the track into the
+    // queue, so 관심 없음 can offer to take it out of the list as well as out
+    // of what is playing.
+    for (const track of tracks) track.fromPlaylist = id
     if (!current(token)) return
     const cover = tracks[0]?.videoId
     const body = h('div', { class: 'rows' })

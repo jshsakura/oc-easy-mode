@@ -152,6 +152,28 @@ export interface Choice {
 }
 
 /**
+ * The title, and the way out beside it.
+ *
+ * A dialog that fills the screen has no outside to press, so the backdrop —
+ * which is how a card-shaped dialog is dismissed — is not reachable, and Escape
+ * is not a key a phone has. Measured on the playlist picker: full screen, no
+ * cross, nothing to do but choose. So the heading is a band with a close button
+ * in it, the same shape the opened player uses.
+ */
+function modalHead(title: string, close: () => void): HTMLElement {
+  return h(
+    'div',
+    { class: 'modalHead' },
+    h('h3', null, title),
+    h(
+      'button',
+      { class: 'modalClose', 'data-nav': '', title: t('닫기'), 'aria-label': t('닫기'), onclick: close },
+      icon('close', 20),
+    ),
+  )
+}
+
+/**
  * A dialog fills a phone.
  *
  * A 420px card floating in the middle of a 390px screen is a card with fifteen
@@ -208,7 +230,7 @@ export function pick(
       h(
         'div',
         { class: modalClass(), role: 'dialog' },
-        h('h3', null, title),
+        modalHead(title, () => done(null)),
         h(
           'div',
           { class: 'list' },
@@ -258,7 +280,7 @@ export function confirm(root: ShadowRoot, message: string, yes = t('삭제')): P
       h(
         'div',
         { class: modalClass(), role: 'alertdialog' },
-        h('h3', null, message),
+        modalHead(message, () => done(false)),
         h(
           'div',
           { class: 'new', style: 'justify-content:flex-end; border:0' },
@@ -282,7 +304,12 @@ export function toast(root: ShadowRoot, message: string, bad = false): void {
     toastHost = h('div', { class: 'toasts' })
     root.appendChild(toastHost)
   }
-  const el = h('div', { class: bad ? 'toast bad' : 'toast' }, message)
+  const el = h(
+    'div',
+    { class: bad ? 'toast bad' : 'toast' },
+    icon(bad ? 'close' : 'check', 16),
+    h('span', null, message),
+  )
   toastHost.appendChild(el)
   setTimeout(() => el.remove(), bad ? 5000 : 2600)
 }

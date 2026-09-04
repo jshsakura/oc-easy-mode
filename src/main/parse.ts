@@ -61,6 +61,15 @@ export interface Track {
   duration: string
   /** Identifies this track's slot in a playlist; needed to remove it. */
   setVideoId?: string
+  /**
+   * Which playlist this row was taken from, stamped by the screen that drew it.
+   *
+   * The queue is a flat list of tracks and knows nothing about where each one
+   * came from, so a track that leaves the queue cannot be taken out of the list
+   * it belongs to as well — there is nothing to name. This is that name. Only
+   * the playlist screen sets it, because only there is the answer certain.
+   */
+  fromPlaylist?: string
   /** Greyed out: taken down, private or region-locked. Skipped on play. */
   unavailable: boolean
 }

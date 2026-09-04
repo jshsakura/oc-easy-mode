@@ -8,16 +8,16 @@
 
 import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
-import { thumbnail } from '../parse.ts'
+import { thumbnail, type Track } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { foldPlaylists, getStoredTheme, playlistsFolded, setStoredTheme, youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
+import { dislikeRemoves, foldPlaylists, getStoredTheme, playlistsFolded, setDislikeRemoves, setStoredTheme, youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
 import { clock, explain, type Ctx, type View } from './ctx.ts'
-import { showMenu, toast, type MenuItem } from './overlay.ts'
+import { confirm, showMenu, toast, type MenuItem } from './overlay.ts'
 import { installRemote } from './remote.ts'
 import { installKeys } from './keys.ts'
 import { render } from './views.ts'
@@ -778,6 +778,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         engine.removeAt(at)
         toast(shell.overlay, t('관심 없음으로 표시하고 건너뜁니다.'))
       }
+      void alsoDropFromPlaylist(track)
     }
     void done.catch((err: unknown) => {
       if (ratedOf === track.videoId) {
@@ -789,6 +790,38 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       const kind = (err as { kind?: string } | null)?.kind
       toast(shell.overlay, kind === 'auth' ? t('평가는 유튜브에 로그인해야 누를 수 있습니다.') : explain(err), true)
     })
+  }
+
+  /**
+   * And out of the list it came from, if that is what the reader wants.
+   *
+   * Asked once and remembered. The button's whole point is one press, so a
+   * dialog on every dislike would be three — but this is a real edit to a real
+   * playlist, and doing it silently the first time would be a deletion nobody
+   * agreed to. Only for a track that carries both a list to remove it from and
+   * the handle YouTube needs to do it, which together mean it is one of the
+   * reader's own lists.
+   */
+  async function alsoDropFromPlaylist(track: Track): Promise<void> {
+    const list = track.fromPlaylist
+    if (!list || !track.setVideoId) return
+    let wanted = dislikeRemoves()
+    if (wanted === null) {
+      const named = ctx.playlists.find((p) => p.id === list)?.title
+      wanted = await confirm(
+        shell.overlay,
+        named ? `'${named}'에서도 뺄까요? 이 선택을 기억합니다.` : t('재생목록에서도 뺄까요? 이 선택을 기억합니다.'),
+        t('빼기'),
+      )
+      setDislikeRemoves(wanted)
+    }
+    if (!wanted) return
+    try {
+      await api.removeFromPlaylist(ctx.cfg, list, track)
+      toast(shell.overlay, t('재생목록에서도 뺐습니다.'))
+    } catch (err) {
+      toast(shell.overlay, explain(err), true)
+    }
   }
 
   upButton.addEventListener('click', (ev) => setRating(ev, 'like'))

@@ -68,6 +68,30 @@ export function setStoredTheme(theme: 'light' | 'dark'): void {
  */
 const PLAYLISTS_KEY = 'oc-easy-mode:side-playlists'
 
+/**
+ * Whether 관심 없음 also takes the track out of the playlist it came from.
+ *
+ * Asked once, on the first dislike that has a playlist behind it, and
+ * remembered — the point of the button is one press, and a dialog every time
+ * would be three. null means it has not been asked yet.
+ */
+const DISLIKE_KEY = 'oc-easy-mode:dislike-removes'
+
+export function dislikeRemoves(): boolean | null {
+  try {
+    const v = localStorage.getItem(DISLIKE_KEY)
+    if (v === 'yes') return true
+    if (v === 'no') return false
+  } catch {}
+  return null
+}
+
+export function setDislikeRemoves(yes: boolean): void {
+  try {
+    localStorage.setItem(DISLIKE_KEY, yes ? 'yes' : 'no')
+  } catch {}
+}
+
 export function playlistsFolded(): boolean {
   try {
     return localStorage.getItem(PLAYLISTS_KEY) === 'folded'
