@@ -292,8 +292,31 @@ input { font: inherit; color: inherit; }
 .sideScroll {
   flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 2px;
   overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  /* Out to the pane's edge and back in again, so the scrollbar rides the edge
+     of the drawer instead of floating 12px inside it, while the rows stay
+     exactly where they were. */
+  margin-inline: -12px; padding-inline: 12px;
+  scrollbar-width: thin; scrollbar-color: var(--glass-line) transparent;
 }
+/* **Every row keeps its own height.**
+   A flex item will not normally shrink below its content, but that protection
+   is dropped for an item whose overflow is not visible, and .pl sets
+   overflow: hidden to get its ellipsis. So the playlists were being squeezed
+   instead of overflowing: measured at 390x844 with twenty of them, twenty rows
+   fell from 38px to 18px, the names printed on top of each other, and the
+   column never scrolled because nothing ever overflowed. The spacer is the one
+   thing here whose whole job is to take up slack. */
+.sideScroll > * { flex: none; }
+.sideScroll > .spacer { flex: 1 0 auto; }
+/* Thin, and the colour of the hairline that edges the pane. The shared rule
+   above draws a 3px border in --background, which is the page's colour and
+   not this pane's, so on the drawer it read as a gap rather than a bar. */
+.sideScroll::-webkit-scrollbar { width: 6px; }
+.sideScroll::-webkit-scrollbar-track { background: transparent; }
+.sideScroll::-webkit-scrollbar-thumb {
+  background: var(--glass-line); border: 0; border-radius: 999px;
+}
+.sideScroll::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 /* Everything in this column shares one left edge and one icon-to-label gap:
    10px of padding, an 18px glyph, 12px of gap. They had been 8/20/8, 10/18/10
    and 10/18/12, so the brand, the switch and the destinations each started at
@@ -316,10 +339,16 @@ input { font: inherit; color: inherit; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
 }
 .side .spacer { flex: 1; }
-/* At the top, under the name, where the way out of a thing belongs — and in
-   the head, so it is reachable however far the playlists below have scrolled.
-   Same indent and same gap as every other line in the column. */
-.exit { margin-top: 0; }
+/* The pane's own controls: leaving, and closing. Both live in the name row,
+   both are the same 34px square as the theme glyph in the header strip, so the
+   three read as one family wherever they appear. */
+.headAction {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 34px; height: 34px; border-radius: var(--radius-md);
+  color: var(--muted-foreground); transition: background var(--ease), color var(--ease);
+}
+.headAction:hover { color: var(--foreground); background: var(--hover); }
+.headAction:active { background: var(--secondary); }
 
 /* ── The header strip, on a narrow screen only ───────────────────────────── */
 .top { display: none; }
@@ -337,13 +366,9 @@ input { font: inherit; color: inherit; }
 .themeButton:hover { color: var(--foreground); }
 .themeButton:active { background: var(--hover); }
 
-.drawerClose {
-  display: none; width: 34px; height: 34px; border-radius: var(--radius-md);
-  align-items: center; justify-content: center; color: var(--muted-foreground);
-  transition: background var(--ease), color var(--ease);
-}
-.drawerClose:hover { color: var(--foreground); }
-.drawerClose:active { background: var(--hover); }
+/* Drawer only: on a wide screen the column is simply there and there is
+   nothing to close. The rest of its look comes from .headAction. */
+.drawerClose { display: none; }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
 /* The page has margins the way a book does — text starts away from the edge,
@@ -1044,7 +1069,6 @@ input[type=range]::-moz-range-thumb {
 .app.narrow .brand { padding: 4px 4px 14px; }
 /* A finger is not a cursor: every line in the drawer is a target. */
 .app.narrow .nav { padding: 11px 12px; font-size: 15px; }
-.app.narrow .exit { padding: 11px 12px; font-size: 15px; }
 .app.narrow .side .pl { padding: 9px 12px; font-size: 14px; }
 /* A shelf reaches both edges of the screen and keeps going. The fade was a
    desktop answer to a hard clip; on a phone it greys out the card a thumb is
@@ -1219,7 +1243,14 @@ input[type=range]::-moz-range-thumb {
      the menu — so four tracks. Declaring three left the menu with no column of
      its own and the grid gave it an implicit row: the ⋯ dropped onto a line of
      its own under the title. */
-  .row { grid-template-columns: 44px 1fr 32px 32px; gap: 10px; padding: 8px 4px; }
+  /* On .rowInner, not on .row. The row is two boxes now — the content and the
+     strip of actions a swipe brings out — and leaving this template on .row put
+     the whole of the content into the 44px artwork column: every title crushed
+     to two characters with the picture on top of it. Measured on the queue
+     screen, and it is the shape the phone was in. */
+  .rowInner { grid-template-columns: 44px 1fr; gap: 10px; }
+  .row { padding: 8px 4px; }
+  .rowActions { gap: 4px; margin-left: 4px; }
   .row .idx, .row .dur { display: none; }
   /* The bars come back, over the artwork.
      The number column is dropped on a phone and the bars lived inside it, so
