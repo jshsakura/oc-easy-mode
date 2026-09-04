@@ -179,3 +179,49 @@ test('an arrival of our own is allowed to play', async () => {
     await h.close()
   }
 })
+
+test('the mute button silences the video element, and hands the level back', async () => {
+  const h = await open(WATCH)
+  try {
+    const ui = app(h.page)
+    await expect(ui.locator('.app')).toBeVisible()
+
+    // Playing first. The engine writes our mute onto the element again on
+    // every tick while there is sound, so a press over a stopped player would
+    // never exercise the path that actually keeps a phone quiet.
+    await expect(ui.locator('.bar .now .t')).not.toHaveText('재생 중인 항목 없음')
+    await ui.locator('.ctl button[title="재생 / 일시정지"]').click()
+    await expect
+      .poll(() => h.page.evaluate(() => document.querySelector('video')?.paused), { timeout: 30_000 })
+      .toBe(false)
+
+    // The element decides whether anything is heard; the player's own answer
+    // is asked for as well, because on some builds the two disagree and that
+    // disagreement is the bug this guards.
+    const sound = () =>
+      h.page.evaluate(() => {
+        const el = document.querySelector('video')
+        const p = document.getElementById('movie_player') as { isMuted?: () => boolean } | null
+        let api: boolean | null = null
+        try {
+          api = p?.isMuted?.() ?? null
+        } catch {
+          api = null
+        }
+        return { el: el ? el.muted : null, api }
+      })
+    expect(await sound()).toEqual({ el: false, api: false })
+
+    const mute = ui.locator('.bar .right button[title="음소거"]')
+    await mute.click()
+    await expect.poll(sound).toEqual({ el: true, api: true })
+
+    await mute.click()
+    await expect.poll(sound).toEqual({ el: false, api: false })
+    // Back to the level it was at rather than to a number chosen by the
+    // button: the same action as the m key, not a second one beside it.
+    expect(await h.page.evaluate(() => JSON.parse(localStorage.getItem('oc-easy-mode:state') ?? '{}').volume)).toBeGreaterThan(0)
+  } finally {
+    await h.close()
+  }
+})

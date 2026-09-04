@@ -42,6 +42,33 @@ async function phone(): Promise<{ context: BrowserContext; page: import('@playwr
   return { context, page }
 }
 
+// A phone that YouTube believes, which the one above is not: Orion's user
+// agent is a desktop Mac, so m.youtube.com answers it with the desktop site
+// and <ytm-app> never exists. The settings sheet below is the mobile site's
+// own furniture, so it needs a profile YouTube serves that site to.
+const IPHONE_SAFARI_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+
+async function mobileSite(): Promise<{ context: BrowserContext; page: import('@playwright/test').Page }> {
+  const profile = mkdtempSync(join(tmpdir(), 'oc-mobile-'))
+  const context = await chromium.launchPersistentContext(profile, {
+    channel: 'chromium',
+    args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`, '--lang=ko-KR'],
+    userAgent: IPHONE_SAFARI_UA,
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  })
+  const page = context.pages()[0] ?? (await context.newPage())
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('oc-easy-mode:on', '1')
+      localStorage.setItem('oc-easy-mode:state', JSON.stringify({ lang: 'ko' }))
+    } catch {}
+  })
+  return { context, page }
+}
+
 test('the layout follows the viewport, and the popup follows the screen', () => {
   // In the page: is there room beside the content? Nothing else is asked,
   // because nothing else is reliable — Orion on iPhone claims to be a desktop
@@ -304,6 +331,136 @@ test('the picture does not come back after the drawer closes', async () => {
         }),
       )
       .toBe('OC-EASY-MODE')
+  } finally {
+    await context.close()
+  }
+})
+
+test('search on a phone asks YouTube and comes back with rows to choose from', async () => {
+  const { context, page } = await phone()
+  try {
+    await page.goto('https://m.youtube.com/watch?v=BzYnNdJhZQw', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    })
+    const ui = page.locator('oc-easy-mode')
+    const over = page.locator('oc-easy-mode-overlay')
+    await expect(ui.locator('.app.narrow')).toBeVisible()
+
+    // The header's way in, because the drawer has no 검색 line on a phone.
+    await ui.locator('.top .searchOpen').click()
+    const box = over.locator('.searchbox input')
+    await expect(box).toBeFocused()
+    await box.fill('아이유 밤편지')
+    await box.press('Enter')
+
+    // Real answers, not the skeleton that stands in while they are fetched:
+    // the placeholders wear the same class names, so a locator without this
+    // passes on an empty panel.
+    const rows = over.locator('.rows .row:not([aria-hidden])')
+    await expect(rows.first()).toBeVisible()
+    expect(await rows.count()).toBeGreaterThan(2)
+    const title = (await rows.first().locator('.title').textContent())?.trim() ?? ''
+    expect(title.length).toBeGreaterThan(0)
+
+    // And one of them can be taken: the panel goes away and the bar says what
+    // was chosen, on the layout where the panel is the whole screen.
+    await rows.first().locator('.meta').click()
+    await expect(over.locator('.modal.search')).toHaveCount(0)
+    await expect(ui.locator('.bar .now .t')).toHaveText(title)
+  } finally {
+    await context.close()
+  }
+})
+
+test('the gear on the mobile player opens YouTube own sheet, and it can be seen', async () => {
+  const { context, page } = await mobileSite()
+  try {
+    await page.goto('https://m.youtube.com/watch?v=BzYnNdJhZQw', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    })
+    const ui = page.locator('oc-easy-mode')
+    await expect(ui.locator('.app.narrow')).toBeVisible()
+    // The mobile site, which is what puts a <bottom-sheet-container> on the
+    // page at all. Without it this test would be measuring the desktop player.
+    expect(await page.locator('ytm-app').count()).toBe(1)
+
+    const first = ui.locator('.tile:not([aria-hidden]), .row:not([aria-hidden])').first()
+    await first.waitFor({ timeout: 60_000 })
+    await first.click()
+    // 영상 mode: the picture across the top, which is where the gear is.
+    await ui.locator('.bar .vid').click()
+    await expect(ui.locator('.slot')).toHaveClass(/stage/)
+
+    const closed = () =>
+      page.evaluate(() => {
+        const c = document.querySelector('bottom-sheet-container')
+        return c ? { kids: c.children.length, display: getComputedStyle(c).display } : null
+      })
+    // Shut, it is display:none from YouTube's own stylesheet with nothing in
+    // it, which is why our rule is not scoped to the hidden attribute.
+    await expect.poll(closed).toEqual({ kids: 0, display: 'none' })
+
+    // The controls are built on the first tap of the picture and fade a few
+    // seconds later, so the tap and the press are retried together rather
+    // than waited on separately.
+    const box = (await ui.locator('.slot').boundingBox())!
+    const gear = page.locator('.player-settings-icon')
+    await expect(async () => {
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+      await expect(gear).toBeVisible({ timeout: 2500 })
+    }).toPass({ timeout: 60_000 })
+    await gear.click()
+
+    // What the gear opens is not in the player: YouTube builds the quality,
+    // speed and caption menu into a direct child of <ytm-app>, which the
+    // stylesheet that hides the page had not been letting through. Visible
+    // was never the whole question, so this asks for a box on the screen and
+    // then asks the page who is on top of it.
+    const sheet = () =>
+      page.evaluate(() => {
+        const c = document.querySelector('bottom-sheet-container')
+        if (!c) return { found: false }
+        // The container itself is a 0x0 wrapper and the scrim inside it fills
+        // the screen; the panel is the one box that is large and neither.
+        let panel: HTMLElement | null = null
+        let biggest = 0
+        for (const el of Array.from(c.querySelectorAll<HTMLElement>('*'))) {
+          const b = el.getBoundingClientRect()
+          if (b.width >= window.innerWidth || b.height < 200 || b.width < 200) continue
+          if (getComputedStyle(el).visibility !== 'visible') continue
+          if (b.width * b.height > biggest) {
+            biggest = b.width * b.height
+            panel = el
+          }
+        }
+        if (!panel) return { found: true, panel: false }
+        const b = panel.getBoundingClientRect()
+        const top = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2)
+        return {
+          found: true,
+          panel: true,
+          containerVisibility: getComputedStyle(c).visibility,
+          containerZ: Number(getComputedStyle(c).zIndex),
+          panelVisibility: getComputedStyle(panel).visibility,
+          onScreen: b.y >= 0 && b.y + b.height <= window.innerHeight && b.x >= 0,
+          reachable: !!top && c.contains(top),
+        }
+      })
+    // Polled: the sheet slides up, so the frame the gear was pressed on has
+    // it off the bottom of the screen and nothing to measure yet.
+    await expect.poll(sheet, { timeout: 30_000 }).toEqual({
+      found: true,
+      panel: true,
+      containerVisibility: 'visible',
+      // Above our own overlay, which sits at 2147483100: while the sheet is
+      // up it is the thing being used.
+      containerZ: 2147483500,
+      panelVisibility: 'visible',
+      onScreen: true,
+      reachable: true,
+    })
   } finally {
     await context.close()
   }
