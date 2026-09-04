@@ -138,4 +138,6 @@ export const VI: Record<string, string> = {
   "위로": "Lên trên",
   "아래로": "Xuống dưới",
   "순서를 바꾸지 못했습니다.": "Không thể sắp xếp lại.",
+  "이 화면에서": "Trên màn hình này",
+  "유튜브 전체": "Toàn bộ YouTube",
 }

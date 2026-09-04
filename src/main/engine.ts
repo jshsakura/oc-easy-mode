@@ -513,13 +513,16 @@ export class Engine {
    * on a device that refuses volumes the stored number never moves and the bar
    * would go on drawing a speaker over a muted track.
    */
+  /**
+   * Ours to say. It used to ask the player as well, and the player says
+   * "muted" whenever YouTube starts a track muted on its own — which on a
+   * phone is every track that starts without a press — so the bar showed a
+   * mute nobody had asked for and syncMute() then kept it. The volume is the
+   * one truth: zero is muted, anything else is not, and the element is made
+   * to agree.
+   */
   get muted(): boolean {
-    if (this.state.volume === 0) return true
-    try {
-      return this.player?.isMuted() === true
-    } catch {
-      return false
-    }
+    return this.state.volume === 0
   }
 
   private applyVolume(): void {
@@ -541,10 +544,14 @@ export class Engine {
    * lets script change it and a tick is where a later mute would be noticed.
    */
   private syncMute(): void {
+    const want = this.state.volume === 0
+    const p = this.player
+    try {
+      if (!want && p?.isMuted()) p.unMute()
+      if (want && p && !p.isMuted()) p.mute()
+    } catch {}
     const el = this.videoEl()
-    if (!el) return
-    const want = this.state.volume === 0 || this.player?.isMuted() === true
-    if (el.muted !== want) el.muted = want
+    if (el && el.muted !== want) el.muted = want
   }
 
   // ── Speed ─────────────────────────────────────────────────────────────────

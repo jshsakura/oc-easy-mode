@@ -138,4 +138,6 @@ export const ID: Record<string, string> = {
   "위로": "Naikkan",
   "아래로": "Turunkan",
   "순서를 바꾸지 못했습니다.": "Gagal mengubah urutan.",
+  "이 화면에서": "Di layar ini",
+  "유튜브 전체": "Seluruh YouTube",
 }

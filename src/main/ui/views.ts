@@ -28,6 +28,12 @@ import { makeSortable } from './sortable.ts'
  */
 let generation = 0
 
+/** The tracks the current screen is showing, for a search of this screen. */
+let shown: Track[] = []
+export function screenTracks(): Track[] {
+  return shown
+}
+
 /** Whether the render holding this token is still the one being awaited. */
 function current(token: number): boolean {
   return token === generation
@@ -36,6 +42,7 @@ function current(token: number): boolean {
 /** Draws `view` into `main`. Returns once the first paint is done. */
 export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
   generation += 1
+  shown = []
   const view = ctx.view
   switch (view.kind) {
     case 'explore':
@@ -149,6 +156,7 @@ function layout(
 ): void {
   const asGrid = shape === 'grid'
   into.className = asGrid ? 'grid' : 'rows'
+  shown = list
   followNowPlaying(ctx, into)
   replace(
     into,
@@ -956,6 +964,7 @@ function recent(ctx: Ctx, main: HTMLElement): void {
 // ── Queue ──────────────────────────────────────────────────────────────────
 
 function queue(ctx: Ctx, main: HTMLElement): void {
+  shown = ctx.engine.state.queue
   const q = ctx.engine.state.queue
   let queueRows: HTMLElement | undefined
   replace(

@@ -138,4 +138,6 @@ export const FR: Record<string, string> = {
   "위로": "Monter",
   "아래로": "Descendre",
   "순서를 바꾸지 못했습니다.": "Impossible de réordonner.",
+  "이 화면에서": "Sur cet écran",
+  "유튜브 전체": "Tout YouTube",
 }

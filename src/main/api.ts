@@ -31,6 +31,8 @@ export interface Page {
   continuation?: string
   /** Which endpoint the continuation belongs to. */
   endpoint: 'search' | 'browse' | 'next'
+  /** Which client answered, so the continuation is asked of the same one. */
+  client?: Client
 }
 
 // Search filter "type: video", protobuf-encoded the way the page sends it.
@@ -38,8 +40,21 @@ export interface Page {
 const VIDEOS_ONLY = 'EgIQAQ%3D%3D'
 
 export async function search(cfg: YtCfg, query: string): Promise<Page> {
-  const res = await call(cfg, 'search', { query, params: VIDEOS_ONLY })
-  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: 'search' }
+  // As the desktop client where the page is not one, the way the feeds and
+  // playlists already are. The mobile client answers a search in shapes this
+  // parser does not read, so on a phone every query came back as "no
+  // results" (2026-09-04, 마인크래프트). The page's own client is the fallback.
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
+  let res: Json
+  let client: Client = as
+  try {
+    res = await call(cfg, 'search', { query, params: VIDEOS_ONLY }, as)
+  } catch (err) {
+    if (as === 'page') throw err
+    client = 'page'
+    res = await call(cfg, 'search', { query, params: VIDEOS_ONLY })
+  }
+  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: 'search', client }
 }
 
 /** A mix seeded from one video: the page's own "radio" for it. */
@@ -231,8 +246,8 @@ export async function lyrics(cfg: YtCfg, videoId: string): Promise<Line[]> {
 /** The next page of any of the above. */
 export async function more(cfg: YtCfg, page: Page): Promise<Page> {
   if (!page.continuation) return { tracks: [], shelves: [], endpoint: page.endpoint }
-  const res = await call(cfg, page.endpoint, { continuation: page.continuation })
-  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: page.endpoint }
+  const res = await call(cfg, page.endpoint, { continuation: page.continuation }, page.client ?? 'page')
+  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: page.endpoint, client: page.client }
 }
 
 /** The signed-in user's playlists. Throws an `auth` error when signed out. */

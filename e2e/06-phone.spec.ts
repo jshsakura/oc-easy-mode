@@ -149,11 +149,17 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     await ui.locator('.drawerToggle').click()
     await ui.locator('.nav').filter({ hasText: '둘러보기' }).click()
     await ui.locator('.shelf .tile:not([aria-hidden])').first().click()
-    await ui.locator('.main .row .more').first().click()
-    const menu = over.locator('.menu.sheetMenu')
+    const more = ui.locator('.main .row .more').first()
+    const pressed = (await more.boundingBox())!
+    await more.click()
+    // Where it was pressed: under the button, aligned to its right edge, and
+    // wholly on the screen.
+    const menu = over.locator('.menu.touch')
     await expect(menu).toBeVisible()
     const box = (await menu.boundingBox())!
-    expect(box.height).toBeLessThanOrEqual(844 * 0.4 + 1)
+    expect(Math.abs(box.x + box.width - (pressed.x + pressed.width))).toBeLessThanOrEqual(12)
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.x).toBeGreaterThanOrEqual(0)
     expect(box.y + box.height).toBeLessThanOrEqual(844)
     await expect(menu.locator('.menuTitle')).not.toHaveText('')
     await menu.locator('.menuClose').click()

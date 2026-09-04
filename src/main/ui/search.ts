@@ -19,7 +19,7 @@ import { h, icon, replace } from './dom.ts'
 import { explain, type Ctx } from './ctx.ts'
 import { holdModal } from './overlay.ts'
 import { row } from './rows.ts'
-import { addQuick, nothing, skRow, skRows } from './views.ts'
+import { addQuick, nothing, screenTracks, skRow, skRows } from './views.ts'
 
 /** How long the field waits after the last keystroke before asking YouTube. */
 const SETTLE_MS = 350
@@ -52,6 +52,7 @@ export function openSearch(ctx: Ctx, query = ''): void {
     'data-nav': '',
   })
   const body = h('div', { class: 'searchBody' })
+
   const panel = h(
     'div',
     { class: narrowNow() ? 'modal search full' : 'modal search', role: 'dialog', 'aria-label': t('검색') },
@@ -106,25 +107,45 @@ export function openSearch(ctx: Ctx, query = ''): void {
   /** Which request is the latest; an older answer arriving late is dropped. */
   let generation = 0
 
+  /**
+   * One question, two answers, in one list.
+   *
+   * What is on the screen that matches comes first, because when you are
+   * standing in a playlist that is usually what you meant; YouTube's answer
+   * follows under its own heading. Neither has to be chosen, which was the
+   * objection to tabs: "화면일지 전체일지 선택하게 할 거 아니면" (2026-09-04).
+   */
+  function onScreen(q: string): Track[] {
+    const fold = (v: string) => v.toLowerCase().replace(/\s+/g, '')
+    const needle = fold(q)
+    return screenTracks().filter((tr) => fold(`${tr.title} ${tr.byline}`).includes(needle))
+  }
+
+  const mark = (label: string, n?: number) =>
+    h('div', { class: 'searchMark' }, label, n !== undefined && h('span', { class: 'sub' }, tn('곡', n)))
+
   async function run(raw: string): Promise<void> {
     const q = raw.trim()
     if (q === shown) return
     shown = q
     const token = ++generation
     if (!q) return replace(body, nothing(t('무엇을 찾을까요?'), 'search'))
-    replace(body, skRows(6))
+    const hits = onScreen(q)
+    const here = hits.length > 0 ? [mark(t('이 화면에서'), hits.length), ...answers({ tracks: hits, shelves: [], endpoint: 'search' }, true)] : []
+    const there = h('div', { class: 'searchThere' }, skRows(4))
+    replace(body, here, mark(t('유튜브 전체')), there)
     try {
       const page = await api.search(ctx.cfg, q)
       if (token !== generation) return
       if (page.tracks.length === 0) {
         shown = null
-        return replace(body, nothing(t('결과가 없습니다.'), 'search'))
+        return replace(there, nothing(t('결과가 없습니다.'), 'search'))
       }
-      replace(body, answers(page))
+      replace(there, answers(page))
     } catch (err) {
       if (token !== generation) return
       shown = null
-      replace(body, h('div', { class: 'err' }, explain(err)))
+      replace(there, h('div', { class: 'err' }, explain(err)))
     }
   }
 
@@ -142,14 +163,17 @@ export function openSearch(ctx: Ctx, query = ''): void {
    * toolbar every time, and 전체 재생 could not be reached without a pointer.
    * A line as wide as the field is straight ahead of it.
    */
-  function answers(first: api.Page): HTMLElement[] {
+  function answers(first: api.Page, fromScreen = false): HTMLElement[] {
     let page = first
     let all: Track[] = first.tracks
     const rows = h('div', { class: 'rows' })
     const more = h('button', { class: 'btn ghost', 'data-nav': '', style: 'margin: 16px auto 0; display: flex' }, t('더 보기'))
 
     const play = (i: number) => {
-      ctx.engine.play(all, i)
+      // A hit on the queue screen is a jump within the queue, not a new one.
+      const inQueue = fromScreen ? ctx.engine.state.queue.findIndex((tr) => tr.videoId === all[i]?.videoId) : -1
+      if (inQueue >= 0 && ctx.view.kind === 'queue') ctx.engine.play(ctx.engine.state.queue, inQueue)
+      else ctx.engine.play(all, i)
       close()
     }
     /** Appends the rows not yet drawn; the ones already there are kept. */
@@ -187,8 +211,12 @@ export function openSearch(ctx: Ctx, query = ''): void {
     })
     draw()
 
-    return [
+    // Hits on the queue screen are already in the queue; offering to add
+    // them again would be a line that does nothing.
+    const onQueue = fromScreen && ctx.view.kind === 'queue'
+    const lines: Array<HTMLElement | null> = [
       h('button', { class: 'searchAct', 'data-nav': '', onclick: () => play(0) }, icon('play', 18), h('span', null, t('전체 재생')), h('span', { class: 'sub' }, tn('곡', all.length))),
+      onQueue ? null :
       h(
         'button',
         {
@@ -204,6 +232,7 @@ export function openSearch(ctx: Ctx, query = ''): void {
       ),
       rows,
     ]
+    return lines.filter((el): el is HTMLElement => el !== null)
   }
 
   // As you type, once the typing pauses; at once on Enter.

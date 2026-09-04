@@ -161,8 +161,7 @@ export const STYLES = `
 :host(.light),
 .app.light,
 .menu.light,
-.modal.light,
-.sheetMenu.light {
+.modal.light {
   --ground: #f2efe9;
   --side-panel: #f7f4ee;
   --panel: #fbfaf6;
@@ -473,6 +472,13 @@ input { font: inherit; color: inherit; }
   transition: background var(--ease), color var(--ease), border-color var(--ease);
 }
 .btn:active { background: var(--hover); }
+/* A thin fill under the outline. Over glass with artwork behind it, an
+   outline alone came and went with the picture ("배경 따라 버튼이 안 보일
+   때가 있어", 2026-09-04); a little of the panel's own colour under it keeps
+   the button a button on any background. */
+.btn { background: color-mix(in srgb, var(--background) 58%, transparent); }
+.btn:hover { background: color-mix(in srgb, var(--background) 72%, var(--secondary)); }
+.btn.ghost { background: transparent; }
 .btn.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
 .btn.primary:active { background: var(--primary-hover); }
 .btn.ghost { border-color: transparent; color: var(--muted-foreground); }
@@ -765,7 +771,9 @@ input { font: inherit; color: inherit; }
   /* relative, because the elapsed line runs along the bar's bottom edge —
      see the seek rule just below the transport. */
   grid-column: 2; min-width: 0; background: transparent; position: relative;
-  display: grid; grid-template-columns: minmax(200px, 1fr) minmax(320px, 2fr) minmax(200px, 1fr);
+  /* The title gets the room: it is the one thing in the bar that has a
+     length of its own, and the transport does not grow with the window. */
+  display: grid; grid-template-columns: minmax(260px, 2fr) minmax(320px, 1.1fr) minmax(220px, 1fr);
   align-items: center; padding: 0; gap: 16px;
 }
 .bar .now { display: flex; align-items: center; gap: 14px; min-width: 0; overflow: hidden; }
@@ -776,7 +784,7 @@ input { font: inherit; color: inherit; }
 /* The pair sits between the title and the transport, and at 2px apart in a
    34px box it read as one crowded lump on a phone. Now that only the chosen
    one stays lit there is room to give it. */
-.bar .now .rate-box { display: flex; flex: none; gap: 6px; margin-left: 6px; }
+.bar .right .rate-box { display: flex; flex: none; margin-right: 2px; }
 .ctl .rate-box { display: flex; gap: 2px; }
 .rate {
   width: 34px; height: 34px; border-radius: var(--radius-md);
@@ -959,46 +967,21 @@ input[type=range]::-moz-range-thumb {
 .menu button:hover svg { color: var(--foreground); }
 .menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px -1px; }
 
-/* The narrow form: a sheet at the foot of the screen. Placed here rather than
-   in the width query below because this root has no .app to qualify it and the
-   decision is made in script anyway. */
-.menu.sheetMenu {
-  /* Hung from 100dvh, not from bottom: 0. A fixed box's bottom is the layout
-     viewport's, which is taller than the screen wherever the browser counts
-     its own bars into it, and the sheet's last line sat 62px under the last
-     visible pixel (measured). The app is 100dvh for the same reason. */
-  left: 10px; right: 10px; bottom: auto;
-  top: calc(100dvh - 12px - env(safe-area-inset-bottom)); transform: translateY(-100%);
-  min-width: 0; max-width: none; padding: 6px 8px 8px; border-radius: var(--radius-lg);
-  /* Two columns, so seven choices are four lines and the sheet is a card at
-     the foot of the screen rather than most of it. Asked for, repeatedly:
-     "화면에 맞게 작게". Never more than two fifths of the screen either way,
-     and scrolls past that. */
-  display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; align-content: start;
-  max-height: 40dvh; overflow-y: auto; overscroll-behavior: contain;
-  /* The dimming, without a second element to manage. A menu with nothing
-     behind it reads as the screen having changed rather than as something
-     opening on top of it — which is exactly how it was read. */
-  box-shadow: var(--shadow), 0 0 0 100vmax oklch(0 0 0 / 45%);
-}
-/* Tighter than it was. A thumb still has a 40px target, which is the number
-   that matters, but the sheet was spending 50px a line and seven lines is half
-   a phone. */
-.menu.sheetMenu button { padding: 9px 10px; font-size: 13.5px; gap: 8px; min-width: 0; }
-.menu.sheetMenu button > :not(svg) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.menu.sheetMenu hr { grid-column: 1 / -1; }
-/* The name of the thing and the way out, on one line across both columns. */
-.menuHead { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 2px 0 4px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+/* The touch form: the same popover, sized for a thumb, with a name and a
+   close on top. Scrolls inside itself past the visible height, which the
+   script sets from the visual viewport. */
+.menu.touch { min-width: 248px; padding: 4px 6px 6px; overflow-y: auto; overscroll-behavior: contain; }
+.menu.touch button { padding: 8px 10px; font-size: 13.5px; gap: 9px; min-width: 0; }
+.menu.touch button > :not(svg) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu.touch button svg { width: 17px; height: 17px; }
+.menu.touch hr { margin: 3px 6px; }
+.menuHead { display: flex; align-items: center; gap: 8px; padding: 2px 0 3px 10px; border-bottom: 1px solid var(--border); margin-bottom: 3px; }
 .menuTitle { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted-foreground); }
- /* Specific enough to beat the menu's own button rule, which would make
-    this one full-width and push the name off the line. */
-.menu .menuClose { flex: none; width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-md); color: var(--muted-foreground); }
+/* Specific enough to beat the menu's own button rule, which would make this
+   one full-width and push the name off the line. */
+.menu .menuClose { flex: none; width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-md); color: var(--muted-foreground); }
 .menu .menuClose:active { background: var(--hover); }
-.menu:not(.sheetMenu) .menuHead { display: none; }
-/* A thumb aims at the sheet, so the glyph gives it something to aim at. */
-.menu.sheetMenu button svg { width: 17px; height: 17px; }
-/* The dividers were eating a line each. A hairline is enough to group. */
-.menu.sheetMenu hr { margin: 4px 8px; }
+.menu:not(.touch) .menuHead { display: none; }
 
 .scrim {
   position: fixed; left: 0; top: 0; width: 100dvw; height: 100dvh; z-index: 2147483090;
@@ -1447,7 +1430,7 @@ input[type=range]::-moz-range-thumb {
    either — the bar is 66px tall with a 42px row in it, and its top-right
    corner is the video button. So they wait in the opened player, which is one
    press away and where they are already drawn at 40px. */
-.app.narrow:not(.sheet-open) .bar .now .rate-box { display: none; }
+.app.narrow:not(.sheet-open) .bar .right .rate-box { display: none; }
 /* Off everywhere else: a desktop keeps the menu, which is where these two have
    always lived and where there is no shortage of room. */
 .right .sp, .right .sl, .right .eqb { display: none; }
@@ -1467,6 +1450,11 @@ input[type=range]::-moz-range-thumb {
 .searchHead { display: flex; align-items: center; gap: 6px; padding: 14px 12px 0 16px; flex: none; }
 .searchHead .searchbox { flex: 1; margin: 0; }
 .searchHead .modalClose { margin: 0; }
+/* The two answers, each under its own small heading. */
+.searchMark { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 6px 4px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.searchMark .sub { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 400; }
+.searchThere { margin-top: 2px; }
+.searchBody > .rows + .searchMark, .searchBody > .searchAct + .searchMark { margin-top: 18px; }
 /* An explicit minimum, which is also what lets a flex child shrink and scroll
    at all: left at auto it would grow the panel past its ceiling instead. */
 .searchBody { flex: 1 1 auto; min-height: 140px; overflow-y: auto; padding: 16px 14px 18px; }

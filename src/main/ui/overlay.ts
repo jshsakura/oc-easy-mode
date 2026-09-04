@@ -61,10 +61,9 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
   const menu = h(
     'div',
     { class: `menu ${isLight ? 'light' : ''}`.trim(), role: 'menu' },
-    // On a phone the sheet says what it is about and how to put it away.
-    // Asked for, more than once: a sheet with no close button and no name
-    // reads as the screen having changed, and a thumb has nowhere obvious
-    // to press to get back.
+    // On a phone the menu says what it is about and how to put it away: a
+    // finger has no hover to tell it which row it opened, and a thumb wants
+    // something to press to get back.
     narrow &&
       h(
         'div',
@@ -114,23 +113,26 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
   // sheet. The app already has the honest answer: this is the same judgment
   // that lays out the whole UI as narrow, and the menu can never disagree
   // with the layout it floats over.
-  if (narrow) {
-    menu.classList.add('sheetMenu')
-  } else {
-    const r = anchor.getBoundingClientRect()
-    const w = menu.offsetWidth
-    const hgt = menu.offsetHeight
-    // Under the button and aligned to its right edge, then pushed back inside
-    // the window on both axes. Only the left edge was being kept in; a menu
-    // opened from a button near the right edge of a narrow window ran off it,
-    // and one flipped above a button near the top ran off that.
-    const x = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8))
-    let y = r.bottom + 4
-    if (y + hgt > window.innerHeight - 8) y = r.top - hgt - 4
-    y = Math.max(8, Math.min(y, window.innerHeight - hgt - 8))
-    menu.style.left = `${x}px`
-    menu.style.top = `${y}px`
-  }
+  // Anchored to the button that opened it, on every screen. It was a sheet
+  // along the foot of a phone, which was a long way from the thumb that
+  // asked and grew with its choices until it was most of the screen; asked
+  // for, more than once, as "누른 데에 오버레이". Under the button and aligned
+  // to its right edge, then pushed back inside the visible viewport on both
+  // axes. Visible, not the layout viewport: on a phone innerHeight counts the
+  // browser's own bars and a menu clamped to it sat under them.
+  if (narrow) menu.classList.add('touch')
+  const vw = Math.min(window.innerWidth, window.visualViewport?.width ?? window.innerWidth)
+  const vh = Math.min(window.innerHeight, window.visualViewport?.height ?? window.innerHeight)
+  const r = anchor.getBoundingClientRect()
+  const w = menu.offsetWidth
+  const hgt = Math.min(menu.offsetHeight, vh - 16)
+  menu.style.maxHeight = `${vh - 16}px`
+  const x = Math.max(8, Math.min(r.right - w, vw - w - 8))
+  let y = r.bottom + 4
+  if (y + hgt > vh - 8) y = r.top - hgt - 4
+  y = Math.max(8, Math.min(y, vh - hgt - 8))
+  menu.style.left = `${x}px`
+  menu.style.top = `${y}px`
   menu.style.visibility = ''
   // Dismissal listens on the document, not on this shadow root.
   //

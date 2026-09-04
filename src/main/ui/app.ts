@@ -894,8 +894,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const ctl = h('div', { class: 'ctl' }, shuffleButton, prevButton, playButton, nextButton, repeatButton)
   // 대기열 first and the picture last, on every screen alike: the user's
   // word on 2026-09-04, "재생목록이 가장 왼쪽, 영상 모드는 항상 우측 끝".
-  const rightRow = h('div', { class: 'right' }, queueButton, lyricsButton, speedButton, sleepButton, eqButton, moreButton, muteButton, volume, videoButton)
-  const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy), rateBox)
+  // The heart leads the right-hand row on every screen. Beside the title it
+  // took the title's room in a column that has little: "하트 위치가 제목
+  // 짜르고 있네" (2026-09-04). The title's column is the title's.
+  const rightRow = h('div', { class: 'right' }, rateBox, queueButton, lyricsButton, speedButton, sleepButton, eqButton, moreButton, muteButton, volume, videoButton)
+  const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy))
   // The track itself is the handle: a phone opens the player by tapping what
   // is playing, which is what every music app has taught. It is a button on a
   // narrow screen only — on a desktop the bar is already showing everything,
@@ -925,21 +928,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     }
     app.classList.toggle('sheet-open', open)
     seatSlot()
-    // The heart moves rather than being restyled where it stands.
-    //
-    // In the bar, `.now` is a row and the heart sits after the title, which is
-    // where a heart goes. Opened, `.now` becomes a column — artwork, title,
-    // artist — and a third child in that stack is a heart floating on its own
-    // in the middle of the screen with a band of nothing under it. Reported
-    // exactly that way.
-    //
-    // It joined the transport, which was right while the transport was the only
-    // row of buttons the opened player had. It is not any more: there is a row
-    // of actions under it now — 가사, 영상, 대기열, 속도, 수면, 음소거 — and an
-    // opinion about the track belongs among those rather than among play, skip
-    // and repeat, which had grown to seven round buttons on a 390px screen.
-    if (open) rightRow.prepend(rateBox)
-    else now.append(rateBox)
     if (!open) {
       app.classList.remove('lyrics-open')
       lyricsButton.classList.remove('on')
