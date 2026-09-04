@@ -26,6 +26,23 @@ function look(page: import('@playwright/test').Page) {
   })
 }
 
+/**
+ * Jumps past everything already downloaded, so what plays next has to be
+ * fetched now and under the cap.
+ *
+ * Kept short of the end, because running off it would advance the queue and
+ * the next track is a different question.
+ */
+async function seekPastBuffer(page: import('@playwright/test').Page): Promise<void> {
+  await page.evaluate(() => {
+    const v = document.querySelector('video')
+    if (!v || !v.buffered.length) return
+    const ahead = v.buffered.end(v.buffered.length - 1) + 5
+    const safe = Number.isFinite(v.duration) ? Math.min(ahead, v.duration - 20) : ahead
+    if (safe > v.currentTime) v.currentTime = safe
+  })
+}
+
 const quality = (page: import('@playwright/test').Page) => look(page).then((s) => s.quality)
 const height = (page: import('@playwright/test').Page) => look(page).then((s) => s.height)
 const modeNow = (page: import('@playwright/test').Page) =>
@@ -60,9 +77,19 @@ test('music mode plays the smallest stream, and still does on the next track', a
 
     // The decoded frame lags the switch: the player answers `tiny` at once and
     // the element keeps handing back the old size until what is already
-    // buffered has played out. The height is what proves bytes were saved, so
-    // it is worth waiting for rather than dropping.
-    await expect.poll(() => height(h.page), { timeout: 90_000 }).toBeLessThanOrEqual(144)
+    // buffered has played out. The height is what proves bytes were actually
+    // saved, so it is worth keeping rather than dropping.
+    //
+    // **Ahead of the buffer, rather than waiting for it to drain.** Waiting is
+    // what made this flaky: the wait is as long as whatever was already
+    // fetched at the old quality, which is a property of the connection and
+    // not of the product. Measured on one line: 18.1s of natural drain against
+    // 1.4s after a seek, and a faster line buffers more and waits longer. A
+    // seek past the buffered end forces the next segments to be fetched, and
+    // they can only arrive at the quality the cap allows, which is the thing
+    // being asserted.
+    await seekPastBuffer(h.page)
+    await expect.poll(() => height(h.page), { timeout: 30_000 }).toBeLessThanOrEqual(144)
   } finally {
     await h.close()
   }

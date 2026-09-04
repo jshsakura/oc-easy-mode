@@ -162,6 +162,34 @@ bottom-sheet-container,
 bottom-sheet-container * { visibility: visible !important; }
 bottom-sheet-container { z-index: 2147483500 !important; pointer-events: auto !important; }
 
+/* The settings sheet, which is not in the player at all.
+ *
+ * Tapping the gear on m.youtube.com does not open anything inside the
+ * controls: YouTube builds the quality, speed and caption menu into
+ * <bottom-sheet-container>, a direct child of <ytm-app>. The whitelist above
+ * lets the player and its controls through and that container is not on it, so
+ * the menu was being built into a subtree this stylesheet had hidden. The gear
+ * worked; there was simply nothing to see.
+ *
+ * **Not scoped to :not([hidden]), on purpose.** A closed sheet is display:none
+ * from YouTube's own stylesheet, which visibility cannot and does not
+ * override, so the closed case needs no help from us: measured, closed it is
+ * 0x0 with no children and takes no touches. Scoping to the attribute would
+ * add a dependency on YouTube keeping it, and the failure it invites is the
+ * silent one, where the selector stops matching and the menu goes back to
+ * being invisible with nothing to say why.
+ *
+ * The z-index has to clear our own overlay, which sits at 2147483100: while
+ * the sheet is up it is the thing being used, and it belongs on top. */
+bottom-sheet-container,
+bottom-sheet-container * {
+  visibility: visible !important;
+}
+bottom-sheet-container {
+  z-index: 2147483500 !important;
+  pointer-events: auto !important;
+}
+
 /* The desktop player hides its own right-hand buttons once it is narrow —
  * .ytp-xsmall-width-mode takes out every .ytp-right-controls .ytp-button — and
  * our stage is narrow often. 자막 and 설정 are not optional furniture; they are
