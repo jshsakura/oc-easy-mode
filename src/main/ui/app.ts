@@ -245,22 +245,25 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           mark(20),
           h('span', null, 'RenewTube'),
           h('div', { class: 'spacer' }),
+          // The way out, as a glyph beside the way closed.
+          //
+          // It was a full labelled line under the name, and on a phone that
+          // spent a whole row of a short column on the one thing nobody opens
+          // the drawer to do. Both of these are the same size and sit in the
+          // same corner, so the row reads as the pane's own controls rather
+          // than as the first of the destinations below it.
+          h(
+            'button',
+            { class: 'headAction exit', 'data-nav': '', title: t('RenewTube 종료'), 'aria-label': t('RenewTube 종료'), onclick: opts.exit },
+            icon('leave', 18),
+          ),
           // Only ever visible in the drawer. Reaching the scrim means reaching
           // across the screen, and a drawer with no close button reads as stuck.
           h(
             'button',
-            { class: 'drawerClose', 'data-nav': '', title: t('닫기'), 'aria-label': t('닫기'), onclick: closeDrawer },
+            { class: 'headAction drawerClose', 'data-nav': '', title: t('닫기'), 'aria-label': t('닫기'), onclick: closeDrawer },
             icon('close', 18),
           ),
-        ),
-        // Leaving is a line in the list, with a glyph that leaves — and it is
-        // the second line, not the last one. At the foot of the column it was
-        // below thirty playlists and had to be scrolled to.
-        h(
-          'button',
-          { class: 'nav exit', 'data-nav': '', title: 'Esc × 2', onclick: opts.exit },
-          icon('leave', 18),
-          h('span', null, t('RenewTube 종료')),
         ),
       ),
       h(
