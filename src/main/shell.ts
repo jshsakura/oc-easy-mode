@@ -154,14 +154,6 @@ body > *:not(${HOST_TAG}):not(${OVERLAY_TAG}) { visibility: hidden !important; }
   pointer-events: none !important;
 }
 #player-control-overlay { pointer-events: var(--oc-pe, auto) !important; }
-/* The mobile player's own sheet for quality, speed and captions. It is a
-   child of body like everything else the page owns, so the rule above hid
-   it, and the gear in 영상 mode pressed into nothing (2026-09-04). Shown,
-   and above our two roots, so the choice YouTube offers can be made. */
-bottom-sheet-container,
-bottom-sheet-container * { visibility: visible !important; }
-bottom-sheet-container { z-index: 2147483500 !important; pointer-events: auto !important; }
-
 /* The settings sheet, which is not in the player at all.
  *
  * Tapping the gear on m.youtube.com does not open anything inside the
