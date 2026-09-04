@@ -87,18 +87,22 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     expect(top.y).toBe(0)
     expect(Math.round(top.width)).toBe(Math.round(app.width))
     // The header names the screen, and it is the only place that name appears.
-    await expect(ui.locator('.top .name')).toHaveText('탐색')
+    await expect(ui.locator('.top .name')).toHaveText('둘러보기')
     await expect(ui.locator('.main > h2')).toBeHidden()
 
     // Its button opens the drawer, and choosing a destination closes it.
     await ui.locator('.drawerToggle').click()
     await expect.poll(async () => (await ui.locator('.side').boundingBox())!.x).toBe(0)
-    await ui.locator('.nav').filter({ hasText: '검색' }).click()
-    const over = page.locator('oc-easy-mode-overlay')
-    await expect(over.locator('.searchbox input')).toBeVisible()
+    // The drawer has no 검색 line on a phone: the header carries it. Any
+    // destination closes the drawer.
+    await expect(ui.locator('.nav').filter({ hasText: '검색' })).toHaveCount(0)
+    await ui.locator('.nav').filter({ hasText: '대기열' }).click()
     await expect
       .poll(async () => (await ui.locator('.side').boundingBox())!.x)
       .toBeLessThan(0)
+    await ui.locator('.top .searchOpen').click()
+    const over = page.locator('oc-easy-mode-overlay')
+    await expect(over.locator('.searchbox input')).toBeVisible()
 
     // On a phone the panel is the whole screen, hung from the top so the field
     // is nowhere near the keyboard, and its own close button puts it away.

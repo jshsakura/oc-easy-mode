@@ -49,7 +49,7 @@ export function row(ctx: Ctx, track: Track, opts: RowOptions): HTMLElement {
       '-',
       { label: t('유튜브에서 열기'), icon: 'external', onSelect: () => window.open(`https://www.youtube.com/watch?v=${track.videoId}`, '_blank') },
       ...(opts.extra?.(el) ?? []),
-    ])
+    ], track.title)
   }
 
   const open = () => {

@@ -523,6 +523,9 @@ input { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .eq i { animation: none; }
 }
+/* Still while nothing is playing: bars that dance over a paused track say
+   the opposite of the truth. The app carries the flag, so every list agrees. */
+.app.paused .eq i { animation-play-state: paused; transform: scaleY(.35); }
 .row.dead { opacity: .4; }
 .row .idx { color: var(--muted-foreground); font-family: var(--font-mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
 /* Square, everywhere a picture appears: the list, the bar, the covers — one
@@ -616,7 +619,11 @@ input { font: inherit; color: inherit; }
      one row's at a time. The strip is placed outside the row and clipped by
      it, which is why nothing needs an opaque background to hide behind.
      --swipe is written by the gesture; both halves move by the same amount. */
-  .row { overflow: hidden; touch-action: pan-y; }
+  /* position: relative, or the strip parked at left: 100% measures from the
+     nearest positioned ancestor, which is the whole pane: it then sat 40px
+     past the right edge of the screen, the page grew to 425px, and the phone
+     zoomed out to fit it. Measured 2026-09-04 with scrollWidth. */
+  .row { position: relative; overflow: hidden; touch-action: pan-y; }
   .rowInner, .rowActions {
     transform: translateX(var(--swipe, 0px));
     transition: transform .2s cubic-bezier(.2, .8, .2, 1);
@@ -955,11 +962,13 @@ input[type=range]::-moz-range-thumb {
    decision is made in script anyway. */
 .menu.sheetMenu {
   left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
-  top: auto; min-width: 0; max-width: none; padding: 8px; border-radius: var(--radius-lg);
-  /* Never more than half the screen, and scrolls if the list is longer. A
-     sheet that grows with its contents eventually stops being a menu over the
-     page and becomes the page. */
-  max-height: 44dvh; overflow-y: auto; overscroll-behavior: contain;
+  top: auto; min-width: 0; max-width: none; padding: 6px 8px 8px; border-radius: var(--radius-lg);
+  /* Two columns, so seven choices are four lines and the sheet is a card at
+     the foot of the screen rather than most of it. Asked for, repeatedly:
+     "화면에 맞게 작게". Never more than two fifths of the screen either way,
+     and scrolls past that. */
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; align-content: start;
+  max-height: 40dvh; overflow-y: auto; overscroll-behavior: contain;
   /* The dimming, without a second element to manage. A menu with nothing
      behind it reads as the screen having changed rather than as something
      opening on top of it — which is exactly how it was read. */
@@ -968,7 +977,17 @@ input[type=range]::-moz-range-thumb {
 /* Tighter than it was. A thumb still has a 40px target, which is the number
    that matters, but the sheet was spending 50px a line and seven lines is half
    a phone. */
-.menu.sheetMenu button { padding: 10px 12px; font-size: 14px; gap: 10px; }
+.menu.sheetMenu button { padding: 9px 10px; font-size: 13.5px; gap: 8px; min-width: 0; }
+.menu.sheetMenu button > :not(svg) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu.sheetMenu hr { grid-column: 1 / -1; }
+/* The name of the thing and the way out, on one line across both columns. */
+.menuHead { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 2px 0 4px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.menuTitle { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted-foreground); }
+ /* Specific enough to beat the menu's own button rule, which would make
+    this one full-width and push the name off the line. */
+.menu .menuClose { flex: none; width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-md); color: var(--muted-foreground); }
+.menu .menuClose:active { background: var(--hover); }
+.menu:not(.sheetMenu) .menuHead { display: none; }
 /* A thumb aims at the sheet, so the glyph gives it something to aim at. */
 .menu.sheetMenu button svg { width: 17px; height: 17px; }
 /* The dividers were eating a line each. A hairline is enough to group. */
@@ -1556,10 +1575,15 @@ input[type=range]::-moz-range-thumb {
    asked for on 2026-09-04, "글래스 모피즘 더 적극적으로". The layer sits under
    every pane inside the app's own stacking context, and paints nothing while
    nothing plays. One small picture, blurred, costs the phone almost nothing. */
+/* inset: 0 and clipped, never larger than the app: a layer that reached past
+   the screen widened the page, and a phone answers a page wider than itself
+   by zooming out (390 became 424). The blur's soft edge is scaled away
+   instead, and the scaling is clipped by the app. */
+.app { overflow: clip; }
 .app::before {
-  content: ''; position: absolute; inset: -80px; z-index: -1; pointer-events: none;
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: var(--art, none) center / cover no-repeat;
-  filter: blur(56px) saturate(150%); opacity: .42;
+  filter: blur(56px) saturate(150%); opacity: .42; transform: scale(1.3);
   transition: opacity .6s ease;
 }
 .app.light::before { opacity: .3; }

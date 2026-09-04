@@ -222,7 +222,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     | { view?: undefined; open: () => void }
   )
   const NAV: NavItem[] = [
-    { view: { kind: 'explore' }, label: t('탐색'), icon: 'radio' },
+    { view: { kind: 'explore' }, label: t('둘러보기'), icon: 'radio' },
     { open: () => ctx.search(), label: t('검색'), icon: 'search' },
     { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
     { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
@@ -388,7 +388,9 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       h(
         'div',
         { class: 'sideScroll' },
-        NAV.map((item) => [
+        // On a phone the header already carries 검색, and the drawer saying it
+        // again read as two ways in to one thing (asked about on 2026-09-04).
+        NAV.filter((item) => !(narrowNow() && item.open)).map((item) => [
           item.section && h('h4', null, item.section),
           // 내 재생목록 is a section, not a destination. It used to be both: a
           // line that opened a screen, and under it the same lists again as a
@@ -998,7 +1000,12 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     // to a static glyph and fatal to a turning one: the ring was rebuilt every
     // 500ms and its rotation started again from zero, so it turned in visible
     // jerks rather than smoothly. Reported as 부드럽지 않게 빙빙 돈다.
-    const want = p.buffering || p.stalled ? 'wait' : p.playing ? 'pause' : 'play'
+    app.classList.toggle('paused', !p.playing)
+    // A wait that has gone on past the stall clock is not a wait any more:
+    // on an iPhone a load the page was not allowed to start sits there for
+    // ever, and a spinner that never stops is a transport with no button on
+    // it. Past the clock it shows play, and the press is what starts it.
+    const want = p.stalled ? 'play' : p.buffering ? 'wait' : p.playing ? 'pause' : 'play'
     if (want !== playGlyph) {
       playGlyph = want
       replace(playButton, want === 'wait' ? h('span', { class: 'spin' }) : icon(want, 20))
@@ -1234,7 +1241,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 function titleOf(view: View): string {
   switch (view.kind) {
     case 'explore':
-      return t('탐색')
+      return t('둘러보기')
     case 'home':
       return t('홈')
     case 'subs':

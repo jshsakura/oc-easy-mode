@@ -51,15 +51,27 @@ export function closeMenu(): void {
 }
 
 /** A popover anchored to the element that was clicked. `'-'` draws a divider. */
-export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<MenuItem | '-'>): void {
+export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<MenuItem | '-'>, title?: string): void {
   closeMenu()
   const isLight = !youtubeIsDark()
   try {
     (root.host as HTMLElement).classList.toggle('light', isLight)
   } catch {}
+  const narrow = narrowNow()
   const menu = h(
     'div',
     { class: `menu ${isLight ? 'light' : ''}`.trim(), role: 'menu' },
+    // On a phone the sheet says what it is about and how to put it away.
+    // Asked for, more than once: a sheet with no close button and no name
+    // reads as the screen having changed, and a thumb has nowhere obvious
+    // to press to get back.
+    narrow &&
+      h(
+        'div',
+        { class: 'menuHead' },
+        h('span', { class: 'menuTitle' }, title ?? ''),
+        h('button', { class: 'menuClose', title: t('닫기'), 'aria-label': t('닫기'), onclick: () => closeMenu() }, icon('close', 18)),
+      ),
     items.map((it) =>
       it === '-'
         ? h('hr')
@@ -102,7 +114,6 @@ export function showMenu(root: ShadowRoot, anchor: HTMLElement, items: Array<Men
   // sheet. The app already has the honest answer: this is the same judgment
   // that lays out the whole UI as narrow, and the menu can never disagree
   // with the layout it floats over.
-  const narrow = narrowNow()
   if (narrow) {
     menu.classList.add('sheetMenu')
   } else {

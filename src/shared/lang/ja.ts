@@ -5,7 +5,7 @@
 // See i18n.ts.
 
 export const JA: Record<string, string> = {
-  "탐색": "さがす",
+  "둘러보기": "さがす",
   "검색": "検索",
   "홈": "ホーム",
   "구독": "登録チャンネル",

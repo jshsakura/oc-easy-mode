@@ -5,7 +5,7 @@
 // See i18n.ts.
 
 export const ZH_TW: Record<string, string> = {
-  "탐색": "探索",
+  "둘러보기": "探索",
   "검색": "搜尋",
   "홈": "首頁",
   "구독": "訂閱內容",

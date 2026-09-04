@@ -5,7 +5,7 @@
 // See i18n.ts.
 
 export const VI: Record<string, string> = {
-  "탐색": "Khám phá",
+  "둘러보기": "Khám phá",
   "검색": "Tìm kiếm",
   "홈": "Trang chủ",
   "구독": "Kênh đăng ký",

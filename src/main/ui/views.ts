@@ -16,7 +16,7 @@ import { applyFilter, channelsOf, chooseChannels } from './channels.ts'
  *
  * Every screen here draws a skeleton, waits for YouTube, and then writes the
  * answer into `main`. Nothing stopped a *slow* screen from writing its answer
- * after the reader had already moved on: open 탐색, press 대기열 before it
+ * after the reader had already moved on: open 둘러보기, press 대기열 before it
  * lands, and the queue is drawn — and then the explore fetch finishes and puts
  * itself, or its error, on top of it. The reader sees a screen they left, or
  * "가져오지 못했습니다" over a queue that arrived perfectly well.
@@ -125,7 +125,7 @@ function listOf(ctx: Ctx, first: api.Page, shape: Shape = feedShape(ctx)): HTMLE
  * 재생 button, it read as an album, and a forty-minute video sat in it looking
  * like track four. The other feeds keep following the mode, because 구독 and
  * 시청 기록 are whatever the person put in them and the mode is the person
- * saying which of the two they are here for. 탐색 is music by decision and is
+ * saying which of the two they are here for. 둘러보기 is music by decision and is
  * drawn elsewhere.
  *
  * Not guessed from the tracks. There is no honest signal in a row for whether
@@ -395,7 +395,7 @@ function tile(opts: {
       h('span', { class: 'play' }, icon('play', 20)),
       // On the artwork, because a card has no spare row and this is the thing
       // the product is for. Without it, filing a track was possible from a
-      // list and impossible from a card — which is every shelf on 탐색 and
+      // list and impossible from a card — which is every shelf on 둘러보기 and
       // every screen in 영상 mode.
       opts.quick &&
         (() => {
@@ -493,22 +493,22 @@ export function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['qui
 
 async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
   const token = generation
-  replace(main, h('h2', null, t('탐색')), skShelf(), skShelf())
+  replace(main, h('h2', null, t('둘러보기')), skShelf(), skShelf())
   try {
     const page = await api.explore(ctx.cfg)
     if (!current(token)) return
     if (page.shelves.length === 0 && page.tracks.length === 0) {
-      return replace(main, h('h2', null, t('탐색')), nothing(t('보여줄 것이 없습니다.'), 'radio'))
+      return replace(main, h('h2', null, t('둘러보기')), nothing(t('보여줄 것이 없습니다.'), 'radio'))
     }
     replace(
       main,
-      h('h2', null, t('탐색')),
+      h('h2', null, t('둘러보기')),
       page.shelves.map((shelf) => shelfRow(ctx, shelf)),
       page.shelves.length === 0 && h('div', { class: 'grid' }, page.tracks.map((_, i) => trackTile(ctx, page.tracks, i))),
     )
   } catch (err) {
     if (!current(token)) return
-    replace(main, h('h2', null, t('탐색')), h('div', { class: 'err' }, explain(err)))
+    replace(main, h('h2', null, t('둘러보기')), h('div', { class: 'err' }, explain(err)))
   }
 }
 
@@ -540,7 +540,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
     if (page.tracks.length === 0) {
       // A dead end otherwise, and 영상 mode lands here on purpose: YouTube's
       // home is empty until it knows you, so a session with no watch history
-      // gets this screen and nothing to press. 탐색 always has something.
+      // gets this screen and nothing to press. 둘러보기 always has something.
       return replace(
         main,
         h('h2', null, title),
@@ -548,7 +548,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
         h(
           'div',
           { class: 'toolbar', style: 'justify-content: center' },
-          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('탐색')),
+          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('둘러보기')),
           h('button', { class: 'btn', 'data-nav': '', onclick: () => ctx.search() }, icon('search', 16), t('검색')),
         ),
       )
@@ -807,7 +807,7 @@ async function playlist(ctx: Ctx, main: HTMLElement, id: string, title: string):
         else renumber()
       }
       // **Only a playlist of one's own can have things taken out of it.**
-      // 탐색 opens YouTube's own editorial playlists, and the row button
+      // 둘러보기 opens YouTube's own editorial playlists, and the row button
       // was offered there too — pressing it asked YouTube to edit a list
       // belonging to someone else, which it refuses, and the reader got a red
       // toast for pressing a button we drew. Reported from a phone, on a

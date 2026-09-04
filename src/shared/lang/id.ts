@@ -5,7 +5,7 @@
 // See i18n.ts.
 
 export const ID: Record<string, string> = {
-  "탐색": "Jelajahi",
+  "둘러보기": "Jelajahi",
   "검색": "Cari",
   "홈": "Beranda",
   "구독": "Langganan",

@@ -5,7 +5,7 @@
 // See i18n.ts.
 
 export const EN: Record<string, string> = {
-  "탐색": "Explore",
+  "둘러보기": "Browse",
   "검색": "Search",
   "홈": "Home",
   "구독": "Subscriptions",
