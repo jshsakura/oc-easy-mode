@@ -12,7 +12,7 @@ import { thumbnail, type Track } from '../parse.ts'
 import type { Engine } from '../engine.ts'
 import type { Shell } from '../shell.ts'
 import type { VideoLayout } from '../store.ts'
-import { dislikeRemoves, foldPlaylists, getStoredTheme, playlistsFolded, setDislikeRemoves, setStoredTheme, youtubeIsDark, type VideoLayout as Placement } from '../store.ts'
+import { clearStoredTheme, dislikeRemoves, foldPlaylists, playlistsFolded, setDislikeRemoves, setStoredTheme, youtubeIsDark, type Mode, type Theme, type VideoLayout as Placement } from '../store.ts'
 import { narrowNow } from './device.ts'
 import { h, icon, mark, replace } from './dom.ts'
 import { STYLES } from './styles.ts'
@@ -24,6 +24,7 @@ import { closeChannels } from './channels.ts'
 import { render } from './views.ts'
 import { closeSearch, openSearch } from './search.ts'
 import { closeEqualizer, openEqualizer } from './equalizer.ts'
+import { closeSettings, openSettings, type SettingsActions } from './settings.ts'
 
 export interface AppOptions {
   shell: Shell
@@ -69,14 +70,17 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   }
 
   /**
-   * The theme button, which changes **YouTube's** setting rather than keeping
-   * one of our own.
+   * Presses **YouTube's** own light/dark switch, rather than only remembering
+   * an answer over here.
    *
    * The user's call, and the right one: two switches for one question is how
-   * you end up with a light panel over a dark page. So there is still no
-   * theme of ours — this presses YouTube's, and the observer above notices the
-   * attribute change and repaints us with it. The choice outlives the mode,
-   * which is the point of pressing it.
+   * you end up with a light panel over a dark page. So a choice made here is
+   * made on the page as well, the observer above notices the attribute change
+   * and repaints us with it, and the choice outlives the mode. That is the
+   * point of pressing it.
+   *
+   * Not called for 자동, which is the absence of a choice: there is nothing to
+   * press YouTube into, and whatever it is already set to is the answer.
    *
    * The attribute is what YouTube reads right now; f6's 0x400 bit in the PREF
    * cookie is what it reads on the next page. Both, or the page snaps back.
@@ -97,16 +101,35 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     }
   }
 
+  /**
+   * The theme, as the three answers the state has room for.
+   *
+   * `auto` is the absence of a choice rather than a choice of its own, so it
+   * is the stored key going away: `youtubeIsDark()` reads that key first and
+   * falls through to YouTube's own attribute only when nothing is there.
+   *
+   * Both places are written, because both are read. `engine.state.theme` is
+   * what is put back before the first paint of the next page load, and the
+   * key is what every later `youtubeIsDark()` asks. The glyph in the header
+   * used to write only the second, so the sheet showed 자동 next to a page
+   * that was plainly holding a choice.
+   */
+  function chooseTheme(theme: Theme): void {
+    engine.setTheme(theme)
+    if (theme === 'auto') {
+      clearStoredTheme()
+    } else {
+      setStoredTheme(theme)
+      setYouTubeDark(theme === 'dark')
+    }
+    applyTheme()
+    drawTop()
+    drawSide()
+  }
+
   function themeButton(compact: boolean): HTMLElement {
     const dark = youtubeIsDark()
-    const press = () => {
-      const nextDark = !youtubeIsDark()
-      setStoredTheme(nextDark ? 'dark' : 'light')
-      setYouTubeDark(nextDark)
-      applyTheme()
-      drawTop()
-      drawSide()
-    }
+    const press = () => chooseTheme(youtubeIsDark() ? 'light' : 'dark')
     if (compact) {
       return h(
         'button',
@@ -352,6 +375,25 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     ]
   }
 
+  /**
+   * What the settings sheet may change. Read through functions rather than
+   * handed as values, because the sheet redraws itself after every choice and
+   * has to see what the engine now says rather than what it said when it
+   * opened.
+   */
+  const settingsActions: SettingsActions = {
+    theme: () => engine.state.theme,
+    setTheme: chooseTheme,
+    mode: () => engine.state.mode,
+    setMode: (mode: Mode) => {
+      engine.setMode(mode)
+      // The mode decides where the picture goes, so the slot has to be told.
+      // Setting the mode alone left 영상 chosen with nothing on the stage.
+      setLayout(pictureNow())
+      drawBar()
+    },
+  }
+
   function drawSide(): void {
     replace(
       side,
@@ -364,6 +406,30 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
           mark(20),
           h('span', null, 'RenewTube'),
           h('div', { class: 'spacer' }),
+          // The way into the settings sheet, and out to YouTube's own pages.
+          //
+          // Here rather than in the header strip because it belongs to the
+          // product and not to the screen, and because this row is the one
+          // place a phone and a desktop both have: the strip is drawn only on
+          // a narrow screen, and the drawer this sits in is a press away
+          // there. One button, one place, both layouts.
+          h(
+            'button',
+            {
+              class: 'headAction gear',
+              'data-nav': '',
+              title: t('설정'),
+              'aria-label': t('설정'),
+              onclick: () => {
+                // The drawer goes away first. The sheet is drawn over the
+                // whole app, and a drawer left standing behind it is a second
+                // full-screen thing nobody asked for.
+                closeDrawer()
+                openSettings(ctx, settingsActions)
+              },
+            },
+            icon('gear', 18),
+          ),
           // The way out, as a glyph beside the way closed.
           //
           // It was a full labelled line under the name, and on a phone that
@@ -1250,6 +1316,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       closeSearch()
       closeChannels()
       closeEqualizer()
+      closeSettings()
       // A reload still pending would take the plain page the reader has just
       // gone back to; leaving the mode is the end of the matter.
       clearTimeout(reloadTimer)
