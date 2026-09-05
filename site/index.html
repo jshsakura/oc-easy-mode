@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>RenewTube · 심플하고 쉬운 유튜브 재생기</title>
-<meta name="description" content="유튜브 화면을 심플하고 쉬운 재생기로 완전히 바꿔 드립니다. 음악과 영상을 한자리에서 다루며 재생은 유튜브가 그대로 맡습니다.">
+<title>RenewTube · A simple, quiet YouTube player</title>
+<meta name="description" content="YouTube, tidied up. A simple player over YouTube's own: music and video on one screen, and a way back at any time.">
 <link rel="icon" type="image/png" sizes="128x128" href="icon-128.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="RenewTube">
-<meta property="og:description" content="유튜브 화면을 심플하고 쉬운 재생기로 완전히 바꿔 드립니다.">
+<meta property="og:description" content="YouTube, tidied up. A simple player over YouTube's own.">
 <meta property="og:url" content="https://jshsakura.github.io/renewtube/">
 <meta property="og:image" content="og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:locale" content="ko_KR">
+<meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 
 <script>
@@ -24,13 +24,22 @@
     if (savedTheme === 'light' || savedTheme === 'dark') {
       root.dataset.theme = savedTheme;
     }
-    const savedLang = localStorage.getItem('lang');
-    const lang = savedLang === 'ko' || savedLang === 'en' ? savedLang : 'ko';
-    root.dataset.lang = lang;
-    root.lang = lang;
-    if (lang === 'en') {
-      document.title = 'RenewTube · A Simple, Quiet YouTube Player';
+    const LANGS = ['en','ko','ja','zh-cn','zh-tw','de','es','fr','pt-br','ru','hi','id','th','vi'];
+    const norm = (t) => {
+      t = String(t || '').toLowerCase();
+      if (t.startsWith('zh')) return /tw|hk|hant/.test(t) ? 'zh-tw' : 'zh-cn';
+      if (t.startsWith('pt')) return 'pt-br';
+      const base = t.split('-')[0];
+      return LANGS.includes(base) ? base : null;
+    };
+    let lang = null;
+    try { lang = localStorage.getItem('lang'); } catch (e) {}
+    if (!LANGS.includes(lang)) {
+      lang = null;
+      for (const t of navigator.languages || [navigator.language]) { const l = norm(t); if (l) { lang = l; break; } }
     }
+    root.dataset.lang = lang || 'en';
+    root.lang = root.dataset.lang;
   })();
 </script>
 
@@ -115,9 +124,6 @@
 }
 
 /* 다국어 언어 스위칭 규칙 */
-:root[data-lang="en"] [lang="ko"] { display: none !important; }
-:root[data-lang="ko"] [lang="en"] { display: none !important; }
-:root:not([data-lang]) [lang="en"] { display: none !important; }
 
 * {
   box-sizing: border-box;
@@ -760,13 +766,11 @@ kbd {
   <div class="hero wrap">
     <div class="badge">
       <img src="icon-128.png" width="16" height="16" alt="RenewTube" style="border-radius: 4px;">
-      <span lang="ko">RenewTube · 브라우저 확장 프로그램</span>
-      <span lang="en">RenewTube · Browser Extension</span>
+      <span data-i18n="s1">RenewTube · Browser Extension</span>
       <span class="badge-divider"></span>
-      <button class="badge-btn" id="lang-toggle" aria-label="언어 전환 / Switch Language" title="한국어 / English">
-        <span lang="ko">EN</span>
-        <span lang="en">KO</span>
-      </button>
+      <select class="badge-btn" id="lang" aria-label="Language">
+        <option value="en">English</option><option value="ko">한국어</option><option value="ja">日本語</option><option value="zh-cn">简体中文</option><option value="zh-tw">繁體中文</option><option value="de">Deutsch</option><option value="es">Español</option><option value="fr">Français</option><option value="pt-br">Português (Brasil)</option><option value="ru">Русский</option><option value="hi">हिन्दी</option><option value="id">Bahasa Indonesia</option><option value="th">ไทย</option><option value="vi">Tiếng Việt</option>
+      </select>
       <span class="badge-divider"></span>
       <button class="badge-btn" id="theme-toggle" aria-label="화면 테마 전환" title="화면 테마 전환">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="currentColor">
@@ -779,12 +783,10 @@ kbd {
     </div>
 
     <h1>
-      <span lang="ko">심플하고 쉬운 유튜브 재생기</span>
-      <span lang="en">A Simple, Quiet YouTube Player</span>
+      <span data-i18n="s2">A Simple, Quiet YouTube Player</span>
     </h1>
     <p class="hero-description">
-      <span lang="ko">유튜브 화면을 심플하고 쉬운 재생기로 완전히 바꿔 드립니다. 음악과 영상을 한자리에서 다루며, 재생과 스트림은 유튜브가 그대로 맡습니다.</span>
-      <span lang="en">Turns YouTube into a player of your own. Music and video on one screen, and YouTube still does the playing.</span>
+      <span data-i18n="s3">Turns YouTube into a player of your own. Music and video on one screen, and YouTube still does the playing.</span>
     </p>
 
     <div class="button-row">
@@ -792,8 +794,7 @@ kbd {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 16 6 10l1.4-1.4L11 12.2V3h2v9.2l3.6-3.6L18 10zM5 20v-2h14v2z"/>
         </svg>
-        <span lang="ko">내려받기</span>
-        <span lang="en">Download</span>
+        <span data-i18n="s4">Download</span>
         <span id="version" class="version-pill"></span>
       </a>
       <a class="btn btn-secondary" href="https://github.com/jshsakura/renewtube">
@@ -802,8 +803,7 @@ kbd {
       </a>
     </div>
     <p class="hero-notice">
-      <span lang="ko">오리온, 크롬, 엣지 브라우저에서 모두 동일한 파일을 사용합니다.</span>
-      <span lang="en">One package works across Orion, Chrome, Edge, and compatible browsers.</span>
+      <span data-i18n="s5">One package works across Orion, Chrome, Edge, and compatible browsers.</span>
     </p>
   </div>
 
@@ -811,11 +811,10 @@ kbd {
     <div class="showcase-grid">
       <figure class="showcase-card">
         <div class="showcase-media">
-          <img src="shot-explore.png" width="1440" height="900" alt="RenewTube 둘러보기 화면 / Browse Screen" loading="eager">
+          <img src="shot-explore.png" width="1440" height="900" alt="RenewTube music screen" loading="eager">
         </div>
         <figcaption class="showcase-caption">
-          <span lang="ko">둘러보기 화면. 로그인하지 않아도 선반이 채워집니다.</span>
-          <span lang="en">Browse view. The shelves are filled before you sign in.</span>
+          <span data-i18n="s6">Music view. The shelves are filled before you sign in.</span>
         </figcaption>
       </figure>
       <figure class="showcase-card">
@@ -823,8 +822,7 @@ kbd {
           <img src="shot-list.png" width="1440" height="900" alt="RenewTube 목록 및 대기열 화면 / Queue & Playlist Screen" loading="lazy">
         </div>
         <figcaption class="showcase-caption">
-          <span lang="ko">대기열 및 재생목록 화면. 감상 중인 콘텐츠 목록을 직관적으로 확인하고 관리합니다.</span>
-          <span lang="en">Queue & playlist view. Glance at and manage what is playing right away.</span>
+          <span data-i18n="s7">Queue & playlist view. Glance at and manage what is playing right away.</span>
         </figcaption>
       </figure>
     </div>
@@ -833,104 +831,85 @@ kbd {
   <section id="features" class="wrap">
     <p class="section-label">
       <svg class="ico"><use href="#i-grid"/></svg>
-      <span lang="ko">기능 안내</span>
-      <span lang="en">Features</span>
+      <span data-i18n="s8">Features</span>
     </p>
     <h2 class="section-title">
-      <span lang="ko">핵심 기능 구성</span>
-      <span lang="en">Core Experience</span>
+      <span data-i18n="s9">Core Experience</span>
     </h2>
     <p class="section-description">
-      <span lang="ko">추천 피드 대신 플레이어 화면을 보여줍니다. 재생과 데이터는 유튜브가 그대로 맡고, 화면만 바꿉니다.</span>
-      <span lang="en">A player screen instead of the recommendation feed. YouTube keeps the streams and the data; only the screen changes.</span>
+      <span data-i18n="s10">A player screen instead of the recommendation feed. YouTube keeps the streams and the data; only the screen changes.</span>
     </p>
     <div class="feature-grid">
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-radio"/></svg></span>
         <h3>
-          <span lang="ko">둘러보기</span>
-          <span lang="en">Browse</span>
+          <span data-i18n="s11">Music First</span>
         </h3>
         <p>
-          <span lang="ko">선반으로 구성된 첫 화면입니다. 로그인하지 않아도 비어 있지 않고, 음악과 영상 목록을 바로 둘러보실 수 있습니다.</span>
-          <span lang="en">The first screen is shelves, and they are filled without a Google sign-in.</span>
+          <span data-i18n="s12">The first screen is music: shelves of playlists and charts, filled without a Google sign-in.</span>
         </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-queue"/></svg></span>
         <h3>
-          <span lang="ko">대기열과 재생목록</span>
-          <span lang="en">Queue & Playlists</span>
+          <span data-i18n="s13">Queue & Playlists</span>
         </h3>
         <p>
-          <span lang="ko">다음에 재생될 목록을 보고 순서를 바꿉니다. 무작위 재생과 반복, 재생목록도 여기서 다룹니다.</span>
-          <span lang="en">See what plays next and reorder it. Shuffle, repeat and playlists live here too.</span>
+          <span data-i18n="s14">See what plays next and reorder it. Shuffle, repeat and playlists live here too.</span>
         </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-video"/></svg></span>
         <h3>
-          <span lang="ko">음악 모드와 영상 모드</span>
-          <span lang="en">Music & Video Modes</span>
+          <span data-i18n="s15">Music & Video Modes</span>
         </h3>
         <p>
-          <span lang="ko">가볍게 들을 때는 트랙 목록, 화면을 볼 때는 썸네일 격자입니다. 버튼 하나로 오갑니다.</span>
-          <span lang="en">A track list for listening, a thumbnail grid for watching. One button switches between them.</span>
+          <span data-i18n="s16">A track list for listening, a thumbnail grid for watching. One button switches between them.</span>
         </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-ban"/></svg></span>
         <h3>
-          <span lang="ko">쇼츠 없음</span>
-          <span lang="en">Zero Shorts</span>
+          <span data-i18n="s17">Zero Shorts</span>
         </h3>
         <p>
-          <span lang="ko">세로형 쇼츠는 어떤 화면과 목록에도 나오지 않습니다.</span>
-          <span lang="en">Shorts appear in no shelf and no search result.</span>
+          <span data-i18n="s18">Shorts appear in no shelf and no search result.</span>
         </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-dpad"/></svg></span>
         <h3>
-          <span lang="ko">방향키 조작</span>
-          <span lang="en">Keyboard & Remote</span>
+          <span data-i18n="s19">Keyboard & Remote</span>
         </h3>
         <p>
-          <span lang="ko">마우스 없이 키보드 화살표로 항목을 옮기고 Enter로 실행합니다. 거실 TV의 리모컨처럼 씁니다.</span>
-          <span lang="en">Arrow keys move between items and Enter opens them, the way a TV remote does.</span>
+          <span data-i18n="s20">Arrow keys move between items and Enter opens them, the way a TV remote does.</span>
         </p>
       </div>
       <div class="feature-item">
-        <span class="icon-badge"><svg class="ico"><use href="#i-eq"/></svg></span>
+        <span class="icon-badge"><svg class="ico"><use href="#i-grid"/></svg></span>
         <h3>
-          <span lang="ko">이퀄라이저와 볼륨 부스터</span>
-          <span lang="en">Equalizer & Volume Booster</span>
+          <span data-i18n="s21">A Menu You Choose</span>
         </h3>
         <p>
-          <span lang="ko">다섯 밴드 이퀄라이저와 최대 3배 볼륨 부스터를 켤 때만 오디오 그래프를 만듭니다. 소리가 나지 않는 브라우저에서는 스스로 꺼집니다.</span>
-          <span lang="en">A five-band equalizer and a booster up to 3x, built only when switched on. In a browser that goes silent, it switches itself off.</span>
+          <span data-i18n="s22">Home, Subscriptions, History and Playlists, plus the TV menu lines: Sports, Live, Gaming, News, Learning, Kids. Switch on only what you want.</span>
         </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-filter"/></svg></span>
         <h3>
-          <span lang="ko">구독 채널 필터</span>
-          <span lang="en">Channel Filter</span>
+          <span data-i18n="s23">Search That Helps</span>
         </h3>
         <p>
-          <span lang="ko">구독 화면에서 보고 싶은 채널만 골라 봅니다. 고른 채널은 기억되고, 한 번에 해제하실 수 있습니다.</span>
-          <span lang="en">Pick which subscribed channels the Subscriptions screen shows. The choice is remembered and cleared with one press.</span>
+          <span data-i18n="s24">Suggestions as you type, recent searches remembered, and playlists and channels among the results.</span>
         </p>
       </div>
       <div class="feature-item">
         <span class="icon-badge"><svg class="ico"><use href="#i-devices"/></svg></span>
         <h3>
-          <span lang="ko">데스크톱과 모바일</span>
-          <span lang="en">Desktop & Mobile</span>
+          <span data-i18n="s25">Desktop & Mobile</span>
         </h3>
         <p>
-          <span lang="ko">오리온, 크롬, 엣지 등 데스크톱 웹 브라우저는 물론, 모바일 오리온 브라우저에서도 동일하게 작동합니다.</span>
-          <span lang="en">Works on desktop Chrome, Orion and Edge, and on Orion for iPhone and iPad.</span>
+          <span data-i18n="s26">Works on desktop Chrome, Orion and Edge, and on Orion for iPhone and iPad.</span>
         </p>
       </div>
     </div>
@@ -939,51 +918,28 @@ kbd {
   <section id="install" class="wrap">
     <p class="section-label">
       <svg class="ico"><use href="#i-download"/></svg>
-      <span lang="ko">설치 가이드</span>
-      <span lang="en">Installation</span>
+      <span data-i18n="s27">Installation</span>
     </p>
     <h2 class="section-title">
-      <span lang="ko">브라우저별 설치 방법</span>
-      <span lang="en">How to Install</span>
+      <span data-i18n="s28">How to Install</span>
     </h2>
     <p class="section-description">
-      <span lang="ko">내려받으신 파일을 브라우저에 등록해 주세요. 별도의 복잡한 과정 없이 1분 안에 설치하실 수 있습니다.</span>
-      <span lang="en">Register the downloaded package with your browser. Setup completes in under a minute without complex configuration.</span>
+      <span data-i18n="s29">Register the downloaded package with your browser. Setup completes in under a minute without complex configuration.</span>
     </p>
     <div class="install-grid">
       <div class="install-card">
         <h3 class="card-heading">
           <svg class="ico"><use href="#i-puzzle"/></svg>
-          <span lang="ko">오리온 브라우저</span>
-          <span lang="en">Orion Browser</span>
+          <span data-i18n="s30">Orion Browser</span>
         </h3>
-        <ol class="step-list" lang="ko">
-          <li>상단의 <strong>내려받기</strong> 단추를 눌러 압축 파일(zip)을 받아 주세요.</li>
-          <li>브라우저 메뉴에서 <strong>설정 → 확장</strong>으로 이동하신 후 <strong>+</strong> 단추를 눌러 해당 zip 파일을 선택해 주세요.</li>
-          <li>주소 표시줄 우측의 확장 프로그램 아이콘을 눌러 켜 주시면 완료됩니다.</li>
-        </ol>
-        <ol class="step-list" lang="en">
-          <li>Click the <strong>Download</strong> button above to save the zip package.</li>
-          <li>Open <strong>Settings → Extensions</strong> in Orion and tap <strong>+</strong> to select the downloaded zip file.</li>
-          <li>Click the extension icon in the toolbar to activate RenewTube.</li>
-        </ol>
+        <ol class="step-list" data-i18n="s31"><li>Click the <strong>Download</strong> button above to save the zip package.</li> <li>Open <strong>Settings → Extensions</strong> in Orion and tap <strong>+</strong> to select the downloaded zip file.</li> <li>Click the extension icon in the toolbar to activate RenewTube.</li></ol>
       </div>
       <div class="install-card">
         <h3 class="card-heading">
           <svg class="ico"><use href="#i-folder"/></svg>
-          <span lang="ko">크롬 및 엣지 브라우저</span>
-          <span lang="en">Chrome & Edge</span>
+          <span data-i18n="s32">Chrome & Edge</span>
         </h3>
-        <ol class="step-list" lang="ko">
-          <li>내려받으신 압축 파일(zip)을 원하시는 폴더에 풀어 주세요.</li>
-          <li>주소창에 <code>chrome://extensions</code> 를 입력하여 이동하신 후, 우측 상단의 <strong>개발자 모드</strong>를 켜 주세요.</li>
-          <li>좌측 상단의 <strong>'압축해제된 확장 프로그램을 로드합니다'</strong> 단추를 눌러 압축을 푼 폴더를 지정해 주세요.</li>
-        </ol>
-        <ol class="step-list" lang="en">
-          <li>Unzip the downloaded package into your preferred folder.</li>
-          <li>Navigate to <code>chrome://extensions</code> in the address bar and turn on <strong>Developer mode</strong>.</li>
-          <li>Click <strong>Load unpacked</strong> at the top left and select the extracted folder.</li>
-        </ol>
+        <ol class="step-list" data-i18n="s33"><li>Unzip the downloaded package into your preferred folder.</li> <li>Navigate to <code>chrome://extensions</code> in the address bar and turn on <strong>Developer mode</strong>.</li> <li>Click <strong>Load unpacked</strong> at the top left and select the extracted folder.</li></ol>
       </div>
     </div>
   </section>
@@ -991,60 +947,49 @@ kbd {
   <section id="notes" class="wrap">
     <p class="section-label">
       <svg class="ico"><use href="#i-info"/></svg>
-      <span lang="ko">안내 사항</span>
-      <span lang="en">Good to Know</span>
+      <span data-i18n="s34">Good to Know</span>
     </p>
     <h2 class="section-title">
-      <span lang="ko">이용 시 알아두실 점</span>
-      <span lang="en">Design Principles & Notes</span>
+      <span data-i18n="s35">Design Principles & Notes</span>
     </h2>
     <p class="section-description">
-      <span lang="ko">원활하고 투명한 이용을 위해 확장의 동작 방식과 범위를 미리 안내해 드립니다.</span>
-      <span lang="en">Transparent details on how RenewTube operates within the browser.</span>
+      <span data-i18n="s36">Transparent details on how RenewTube operates within the browser.</span>
     </p>
     <dl class="notice-grid">
       <div class="notice-item">
         <dt class="card-heading">
           <svg class="ico"><use href="#i-exit"/></svg>
-          <span lang="ko">Esc 두 번으로 언제든 종료</span>
-          <span lang="en">Double-Esc to Exit Anytime</span>
+          <span data-i18n="s37">Double-Esc to Exit Anytime</span>
         </dt>
         <dd>
-          <span lang="ko">유튜브의 본래 구조를 훼손하지 않습니다. 키보드의 <kbd>Esc</kbd> 키를 1초 안에 두 번 누르시면 언제든지 확장을 닫고 본래의 유튜브 화면으로 즉시 되돌아옵니다.</span>
-          <span lang="en">Leaves YouTube intact. Press <kbd>Esc</kbd> twice within 1 second to close RenewTube and get the ordinary YouTube page back.</span>
+          <span data-i18n="s38">Leaves YouTube intact. Press <kbd>Esc</kbd> twice within 1 second to close RenewTube and get the ordinary YouTube page back.</span>
         </dd>
       </div>
       <div class="notice-item">
         <dt class="card-heading">
           <svg class="ico"><use href="#i-lock"/></svg>
-          <span lang="ko">화면 잠금 재생은 브라우저 기능 사용</span>
-          <span lang="en">Background & Screen-Off Playback</span>
+          <span data-i18n="s39">Background & Screen-Off Playback</span>
         </dt>
         <dd>
-          <span lang="ko">기기 화면이 꺼진 상태에서의 재생은 확장이 직접 제어하지 않으며, 오리온 브라우저 등이 자체적으로 지원하는 백그라운드 미디어 재생 기능을 활용합니다.</span>
-          <span lang="en">Playback with the screen turned off relies on native browser background audio capabilities (such as Orion's background playback).</span>
+          <span data-i18n="s40">Playback with the screen turned off relies on native browser background audio capabilities (such as Orion's background playback).</span>
         </dd>
       </div>
       <div class="notice-item">
         <dt class="card-heading">
           <svg class="ico"><use href="#i-shield"/></svg>
-          <span lang="ko">광고 차단 없음</span>
-          <span lang="en">No Built-In Ad Blocking</span>
+          <span data-i18n="s41">No Built-In Ad Blocking</span>
         </dt>
         <dd>
-          <span lang="ko">유튜브 스트림 규정을 준수하며 광고 차단 기능을 내장하지 않습니다. 기존에 사용하시던 차단 확장 프로그램이 있으실 경우 그대로 함께 켜 두시면 됩니다.</span>
-          <span lang="en">RenewTube complies with YouTube streaming standards and does not block ads. Dedicated content blockers can be used alongside it.</span>
+          <span data-i18n="s42">RenewTube complies with YouTube streaming standards and does not block ads. Dedicated content blockers can be used alongside it.</span>
         </dd>
       </div>
       <div class="notice-item">
         <dt class="card-heading">
           <svg class="ico"><use href="#i-user"/></svg>
-          <span lang="ko">구독과 기록은 로그인 필요</span>
-          <span lang="en">Library Requires Sign-In</span>
+          <span data-i18n="s43">Library Requires Sign-In</span>
         </dt>
         <dd>
-          <span lang="ko">검색과 둘러보기는 로그인 없이 됩니다. 다만 개인 구독 채널 목록, 시청 기록 및 보관함 재생목록을 불러오시려면 유튜브 로그인이 필요합니다.</span>
-          <span lang="en">Search and explore shelves work anonymously. Personal subscriptions, watch history, and saved playlists connect via standard YouTube login.</span>
+          <span data-i18n="s44">Search, music and the TV menu work signed out. Subscriptions, history and playlists appear once you sign in to YouTube.</span>
         </dd>
       </div>
     </dl>
@@ -1054,14 +999,12 @@ kbd {
 <footer class="footer">
   <div class="wrap footer-inner">
     <p>
-      <span lang="ko">RenewTube · 유튜브를 위한 브라우저 확장 프로그램</span>
-      <span lang="en">RenewTube · A quiet browser extension for YouTube</span>
+      <span data-i18n="s45">RenewTube · A quiet browser extension for YouTube</span>
     </p>
     <div class="footer-links">
       <a class="footer-link" href="privacy.html">
         <svg class="ico" width="16" height="16"><use href="#i-shield"/></svg>
-        <span lang="ko"><span>개인정보 처리방침</span></span>
-        <span lang="en"><span>Privacy Policy</span></span>
+        <span data-i18n="s47">Privacy Policy</span>
       </a>
       <a class="footer-link" href="https://github.com/jshsakura/renewtube">
         <svg class="ico" width="16" height="16"><use href="#i-github"/></svg>
@@ -1072,32 +1015,27 @@ kbd {
 </footer>
 
 <script>
-  // 테마 및 언어 설정 제어
+  // Theme and language
   const root = document.documentElement;
   const themeButton = document.getElementById('theme-toggle');
-  const langButton = document.getElementById('lang-toggle');
-
-  themeButton.addEventListener('click', () => {
-    const isDark = root.dataset.theme === 'dark' ||
-      (!root.dataset.theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    const nextTheme = isDark ? 'light' : 'dark';
-    root.dataset.theme = nextTheme;
-    try {
-      localStorage.setItem('theme', nextTheme);
-    } catch (e) {}
-  });
-
-  langButton.addEventListener('click', () => {
-    const current = root.dataset.lang || 'ko';
-    const next = current === 'ko' ? 'en' : 'ko';
-    root.dataset.lang = next;
-    root.lang = next;
-    document.title = next === 'en'
-      ? 'RenewTube · A Simple, Quiet YouTube Player'
-      : 'RenewTube · 심플하고 쉬운 유튜브 재생기';
-    try {
-      localStorage.setItem('lang', next);
-    } catch (e) {}
+  const I18N = {"en":{"title":"A simple, quiet YouTube player","desc":"YouTube, tidied up. A simple player over YouTube's own: music and video on one screen, and a way back at any time.","s1":"RenewTube · Browser Extension","s2":"A Simple, Quiet YouTube Player","s3":"Turns YouTube into a player of your own. Music and video on one screen, and YouTube still does the playing.","s4":"Download","s5":"One package works across Orion, Chrome, Edge, and compatible browsers.","s6":"Music view. The shelves are filled before you sign in.","s7":"Queue & playlist view. Glance at and manage what is playing right away.","s8":"Features","s9":"Core Experience","s10":"A player screen instead of the recommendation feed. YouTube keeps the streams and the data; only the screen changes.","s11":"Music First","s12":"The first screen is music: shelves of playlists and charts, filled without a Google sign-in.","s13":"Queue & Playlists","s14":"See what plays next and reorder it. Shuffle, repeat and playlists live here too.","s15":"Music & Video Modes","s16":"A track list for listening, a thumbnail grid for watching. One button switches between them.","s17":"Zero Shorts","s18":"Shorts appear in no shelf and no search result.","s19":"Keyboard & Remote","s20":"Arrow keys move between items and Enter opens them, the way a TV remote does.","s21":"A Menu You Choose","s22":"Home, Subscriptions, History and Playlists, plus the TV menu lines: Sports, Live, Gaming, News, Learning, Kids. Switch on only what you want.","s23":"Search That Helps","s24":"Suggestions as you type, recent searches remembered, and playlists and channels among the results.","s25":"Desktop & Mobile","s26":"Works on desktop Chrome, Orion and Edge, and on Orion for iPhone and iPad.","s27":"Installation","s28":"How to Install","s29":"Register the downloaded package with your browser. Setup completes in under a minute without complex configuration.","s30":"Orion Browser","s31":"<li>Click the <strong>Download</strong> button above to save the zip package.</li> <li>Open <strong>Settings → Extensions</strong> in Orion and tap <strong>+</strong> to select the downloaded zip file.</li> <li>Click the extension icon in the toolbar to activate RenewTube.</li>","s32":"Chrome & Edge","s33":"<li>Unzip the downloaded package into your preferred folder.</li> <li>Navigate to <code>chrome://extensions</code> in the address bar and turn on <strong>Developer mode</strong>.</li> <li>Click <strong>Load unpacked</strong> at the top left and select the extracted folder.</li>","s34":"Good to Know","s35":"Design Principles & Notes","s36":"Transparent details on how RenewTube operates within the browser.","s37":"Double-Esc to Exit Anytime","s38":"Leaves YouTube intact. Press <kbd>Esc</kbd> twice within 1 second to close RenewTube and get the ordinary YouTube page back.","s39":"Background & Screen-Off Playback","s40":"Playback with the screen turned off relies on native browser background audio capabilities (such as Orion's background playback).","s41":"No Built-In Ad Blocking","s42":"RenewTube complies with YouTube streaming standards and does not block ads. Dedicated content blockers can be used alongside it.","s43":"Library Requires Sign-In","s44":"Search, music and the TV menu work signed out. Subscriptions, history and playlists appear once you sign in to YouTube.","s45":"RenewTube · A quiet browser extension for YouTube","s47":"Privacy Policy"},"ko":{"title":"심플하고 조용한 유튜브 재생기","desc":"유튜브를 정리했습니다. 유튜브 재생기 위에 얹는 심플한 화면. 음악과 영상을 한 화면에서, 언제든 돌아갈 수 있습니다.","s1":"RenewTube · 브라우저 확장 프로그램","s2":"심플하고 조용한 유튜브 재생기","s3":"유튜브를 나만의 재생기로 바꿉니다. 음악과 영상을 한 화면에서 다루고, 재생은 유튜브가 그대로 맡습니다.","s4":"내려받기","s5":"패키지 하나로 Orion, Chrome, Edge 와 호환 브라우저에서 모두 동작합니다.","s6":"음악 화면. 로그인하지 않아도 선반이 채워집니다.","s7":"대기열과 재생목록 화면. 지금 재생 중인 것을 한눈에 보고 바로 다룹니다.","s8":"기능","s9":"핵심 경험","s10":"추천 피드 대신 재생기 화면. 스트림과 데이터는 유튜브가 갖고, 화면만 바뀝니다.","s11":"음악이 먼저","s12":"첫 화면은 음악입니다. 재생목록과 차트 선반이 구글 로그인 없이도 채워집니다.","s13":"대기열과 재생목록","s14":"다음에 나올 곡을 보고 순서를 바꿉니다. 셔플, 반복, 재생목록도 여기 있습니다.","s15":"음악 · 영상 모드","s16":"들을 때는 트랙 목록, 볼 때는 썸네일 격자. 버튼 하나로 오갑니다.","s17":"쇼츠 없음","s18":"어느 선반에도, 어느 검색 결과에도 쇼츠는 나오지 않습니다.","s19":"키보드와 리모컨","s20":"화살표로 항목을 옮기고 Enter 로 엽니다. TV 리모컨과 같습니다.","s21":"골라서 켜는 메뉴","s22":"홈, 구독, 시청 기록, 재생목록에 더해 TV 메뉴의 스포츠, 생방송, 게임, 뉴스, 학습, 아동. 원하는 것만 켭니다.","s23":"도움이 되는 검색","s24":"입력하는 동안 제안이 뜨고, 최근 검색을 기억하며, 결과에 재생목록과 채널이 함께 나옵니다.","s25":"데스크톱과 모바일","s26":"데스크톱 Chrome, Orion, Edge 와 아이폰·아이패드의 Orion 에서 동작합니다.","s27":"설치","s28":"설치 방법","s29":"내려받은 패키지를 브라우저에 등록합니다. 복잡한 설정 없이 1분 안에 끝납니다.","s30":"Orion 브라우저","s31":"<li>위의 <strong>내려받기</strong> 버튼으로 zip 패키지를 저장합니다.</li> <li>Orion 의 <strong>설정 → 확장 프로그램</strong>에서 <strong>+</strong> 를 눌러 내려받은 zip 을 고릅니다.</li> <li>툴바의 확장 아이콘을 눌러 RenewTube 를 켭니다.</li>","s32":"Chrome 과 Edge","s33":"<li>내려받은 패키지를 원하는 폴더에 풉니다.</li> <li>주소창에 <code>chrome://extensions</code> 를 열고 <strong>개발자 모드</strong>를 켭니다.</li> <li>왼쪽 위 <strong>압축해제된 확장 프로그램을 로드</strong>를 눌러 푼 폴더를 고릅니다.</li>","s34":"알아 두면 좋은 것","s35":"설계 원칙과 참고","s36":"RenewTube 가 브라우저 안에서 어떻게 동작하는지 숨김 없이 적었습니다.","s37":"Esc 두 번이면 언제든 나갑니다","s38":"유튜브는 그대로 둡니다. <kbd>Esc</kbd> 를 1초 안에 두 번 누르면 RenewTube 가 닫히고 평소의 유튜브 화면으로 돌아옵니다.","s39":"백그라운드와 화면 꺼짐 재생","s40":"화면을 끈 채 듣는 것은 브라우저 자체의 백그라운드 재생 기능(예: Orion 의 백그라운드 재생)에 맡깁니다.","s41":"광고 차단 없음","s42":"RenewTube 는 유튜브의 스트리밍 규격을 따르며 광고를 막지 않습니다. 별도의 콘텐츠 차단기와 함께 쓸 수 있습니다.","s43":"보관함은 로그인이 필요합니다","s44":"검색, 음악, TV 메뉴는 로그인 없이 됩니다. 구독, 시청 기록, 재생목록은 유튜브에 로그인하면 나타납니다.","s45":"RenewTube · 유튜브를 위한 조용한 브라우저 확장","s47":"개인정보 처리방침"},"ja":{"title":"シンプルで静かな YouTube プレーヤー","desc":"YouTube を片づけました。YouTube 自身のプレーヤーの上に載る、シンプルな画面。音楽と動画をひとつの画面で、いつでも元に戻せます。","s1":"RenewTube · ブラウザ拡張機能","s2":"シンプルで静かな YouTube プレーヤー","s3":"YouTube を自分のプレーヤーに変えます。音楽と動画をひとつの画面で。再生は YouTube がそのまま担います。","s4":"ダウンロード","s5":"ひとつのパッケージが Orion、Chrome、Edge と互換ブラウザで動きます。","s6":"音楽画面。ログイン前から棚が埋まっています。","s7":"キューとプレイリストの画面。再生中のものをひと目で確認し、その場で操作できます。","s8":"機能","s9":"中心となる体験","s10":"おすすめフィードの代わりにプレーヤー画面。ストリームとデータは YouTube のまま、画面だけが変わります。","s11":"音楽が最初","s12":"最初の画面は音楽です。プレイリストとチャートの棚が、Google ログインなしで埋まります。","s13":"キューとプレイリスト","s14":"次に流れる曲を見て並べ替えます。シャッフル、リピート、プレイリストもここにあります。","s15":"音楽・動画モード","s16":"聴くときはトラック一覧、観るときはサムネイルのグリッド。ボタンひとつで切り替えます。","s17":"ショートなし","s18":"どの棚にも、どの検索結果にもショートは出ません。","s19":"キーボードとリモコン","s20":"矢印キーで項目を移動し、Enter で開きます。テレビのリモコンと同じです。","s21":"選んで点けるメニュー","s22":"ホーム、登録チャンネル、履歴、プレイリストに加え、テレビのメニュー行であるスポーツ、ライブ、ゲーム、ニュース、学習、キッズ。欲しいものだけ点けます。","s23":"役に立つ検索","s24":"入力中に候補が出て、最近の検索を覚え、結果にはプレイリストとチャンネルも並びます。","s25":"デスクトップとモバイル","s26":"デスクトップの Chrome、Orion、Edge、そして iPhone と iPad の Orion で動きます。","s27":"インストール","s28":"インストール方法","s29":"ダウンロードしたパッケージをブラウザに登録します。複雑な設定なしで 1 分以内に終わります。","s30":"Orion ブラウザ","s31":"<li>上の<strong>ダウンロード</strong>ボタンで zip パッケージを保存します。</li> <li>Orion の<strong>設定 → 拡張機能</strong>を開き、<strong>+</strong> を押してダウンロードした zip を選びます。</li> <li>ツールバーの拡張機能アイコンを押して RenewTube を有効にします。</li>","s32":"Chrome と Edge","s33":"<li>ダウンロードしたパッケージを好きなフォルダに展開します。</li> <li>アドレスバーで <code>chrome://extensions</code> を開き、<strong>デベロッパーモード</strong>をオンにします。</li> <li>左上の<strong>パッケージ化されていない拡張機能を読み込む</strong>を押し、展開したフォルダを選びます。</li>","s34":"知っておくと良いこと","s35":"設計の原則とメモ","s36":"RenewTube がブラウザの中でどう動くかを、隠さずに書いています。","s37":"Esc 二回でいつでも終了","s38":"YouTube はそのままです。<kbd>Esc</kbd> を 1 秒以内に二回押すと RenewTube が閉じ、いつもの YouTube 画面に戻ります。","s39":"バックグラウンド再生と画面オフ再生","s40":"画面を消したままの再生は、ブラウザ自身のバックグラウンド再生機能（Orion のバックグラウンド再生など）に任せます。","s41":"広告ブロックは内蔵しません","s42":"RenewTube は YouTube のストリーミング規約に従い、広告を止めません。専用のコンテンツブロッカーと併用できます。","s43":"ライブラリにはログインが必要です","s44":"検索、音楽、テレビのメニューはログインなしで使えます。登録チャンネル、履歴、プレイリストは YouTube にログインすると現れます。","s45":"RenewTube · YouTube のための静かなブラウザ拡張機能","s47":"プライバシーポリシー"},"zh-cn":{"title":"简洁安静的 YouTube 播放器","desc":"把 YouTube 收拾干净。架在 YouTube 自带播放器之上的简洁界面：音乐和视频同屏，随时可以回去。","s1":"RenewTube · 浏览器扩展","s2":"简洁安静的 YouTube 播放器","s3":"把 YouTube 变成你自己的播放器。音乐和视频同在一个屏幕上，播放仍由 YouTube 完成。","s4":"下载","s5":"一个安装包即可在 Orion、Chrome、Edge 及兼容浏览器中使用。","s6":"音乐界面。登录之前货架就已填满。","s7":"队列与播放列表界面。一眼看到正在播放的内容并立即管理。","s8":"功能","s9":"核心体验","s10":"用播放器界面取代推荐信息流。流媒体和数据仍属于 YouTube，只有界面变了。","s11":"音乐优先","s12":"第一屏是音乐：播放列表和排行榜的货架，无需 Google 登录即已填满。","s13":"队列与播放列表","s14":"查看接下来播放什么并调整顺序。随机、循环和播放列表也在这里。","s15":"音乐与视频模式","s16":"听时是曲目列表，看时是缩略图网格。一个按钮切换。","s17":"没有 Shorts","s18":"任何货架、任何搜索结果中都不会出现 Shorts。","s19":"键盘与遥控","s20":"方向键在项目间移动，Enter 打开，就像电视遥控器一样。","s21":"自己选择的菜单","s22":"首页、订阅、历史记录和播放列表，再加上电视菜单里的体育、直播、游戏、新闻、学习、儿童。只打开你想要的。","s23":"真正有用的搜索","s24":"输入时给出建议，记住最近的搜索，结果中还有播放列表和频道。","s25":"桌面与移动","s26":"可在桌面版 Chrome、Orion、Edge，以及 iPhone 和 iPad 上的 Orion 中运行。","s27":"安装","s28":"安装方法","s29":"把下载的安装包注册到浏览器。无需复杂配置，一分钟内完成。","s30":"Orion 浏览器","s31":"<li>点击上方的<strong>下载</strong>按钮保存 zip 安装包。</li> <li>在 Orion 中打开<strong>设置 → 扩展</strong>，点按 <strong>+</strong> 选择下载的 zip 文件。</li> <li>点击工具栏中的扩展图标启用 RenewTube。</li>","s32":"Chrome 与 Edge","s33":"<li>把下载的安装包解压到你想要的文件夹。</li> <li>在地址栏打开 <code>chrome://extensions</code>，打开<strong>开发者模式</strong>。</li> <li>点击左上角的<strong>加载已解压的扩展程序</strong>，选择解压后的文件夹。</li>","s34":"值得了解","s35":"设计原则与说明","s36":"坦率地说明 RenewTube 在浏览器中如何运作。","s37":"按两次 Esc 随时退出","s38":"YouTube 保持原样。1 秒内按两次 <kbd>Esc</kbd> 即可关闭 RenewTube，回到平常的 YouTube 页面。","s39":"后台与熄屏播放","s40":"熄屏播放依赖浏览器自身的后台音频能力（例如 Orion 的后台播放）。","s41":"不内置广告拦截","s42":"RenewTube 遵守 YouTube 的流媒体规范，不拦截广告。可与专门的内容拦截器一起使用。","s43":"媒体库需要登录","s44":"搜索、音乐和电视菜单无需登录即可使用。登录 YouTube 后，订阅、历史记录和播放列表会出现。","s45":"RenewTube · 一款为 YouTube 而生的安静浏览器扩展","s47":"隐私政策"},"zh-tw":{"title":"簡潔安靜的 YouTube 播放器","desc":"把 YouTube 收拾乾淨。架在 YouTube 自家播放器之上的簡潔介面：音樂和影片同一畫面，隨時可以回去。","s1":"RenewTube · 瀏覽器擴充功能","s2":"簡潔安靜的 YouTube 播放器","s3":"把 YouTube 變成你自己的播放器。音樂和影片在同一個畫面，播放仍由 YouTube 負責。","s4":"下載","s5":"一個安裝包即可在 Orion、Chrome、Edge 與相容瀏覽器中使用。","s6":"音樂畫面。登入之前架子就已填滿。","s7":"佇列與播放清單畫面。一眼看到正在播放的內容並立即管理。","s8":"功能","s9":"核心體驗","s10":"用播放器畫面取代推薦動態。串流與資料仍屬於 YouTube，只有畫面變了。","s11":"音樂優先","s12":"第一個畫面是音樂：播放清單與排行榜的架子，不需 Google 登入就已填滿。","s13":"佇列與播放清單","s14":"查看接下來播放什麼並調整順序。隨機、重複與播放清單也在這裡。","s15":"音樂與影片模式","s16":"聽的時候是曲目清單，看的時候是縮圖格線。一個按鈕切換。","s17":"沒有 Shorts","s18":"任何架子、任何搜尋結果都不會出現 Shorts。","s19":"鍵盤與遙控","s20":"方向鍵在項目間移動，Enter 開啟，就像電視遙控器。","s21":"自己選擇的選單","s22":"首頁、訂閱、觀看紀錄與播放清單，再加上電視選單裡的體育、直播、遊戲、新聞、學習、兒童。只打開你想要的。","s23":"真正有用的搜尋","s24":"輸入時給出建議，記住最近的搜尋，結果中還有播放清單與頻道。","s25":"桌面與行動裝置","s26":"可在桌面版 Chrome、Orion、Edge，以及 iPhone 和 iPad 上的 Orion 中執行。","s27":"安裝","s28":"安裝方式","s29":"把下載的安裝包註冊到瀏覽器。不需複雜設定，一分鐘內完成。","s30":"Orion 瀏覽器","s31":"<li>點選上方的<strong>下載</strong>按鈕儲存 zip 安裝包。</li> <li>在 Orion 中開啟<strong>設定 → 擴充功能</strong>，點按 <strong>+</strong> 選擇下載的 zip 檔。</li> <li>點選工具列中的擴充功能圖示啟用 RenewTube。</li>","s32":"Chrome 與 Edge","s33":"<li>把下載的安裝包解壓縮到你想要的資料夾。</li> <li>在網址列開啟 <code>chrome://extensions</code>，開啟<strong>開發人員模式</strong>。</li> <li>點選左上角的<strong>載入未封裝項目</strong>，選擇解壓縮後的資料夾。</li>","s34":"值得知道","s35":"設計原則與說明","s36":"坦白說明 RenewTube 在瀏覽器中如何運作。","s37":"按兩次 Esc 隨時離開","s38":"YouTube 保持原樣。1 秒內按兩次 <kbd>Esc</kbd> 即可關閉 RenewTube，回到平常的 YouTube 頁面。","s39":"背景與螢幕關閉播放","s40":"螢幕關閉時的播放依賴瀏覽器本身的背景音訊功能（例如 Orion 的背景播放）。","s41":"不內建廣告封鎖","s42":"RenewTube 遵守 YouTube 的串流規範，不封鎖廣告。可與專門的內容封鎖器一起使用。","s43":"媒體庫需要登入","s44":"搜尋、音樂與電視選單不需登入即可使用。登入 YouTube 後，訂閱、觀看紀錄與播放清單會出現。","s45":"RenewTube · 一款為 YouTube 而生的安靜瀏覽器擴充功能","s47":"隱私權政策"},"de":{"title":"Ein schlichter, ruhiger YouTube-Player","desc":"YouTube aufgeräumt. Eine schlichte Oberfläche über YouTubes eigenem Player: Musik und Video auf einem Bildschirm, und jederzeit ein Weg zurück.","s1":"RenewTube · Browser-Erweiterung","s2":"Ein schlichter, ruhiger YouTube-Player","s3":"Macht aus YouTube einen Player nach deinem Geschmack. Musik und Video auf einem Bildschirm, abgespielt weiterhin von YouTube.","s4":"Herunterladen","s5":"Ein Paket läuft in Orion, Chrome, Edge und kompatiblen Browsern.","s6":"Musikansicht. Die Regale sind schon vor der Anmeldung gefüllt.","s7":"Warteschlange und Playlists. Auf einen Blick sehen, was läuft, und es sofort verwalten.","s8":"Funktionen","s9":"Kernerlebnis","s10":"Ein Player-Bildschirm statt des Empfehlungsfeeds. Streams und Daten bleiben bei YouTube, nur der Bildschirm ändert sich.","s11":"Musik zuerst","s12":"Der erste Bildschirm ist Musik: Regale mit Playlists und Charts, gefüllt ohne Google-Anmeldung.","s13":"Warteschlange und Playlists","s14":"Sehen, was als Nächstes läuft, und umsortieren. Zufall, Wiederholung und Playlists sind auch hier.","s15":"Musik- und Videomodus","s16":"Eine Titelliste zum Hören, ein Vorschauraster zum Sehen. Ein Knopf wechselt.","s17":"Keine Shorts","s18":"Shorts erscheinen in keinem Regal und in keinem Suchergebnis.","s19":"Tastatur und Fernbedienung","s20":"Pfeiltasten bewegen sich zwischen Einträgen, Enter öffnet sie, wie bei einer TV-Fernbedienung.","s21":"Ein Menü nach Wahl","s22":"Startseite, Abos, Verlauf und Playlists, dazu die TV-Menüzeilen Sport, Live, Gaming, Nachrichten, Lernen, Kinder. Nur einschalten, was du willst.","s23":"Suche, die hilft","s24":"Vorschläge beim Tippen, gemerkte letzte Suchen, und Playlists und Kanäle unter den Ergebnissen.","s25":"Desktop und Mobil","s26":"Läuft in Chrome, Orion und Edge auf dem Desktop und in Orion auf iPhone und iPad.","s27":"Installation","s28":"So wird installiert","s29":"Das heruntergeladene Paket im Browser registrieren. In unter einer Minute erledigt, ohne komplizierte Einstellungen.","s30":"Orion-Browser","s31":"<li>Oben auf <strong>Herunterladen</strong> klicken und das zip-Paket speichern.</li> <li>In Orion <strong>Einstellungen → Erweiterungen</strong> öffnen und mit <strong>+</strong> die heruntergeladene zip-Datei wählen.</li> <li>Das Erweiterungssymbol in der Symbolleiste anklicken, um RenewTube einzuschalten.</li>","s32":"Chrome und Edge","s33":"<li>Das heruntergeladene Paket in einen beliebigen Ordner entpacken.</li> <li><code>chrome://extensions</code> in der Adressleiste öffnen und den <strong>Entwicklermodus</strong> einschalten.</li> <li>Oben links auf <strong>Entpackte Erweiterung laden</strong> klicken und den entpackten Ordner wählen.</li>","s34":"Gut zu wissen","s35":"Gestaltungsprinzipien und Hinweise","s36":"Offen dargelegt, wie RenewTube im Browser arbeitet.","s37":"Zweimal Esc, jederzeit raus","s38":"YouTube bleibt unangetastet. <kbd>Esc</kbd> zweimal innerhalb einer Sekunde schließt RenewTube und bringt die gewohnte YouTube-Seite zurück.","s39":"Hintergrund- und Bildschirm-aus-Wiedergabe","s40":"Wiedergabe bei ausgeschaltetem Bildschirm stützt sich auf die Hintergrundfunktionen des Browsers (etwa Orions Hintergrundwiedergabe).","s41":"Kein eingebauter Werbeblocker","s42":"RenewTube hält sich an YouTubes Streaming-Regeln und blockiert keine Werbung. Ein eigener Inhaltsblocker kann daneben laufen.","s43":"Bibliothek braucht Anmeldung","s44":"Suche, Musik und TV-Menü funktionieren ohne Anmeldung. Abos, Verlauf und Playlists erscheinen nach der Anmeldung bei YouTube.","s45":"RenewTube · Eine ruhige Browser-Erweiterung für YouTube","s47":"Datenschutz"},"es":{"title":"Un reproductor de YouTube simple y tranquilo","desc":"YouTube, ordenado. Una pantalla simple sobre el propio reproductor de YouTube: música y video en una sola pantalla, y una salida en cualquier momento.","s1":"RenewTube · Extensión del navegador","s2":"Un reproductor de YouTube simple y tranquilo","s3":"Convierte YouTube en un reproductor propio. Música y video en una pantalla, y YouTube sigue reproduciendo.","s4":"Descargar","s5":"Un solo paquete funciona en Orion, Chrome, Edge y navegadores compatibles.","s6":"Vista de música. Los estantes se llenan antes de iniciar sesión.","s7":"Vista de cola y playlists. Ve de un vistazo lo que suena y gestiónalo al momento.","s8":"Funciones","s9":"Experiencia principal","s10":"Una pantalla de reproductor en lugar del feed de recomendaciones. YouTube conserva los streams y los datos; solo cambia la pantalla.","s11":"La música primero","s12":"La primera pantalla es música: estantes de playlists y listas de éxitos, llenos sin iniciar sesión en Google.","s13":"Cola y playlists","s14":"Ve lo que suena después y reordénalo. Aleatorio, repetir y playlists también viven aquí.","s15":"Modos música y video","s16":"Una lista de pistas para escuchar, una cuadrícula de miniaturas para ver. Un botón cambia entre ambos.","s17":"Cero Shorts","s18":"Los Shorts no aparecen en ningún estante ni resultado de búsqueda.","s19":"Teclado y mando","s20":"Las flechas se mueven entre elementos y Enter los abre, como un mando de TV.","s21":"Un menú a tu elección","s22":"Inicio, Suscripciones, Historial y Playlists, más las líneas del menú de TV: Deportes, En directo, Juegos, Noticias, Aprender, Niños. Activa solo lo que quieras.","s23":"Una búsqueda que ayuda","s24":"Sugerencias mientras escribes, búsquedas recientes recordadas, y playlists y canales entre los resultados.","s25":"Escritorio y móvil","s26":"Funciona en Chrome, Orion y Edge de escritorio, y en Orion para iPhone y iPad.","s27":"Instalación","s28":"Cómo instalar","s29":"Registra el paquete descargado en tu navegador. Listo en menos de un minuto, sin configuraciones complejas.","s30":"Navegador Orion","s31":"<li>Pulsa el botón <strong>Descargar</strong> de arriba para guardar el paquete zip.</li> <li>Abre <strong>Ajustes → Extensiones</strong> en Orion y toca <strong>+</strong> para elegir el zip descargado.</li> <li>Pulsa el icono de la extensión en la barra de herramientas para activar RenewTube.</li>","s32":"Chrome y Edge","s33":"<li>Descomprime el paquete descargado en la carpeta que prefieras.</li> <li>Abre <code>chrome://extensions</code> en la barra de direcciones y activa el <strong>Modo de desarrollador</strong>.</li> <li>Pulsa <strong>Cargar descomprimida</strong> arriba a la izquierda y elige la carpeta extraída.</li>","s34":"Conviene saber","s35":"Principios de diseño y notas","s36":"Detalles claros sobre cómo funciona RenewTube dentro del navegador.","s37":"Dos veces Esc para salir cuando quieras","s38":"YouTube queda intacto. Pulsa <kbd>Esc</kbd> dos veces en un segundo para cerrar RenewTube y volver a la página normal de YouTube.","s39":"Reproducción en segundo plano y con pantalla apagada","s40":"La reproducción con la pantalla apagada depende de las funciones nativas del navegador (como la reproducción en segundo plano de Orion).","s41":"Sin bloqueo de anuncios integrado","s42":"RenewTube respeta las normas de streaming de YouTube y no bloquea anuncios. Puede usarse junto a un bloqueador de contenido dedicado.","s43":"La biblioteca requiere iniciar sesión","s44":"La búsqueda, la música y el menú de TV funcionan sin sesión. Suscripciones, historial y playlists aparecen al iniciar sesión en YouTube.","s45":"RenewTube · Una extensión tranquila para YouTube","s47":"Política de privacidad"},"fr":{"title":"Un lecteur YouTube simple et calme","desc":"YouTube, rangé. Un écran simple par-dessus le lecteur de YouTube : musique et vidéo sur un seul écran, et un retour possible à tout moment.","s1":"RenewTube · Extension de navigateur","s2":"Un lecteur YouTube simple et calme","s3":"Transforme YouTube en un lecteur à vous. Musique et vidéo sur un seul écran, et c'est toujours YouTube qui lit.","s4":"Télécharger","s5":"Un seul paquet fonctionne sur Orion, Chrome, Edge et les navigateurs compatibles.","s6":"Écran Musique. Les étagères sont remplies avant même la connexion.","s7":"Écran File d'attente et playlists. Voyez d'un coup d'œil ce qui joue et gérez-le aussitôt.","s8":"Fonctions","s9":"L'essentiel","s10":"Un écran de lecteur à la place du flux de recommandations. YouTube garde les flux et les données ; seul l'écran change.","s11":"La musique d'abord","s12":"Le premier écran est la musique : des étagères de playlists et de classements, remplies sans connexion Google.","s13":"File d'attente et playlists","s14":"Voyez ce qui vient ensuite et réordonnez. Aléatoire, répétition et playlists sont ici aussi.","s15":"Modes musique et vidéo","s16":"Une liste de pistes pour écouter, une grille de vignettes pour regarder. Un bouton pour passer de l'un à l'autre.","s17":"Zéro Shorts","s18":"Les Shorts n'apparaissent dans aucune étagère ni aucun résultat de recherche.","s19":"Clavier et télécommande","s20":"Les flèches passent d'un élément à l'autre et Entrée ouvre, comme une télécommande de téléviseur.","s21":"Un menu que vous choisissez","s22":"Accueil, Abonnements, Historique et Playlists, plus les lignes du menu TV : Sport, Direct, Jeux, Actualités, Apprendre, Enfants. N'activez que ce que vous voulez.","s23":"Une recherche qui aide","s24":"Des suggestions pendant la saisie, les recherches récentes mémorisées, et des playlists et des chaînes parmi les résultats.","s25":"Ordinateur et mobile","s26":"Fonctionne sur Chrome, Orion et Edge sur ordinateur, et sur Orion pour iPhone et iPad.","s27":"Installation","s28":"Comment installer","s29":"Enregistrez le paquet téléchargé dans votre navigateur. Moins d'une minute, sans configuration compliquée.","s30":"Navigateur Orion","s31":"<li>Cliquez sur le bouton <strong>Télécharger</strong> ci-dessus pour enregistrer le paquet zip.</li> <li>Ouvrez <strong>Réglages → Extensions</strong> dans Orion et touchez <strong>+</strong> pour choisir le zip téléchargé.</li> <li>Cliquez sur l'icône de l'extension dans la barre d'outils pour activer RenewTube.</li>","s32":"Chrome et Edge","s33":"<li>Décompressez le paquet téléchargé dans le dossier de votre choix.</li> <li>Ouvrez <code>chrome://extensions</code> dans la barre d'adresse et activez le <strong>Mode développeur</strong>.</li> <li>Cliquez sur <strong>Charger l'extension non empaquetée</strong> en haut à gauche et choisissez le dossier extrait.</li>","s34":"Bon à savoir","s35":"Principes de conception et notes","s36":"Des détails transparents sur le fonctionnement de RenewTube dans le navigateur.","s37":"Deux fois Échap pour sortir à tout moment","s38":"YouTube reste intact. Appuyez deux fois sur <kbd>Échap</kbd> en une seconde pour fermer RenewTube et retrouver la page YouTube habituelle.","s39":"Lecture en arrière-plan et écran éteint","s40":"La lecture écran éteint repose sur les capacités natives du navigateur (comme la lecture en arrière-plan d'Orion).","s41":"Pas de blocage de publicité intégré","s42":"RenewTube respecte les règles de diffusion de YouTube et ne bloque pas les publicités. Un bloqueur de contenu dédié peut fonctionner à côté.","s43":"La bibliothèque demande une connexion","s44":"La recherche, la musique et le menu TV fonctionnent sans connexion. Abonnements, historique et playlists apparaissent une fois connecté à YouTube.","s45":"RenewTube · Une extension calme pour YouTube","s47":"Politique de confidentialité"},"pt-br":{"title":"Um player do YouTube simples e tranquilo","desc":"YouTube, arrumado. Uma tela simples sobre o próprio player do YouTube: música e vídeo em uma só tela, e um caminho de volta a qualquer momento.","s1":"RenewTube · Extensão de navegador","s2":"Um player do YouTube simples e tranquilo","s3":"Transforma o YouTube em um player seu. Música e vídeo em uma tela, e o YouTube continua tocando.","s4":"Baixar","s5":"Um único pacote funciona no Orion, Chrome, Edge e navegadores compatíveis.","s6":"Tela de música. As prateleiras se enchem antes mesmo de você entrar.","s7":"Tela de fila e playlists. Veja de relance o que está tocando e organize na hora.","s8":"Recursos","s9":"Experiência principal","s10":"Uma tela de player no lugar do feed de recomendações. O YouTube mantém os streams e os dados; só a tela muda.","s11":"Música primeiro","s12":"A primeira tela é música: prateleiras de playlists e paradas, cheias sem login no Google.","s13":"Fila e playlists","s14":"Veja o que toca a seguir e reordene. Aleatório, repetir e playlists também ficam aqui.","s15":"Modos música e vídeo","s16":"Uma lista de faixas para ouvir, uma grade de miniaturas para assistir. Um botão alterna.","s17":"Zero Shorts","s18":"Shorts não aparecem em nenhuma prateleira nem em nenhum resultado de busca.","s19":"Teclado e controle remoto","s20":"As setas movem entre os itens e Enter abre, como um controle de TV.","s21":"Um menu que você escolhe","s22":"Início, Inscrições, Histórico e Playlists, mais as linhas do menu de TV: Esportes, Ao vivo, Jogos, Notícias, Aprender, Infantil. Ligue só o que quiser.","s23":"Uma busca que ajuda","s24":"Sugestões enquanto digita, buscas recentes lembradas, e playlists e canais entre os resultados.","s25":"Desktop e celular","s26":"Funciona no Chrome, Orion e Edge no desktop, e no Orion para iPhone e iPad.","s27":"Instalação","s28":"Como instalar","s29":"Registre o pacote baixado no seu navegador. Pronto em menos de um minuto, sem configuração complicada.","s30":"Navegador Orion","s31":"<li>Clique no botão <strong>Baixar</strong> acima para salvar o pacote zip.</li> <li>Abra <strong>Ajustes → Extensões</strong> no Orion e toque em <strong>+</strong> para escolher o zip baixado.</li> <li>Clique no ícone da extensão na barra de ferramentas para ativar o RenewTube.</li>","s32":"Chrome e Edge","s33":"<li>Descompacte o pacote baixado na pasta que preferir.</li> <li>Abra <code>chrome://extensions</code> na barra de endereço e ative o <strong>Modo do desenvolvedor</strong>.</li> <li>Clique em <strong>Carregar sem compactação</strong> no canto superior esquerdo e escolha a pasta extraída.</li>","s34":"Bom saber","s35":"Princípios de design e notas","s36":"Detalhes transparentes sobre como o RenewTube funciona dentro do navegador.","s37":"Esc duas vezes para sair quando quiser","s38":"O YouTube fica intacto. Pressione <kbd>Esc</kbd> duas vezes em um segundo para fechar o RenewTube e voltar à página normal do YouTube.","s39":"Reprodução em segundo plano e com a tela apagada","s40":"A reprodução com a tela apagada depende dos recursos nativos do navegador (como a reprodução em segundo plano do Orion).","s41":"Sem bloqueio de anúncios embutido","s42":"O RenewTube segue as regras de streaming do YouTube e não bloqueia anúncios. Um bloqueador de conteúdo dedicado pode ser usado junto.","s43":"A biblioteca exige login","s44":"Busca, música e o menu de TV funcionam sem login. Inscrições, histórico e playlists aparecem quando você entra no YouTube.","s45":"RenewTube · Uma extensão tranquila para o YouTube","s47":"Política de privacidade"},"ru":{"title":"Простой и тихий плеер для YouTube","desc":"YouTube, приведённый в порядок. Простой экран поверх собственного плеера YouTube: музыка и видео на одном экране, и выход в любой момент.","s1":"RenewTube · Расширение для браузера","s2":"Простой и тихий плеер для YouTube","s3":"Превращает YouTube в ваш собственный плеер. Музыка и видео на одном экране, а воспроизводит по-прежнему YouTube.","s4":"Скачать","s5":"Один пакет работает в Orion, Chrome, Edge и совместимых браузерах.","s6":"Экран музыки. Полки заполнены ещё до входа в аккаунт.","s7":"Экран очереди и плейлистов. Сразу видно, что играет, и можно тут же управлять.","s8":"Возможности","s9":"Главное","s10":"Экран плеера вместо ленты рекомендаций. Потоки и данные остаются у YouTube, меняется только экран.","s11":"Музыка первой","s12":"Первый экран - музыка: полки плейлистов и чартов, заполненные без входа в Google.","s13":"Очередь и плейлисты","s14":"Смотрите, что играет дальше, и меняйте порядок. Случайный порядок, повтор и плейлисты тоже здесь.","s15":"Режимы музыки и видео","s16":"Список треков для прослушивания, сетка миниатюр для просмотра. Одна кнопка переключает.","s17":"Никаких Shorts","s18":"Shorts не появляются ни на одной полке и ни в одном результате поиска.","s19":"Клавиатура и пульт","s20":"Стрелки перемещают между элементами, Enter открывает, как на пульте телевизора.","s21":"Меню, которое выбираете вы","s22":"Главная, Подписки, История и Плейлисты, плюс строки телевизионного меню: Спорт, Эфир, Игры, Новости, Обучение, Детям. Включайте только нужное.","s23":"Поиск, который помогает","s24":"Подсказки при вводе, запоминание недавних запросов, а среди результатов - плейлисты и каналы.","s25":"Компьютер и телефон","s26":"Работает в Chrome, Orion и Edge на компьютере и в Orion на iPhone и iPad.","s27":"Установка","s28":"Как установить","s29":"Зарегистрируйте скачанный пакет в браузере. Меньше минуты, без сложных настроек.","s30":"Браузер Orion","s31":"<li>Нажмите кнопку <strong>Скачать</strong> выше и сохраните zip-пакет.</li> <li>Откройте в Orion <strong>Настройки → Расширения</strong> и нажмите <strong>+</strong>, чтобы выбрать скачанный zip.</li> <li>Нажмите значок расширения на панели инструментов, чтобы включить RenewTube.</li>","s32":"Chrome и Edge","s33":"<li>Распакуйте скачанный пакет в любую папку.</li> <li>Откройте <code>chrome://extensions</code> в адресной строке и включите <strong>Режим разработчика</strong>.</li> <li>Нажмите <strong>Загрузить распакованное расширение</strong> слева вверху и выберите распакованную папку.</li>","s34":"Полезно знать","s35":"Принципы и заметки","s36":"Открыто о том, как RenewTube работает внутри браузера.","s37":"Дважды Esc, чтобы выйти в любой момент","s38":"YouTube остаётся нетронутым. Нажмите <kbd>Esc</kbd> дважды в течение секунды, чтобы закрыть RenewTube и вернуть обычную страницу YouTube.","s39":"Фоновое воспроизведение и выключенный экран","s40":"Воспроизведение при выключенном экране зависит от возможностей самого браузера (например, фонового воспроизведения в Orion).","s41":"Без встроенной блокировки рекламы","s42":"RenewTube соблюдает правила потокового вещания YouTube и не блокирует рекламу. Рядом можно использовать отдельный блокировщик.","s43":"Для библиотеки нужен вход","s44":"Поиск, музыка и телевизионное меню работают без входа. Подписки, история и плейлисты появляются после входа в YouTube.","s45":"RenewTube · Тихое расширение для YouTube","s47":"Политика конфиденциальности"},"hi":{"title":"एक सरल, शांत YouTube प्लेयर","desc":"YouTube, सुव्यवस्थित। YouTube के अपने प्लेयर के ऊपर एक सरल स्क्रीन: संगीत और वीडियो एक ही स्क्रीन पर, और कभी भी वापस जाने का रास्ता।","s1":"RenewTube · ब्राउज़र एक्सटेंशन","s2":"एक सरल, शांत YouTube प्लेयर","s3":"YouTube को आपका अपना प्लेयर बना देता है। संगीत और वीडियो एक स्क्रीन पर, और चलाने का काम अब भी YouTube करता है।","s4":"डाउनलोड","s5":"एक ही पैकेज Orion, Chrome, Edge और संगत ब्राउज़रों में काम करता है।","s6":"संगीत स्क्रीन। साइन इन से पहले ही शेल्फ़ भरी रहती हैं।","s7":"कतार और प्लेलिस्ट स्क्रीन। जो चल रहा है उसे एक नज़र में देखें और तुरंत संभालें।","s8":"सुविधाएँ","s9":"मुख्य अनुभव","s10":"सिफ़ारिश फ़ीड की जगह एक प्लेयर स्क्रीन। स्ट्रीम और डेटा YouTube के पास रहते हैं; सिर्फ़ स्क्रीन बदलती है।","s11":"पहले संगीत","s12":"पहली स्क्रीन संगीत है: प्लेलिस्ट और चार्ट की शेल्फ़, बिना Google साइन इन के भरी हुई।","s13":"कतार और प्लेलिस्ट","s14":"देखें आगे क्या चलेगा और क्रम बदलें। शफ़ल, रिपीट और प्लेलिस्ट भी यहीं हैं।","s15":"संगीत और वीडियो मोड","s16":"सुनने के लिए ट्रैक सूची, देखने के लिए थंबनेल ग्रिड। एक बटन से बदलें।","s17":"कोई Shorts नहीं","s18":"Shorts किसी शेल्फ़ या खोज परिणाम में नहीं दिखते।","s19":"कीबोर्ड और रिमोट","s20":"तीर कुंजियाँ आइटम के बीच चलती हैं और Enter उन्हें खोलता है, टीवी रिमोट की तरह।","s21":"आपकी पसंद का मेनू","s22":"होम, सदस्यताएँ, इतिहास और प्लेलिस्ट, साथ में टीवी मेनू की पंक्तियाँ: खेल, लाइव, गेमिंग, समाचार, सीखना, बच्चे। सिर्फ़ वही चालू करें जो चाहिए।","s23":"मददगार खोज","s24":"टाइप करते समय सुझाव, हाल की खोजें याद रहती हैं, और परिणामों में प्लेलिस्ट और चैनल भी।","s25":"डेस्कटॉप और मोबाइल","s26":"डेस्कटॉप Chrome, Orion और Edge पर, और iPhone व iPad के Orion पर चलता है।","s27":"इंस्टॉल","s28":"इंस्टॉल कैसे करें","s29":"डाउनलोड किया पैकेज अपने ब्राउज़र में जोड़ें। बिना जटिल सेटिंग के एक मिनट से कम में पूरा।","s30":"Orion ब्राउज़र","s31":"<li>ऊपर <strong>डाउनलोड</strong> बटन दबाकर zip पैकेज सहेजें।</li> <li>Orion में <strong>सेटिंग → एक्सटेंशन</strong> खोलें और <strong>+</strong> दबाकर डाउनलोड की गई zip चुनें।</li> <li>टूलबार में एक्सटेंशन आइकन दबाकर RenewTube चालू करें।</li>","s32":"Chrome और Edge","s33":"<li>डाउनलोड किया पैकेज किसी फ़ोल्डर में अनज़िप करें।</li> <li>पता बार में <code>chrome://extensions</code> खोलें और <strong>डेवलपर मोड</strong> चालू करें।</li> <li>ऊपर बाएँ <strong>अनपैक्ड लोड करें</strong> दबाएँ और निकाला गया फ़ोल्डर चुनें।</li>","s34":"जानने योग्य","s35":"डिज़ाइन सिद्धांत और नोट","s36":"RenewTube ब्राउज़र के भीतर कैसे काम करता है, इसके पारदर्शी विवरण।","s37":"दो बार Esc, कभी भी बाहर","s38":"YouTube जैसा है वैसा रहता है। एक सेकंड में दो बार <kbd>Esc</kbd> दबाएँ, RenewTube बंद होगा और सामान्य YouTube पेज लौट आएगा।","s39":"बैकग्राउंड और स्क्रीन बंद पर प्लेबैक","s40":"स्क्रीन बंद होने पर प्लेबैक ब्राउज़र की अपनी बैकग्राउंड ऑडियो सुविधा पर निर्भर है (जैसे Orion का बैकग्राउंड प्लेबैक)।","s41":"कोई अंतर्निर्मित विज्ञापन अवरोधक नहीं","s42":"RenewTube YouTube के स्ट्रीमिंग नियमों का पालन करता है और विज्ञापन नहीं रोकता। अलग कंटेंट ब्लॉकर साथ में इस्तेमाल किया जा सकता है।","s43":"लाइब्रेरी के लिए साइन इन ज़रूरी","s44":"खोज, संगीत और टीवी मेनू बिना साइन इन के काम करते हैं। YouTube में साइन इन करने पर सदस्यताएँ, इतिहास और प्लेलिस्ट दिखती हैं।","s45":"RenewTube · YouTube के लिए एक शांत ब्राउज़र एक्सटेंशन","s47":"गोपनीयता नीति"},"id":{"title":"Pemutar YouTube yang sederhana dan tenang","desc":"YouTube yang dirapikan. Layar sederhana di atas pemutar YouTube sendiri: musik dan video dalam satu layar, dan jalan kembali kapan saja.","s1":"RenewTube · Ekstensi browser","s2":"Pemutar YouTube yang sederhana dan tenang","s3":"Mengubah YouTube menjadi pemutar milik Anda. Musik dan video dalam satu layar, dan YouTube tetap yang memutar.","s4":"Unduh","s5":"Satu paket berjalan di Orion, Chrome, Edge, dan browser yang kompatibel.","s6":"Tampilan musik. Rak sudah terisi sebelum Anda masuk.","s7":"Tampilan antrean dan playlist. Lihat sekilas yang sedang diputar dan kelola langsung.","s8":"Fitur","s9":"Pengalaman inti","s10":"Layar pemutar menggantikan feed rekomendasi. Stream dan data tetap di YouTube; hanya layarnya yang berubah.","s11":"Musik lebih dulu","s12":"Layar pertama adalah musik: rak playlist dan tangga lagu, terisi tanpa masuk akun Google.","s13":"Antrean dan playlist","s14":"Lihat yang diputar berikutnya dan susun ulang. Acak, ulang, dan playlist juga ada di sini.","s15":"Mode musik dan video","s16":"Daftar lagu untuk mendengarkan, kisi thumbnail untuk menonton. Satu tombol untuk berganti.","s17":"Tanpa Shorts","s18":"Shorts tidak muncul di rak mana pun maupun di hasil pencarian.","s19":"Keyboard dan remote","s20":"Tombol panah berpindah antar item dan Enter membukanya, seperti remote TV.","s21":"Menu pilihan Anda","s22":"Beranda, Langganan, Riwayat, dan Playlist, ditambah baris menu TV: Olahraga, Siaran langsung, Game, Berita, Belajar, Anak. Nyalakan yang Anda mau saja.","s23":"Pencarian yang membantu","s24":"Saran saat mengetik, pencarian terbaru diingat, serta playlist dan channel di antara hasil.","s25":"Desktop dan ponsel","s26":"Berjalan di Chrome, Orion, dan Edge desktop, serta Orion untuk iPhone dan iPad.","s27":"Pemasangan","s28":"Cara memasang","s29":"Daftarkan paket yang diunduh ke browser Anda. Selesai kurang dari semenit tanpa pengaturan rumit.","s30":"Browser Orion","s31":"<li>Tekan tombol <strong>Unduh</strong> di atas untuk menyimpan paket zip.</li> <li>Buka <strong>Pengaturan → Ekstensi</strong> di Orion dan ketuk <strong>+</strong> untuk memilih zip yang diunduh.</li> <li>Tekan ikon ekstensi di bilah alat untuk mengaktifkan RenewTube.</li>","s32":"Chrome dan Edge","s33":"<li>Ekstrak paket yang diunduh ke folder pilihan Anda.</li> <li>Buka <code>chrome://extensions</code> di bilah alamat dan aktifkan <strong>Mode pengembang</strong>.</li> <li>Tekan <strong>Muat yang belum dikemas</strong> di kiri atas dan pilih folder hasil ekstrak.</li>","s34":"Perlu diketahui","s35":"Prinsip desain dan catatan","s36":"Penjelasan terbuka tentang cara RenewTube bekerja di dalam browser.","s37":"Dua kali Esc untuk keluar kapan saja","s38":"YouTube tetap utuh. Tekan <kbd>Esc</kbd> dua kali dalam satu detik untuk menutup RenewTube dan kembali ke halaman YouTube biasa.","s39":"Pemutaran latar dan layar mati","s40":"Pemutaran dengan layar mati bergantung pada kemampuan latar browser itu sendiri (seperti pemutaran latar Orion).","s41":"Tanpa pemblokir iklan bawaan","s42":"RenewTube mematuhi aturan streaming YouTube dan tidak memblokir iklan. Pemblokir konten terpisah bisa dipakai bersamaan.","s43":"Pustaka perlu masuk akun","s44":"Pencarian, musik, dan menu TV berjalan tanpa masuk. Langganan, riwayat, dan playlist muncul setelah masuk ke YouTube.","s45":"RenewTube · Ekstensi browser yang tenang untuk YouTube","s47":"Kebijakan privasi"},"th":{"title":"เครื่องเล่น YouTube ที่เรียบง่ายและเงียบ","desc":"จัดระเบียบ YouTube หน้าจอเรียบง่ายที่วางทับเครื่องเล่นของ YouTube เอง: เพลงและวิดีโอในหน้าจอเดียว และกลับได้ทุกเมื่อ","s1":"RenewTube · ส่วนขยายเบราว์เซอร์","s2":"เครื่องเล่น YouTube ที่เรียบง่ายและเงียบ","s3":"เปลี่ยน YouTube ให้เป็นเครื่องเล่นของคุณเอง เพลงและวิดีโอในหน้าจอเดียว และ YouTube ยังเป็นผู้เล่นเหมือนเดิม","s4":"ดาวน์โหลด","s5":"แพ็กเกจเดียวใช้ได้ทั้ง Orion, Chrome, Edge และเบราว์เซอร์ที่รองรับ","s6":"หน้าจอเพลง ชั้นวางเต็มตั้งแต่ก่อนเข้าสู่ระบบ","s7":"หน้าจอคิวและเพลย์ลิสต์ เห็นสิ่งที่กำลังเล่นในพริบตาและจัดการได้ทันที","s8":"คุณสมบัติ","s9":"ประสบการณ์หลัก","s10":"หน้าจอเครื่องเล่นแทนฟีดแนะนำ สตรีมและข้อมูลยังเป็นของ YouTube เปลี่ยนแค่หน้าจอ","s11":"เพลงมาก่อน","s12":"หน้าจอแรกคือเพลง: ชั้นวางเพลย์ลิสต์และชาร์ต เต็มโดยไม่ต้องเข้าสู่ระบบ Google","s13":"คิวและเพลย์ลิสต์","s14":"ดูว่าจะเล่นอะไรต่อและจัดลำดับใหม่ สุ่ม เล่นซ้ำ และเพลย์ลิสต์ก็อยู่ที่นี่","s15":"โหมดเพลงและวิดีโอ","s16":"รายการแทร็กสำหรับฟัง ตารางภาพขนาดย่อสำหรับดู สลับด้วยปุ่มเดียว","s17":"ไม่มี Shorts","s18":"Shorts ไม่ปรากฏในชั้นวางใดหรือผลการค้นหาใด","s19":"คีย์บอร์ดและรีโมต","s20":"ปุ่มลูกศรเลื่อนระหว่างรายการ และ Enter เปิด เหมือนรีโมตทีวี","s21":"เมนูที่คุณเลือกเอง","s22":"หน้าแรก การติดตาม ประวัติ และเพลย์ลิสต์ พร้อมแถวเมนูทีวี: กีฬา ถ่ายทอดสด เกม ข่าว การเรียนรู้ เด็ก เปิดเฉพาะที่ต้องการ","s23":"การค้นหาที่ช่วยได้","s24":"คำแนะนำขณะพิมพ์ จำการค้นหาล่าสุด และมีเพลย์ลิสต์กับช่องอยู่ในผลลัพธ์ด้วย","s25":"เดสก์ท็อปและมือถือ","s26":"ใช้ได้บน Chrome, Orion และ Edge บนเดสก์ท็อป และ Orion บน iPhone และ iPad","s27":"การติดตั้ง","s28":"วิธีติดตั้ง","s29":"ลงทะเบียนแพ็กเกจที่ดาวน์โหลดกับเบราว์เซอร์ เสร็จในไม่ถึงหนึ่งนาทีโดยไม่ต้องตั้งค่าซับซ้อน","s30":"เบราว์เซอร์ Orion","s31":"<li>กดปุ่ม <strong>ดาวน์โหลด</strong> ด้านบนเพื่อบันทึกแพ็กเกจ zip</li> <li>เปิด <strong>การตั้งค่า → ส่วนขยาย</strong> ใน Orion แล้วแตะ <strong>+</strong> เพื่อเลือกไฟล์ zip ที่ดาวน์โหลด</li> <li>กดไอคอนส่วนขยายบนแถบเครื่องมือเพื่อเปิดใช้ RenewTube</li>","s32":"Chrome และ Edge","s33":"<li>แตกแพ็กเกจที่ดาวน์โหลดไว้ในโฟลเดอร์ที่ต้องการ</li> <li>เปิด <code>chrome://extensions</code> ในแถบที่อยู่ แล้วเปิด <strong>โหมดนักพัฒนา</strong></li> <li>กด <strong>โหลดส่วนขยายที่แตกไฟล์แล้ว</strong> ที่มุมซ้ายบน แล้วเลือกโฟลเดอร์ที่แตกไว้</li>","s34":"ควรรู้","s35":"หลักการออกแบบและหมายเหตุ","s36":"รายละเอียดอย่างโปร่งใสว่า RenewTube ทำงานในเบราว์เซอร์อย่างไร","s37":"กด Esc สองครั้งเพื่อออกได้ทุกเมื่อ","s38":"YouTube ยังคงเดิม กด <kbd>Esc</kbd> สองครั้งภายใน 1 วินาทีเพื่อปิด RenewTube และกลับไปหน้า YouTube ปกติ","s39":"เล่นเบื้องหลังและเล่นขณะปิดหน้าจอ","s40":"การเล่นขณะปิดหน้าจออาศัยความสามารถเบื้องหลังของเบราว์เซอร์เอง (เช่น การเล่นเบื้องหลังของ Orion)","s41":"ไม่มีตัวบล็อกโฆษณาในตัว","s42":"RenewTube ปฏิบัติตามมาตรฐานสตรีมมิงของ YouTube และไม่บล็อกโฆษณา ใช้ร่วมกับตัวบล็อกเนื้อหาแยกต่างหากได้","s43":"คลังต้องเข้าสู่ระบบ","s44":"การค้นหา เพลง และเมนูทีวีใช้ได้โดยไม่ต้องเข้าสู่ระบบ การติดตาม ประวัติ และเพลย์ลิสต์จะปรากฏเมื่อเข้าสู่ระบบ YouTube","s45":"RenewTube · ส่วนขยายเบราว์เซอร์ที่เงียบสำหรับ YouTube","s47":"นโยบายความเป็นส่วนตัว"},"vi":{"title":"Trình phát YouTube đơn giản và yên tĩnh","desc":"YouTube được dọn gọn. Một màn hình đơn giản đặt trên trình phát của chính YouTube: âm nhạc và video trên một màn hình, và có thể quay lại bất cứ lúc nào.","s1":"RenewTube · Tiện ích trình duyệt","s2":"Trình phát YouTube đơn giản và yên tĩnh","s3":"Biến YouTube thành trình phát của riêng bạn. Âm nhạc và video trên một màn hình, và YouTube vẫn là bên phát.","s4":"Tải xuống","s5":"Một gói dùng được trên Orion, Chrome, Edge và các trình duyệt tương thích.","s6":"Màn hình âm nhạc. Các kệ đã đầy trước cả khi đăng nhập.","s7":"Màn hình hàng đợi và danh sách phát. Nhìn lướt là thấy đang phát gì và quản lý ngay.","s8":"Tính năng","s9":"Trải nghiệm cốt lõi","s10":"Màn hình trình phát thay cho bảng đề xuất. Luồng và dữ liệu vẫn của YouTube; chỉ màn hình thay đổi.","s11":"Âm nhạc trước tiên","s12":"Màn hình đầu tiên là âm nhạc: các kệ danh sách phát và bảng xếp hạng, đầy mà không cần đăng nhập Google.","s13":"Hàng đợi và danh sách phát","s14":"Xem bài tiếp theo và sắp xếp lại. Trộn, lặp lại và danh sách phát cũng ở đây.","s15":"Chế độ âm nhạc và video","s16":"Danh sách bài để nghe, lưới hình thu nhỏ để xem. Một nút để chuyển.","s17":"Không có Shorts","s18":"Shorts không xuất hiện ở bất kỳ kệ nào hay kết quả tìm kiếm nào.","s19":"Bàn phím và điều khiển","s20":"Phím mũi tên di chuyển giữa các mục và Enter mở chúng, như điều khiển TV.","s21":"Menu do bạn chọn","s22":"Trang chủ, Kênh đăng ký, Lịch sử và Danh sách phát, cộng thêm các dòng menu TV: Thể thao, Trực tiếp, Trò chơi, Tin tức, Học tập, Trẻ em. Chỉ bật những gì bạn muốn.","s23":"Tìm kiếm hữu ích","s24":"Gợi ý khi gõ, nhớ các tìm kiếm gần đây, và có danh sách phát cùng kênh trong kết quả.","s25":"Máy tính và điện thoại","s26":"Chạy trên Chrome, Orion và Edge máy tính, và Orion trên iPhone, iPad.","s27":"Cài đặt","s28":"Cách cài đặt","s29":"Đăng ký gói đã tải với trình duyệt. Xong trong chưa đầy một phút, không cần cấu hình phức tạp.","s30":"Trình duyệt Orion","s31":"<li>Nhấn nút <strong>Tải xuống</strong> ở trên để lưu gói zip.</li> <li>Mở <strong>Cài đặt → Tiện ích</strong> trong Orion và chạm <strong>+</strong> để chọn tệp zip đã tải.</li> <li>Nhấn biểu tượng tiện ích trên thanh công cụ để bật RenewTube.</li>","s32":"Chrome và Edge","s33":"<li>Giải nén gói đã tải vào thư mục bạn muốn.</li> <li>Mở <code>chrome://extensions</code> trên thanh địa chỉ và bật <strong>Chế độ nhà phát triển</strong>.</li> <li>Nhấn <strong>Tải tiện ích đã giải nén</strong> ở góc trên bên trái và chọn thư mục đã giải nén.</li>","s34":"Nên biết","s35":"Nguyên tắc thiết kế và ghi chú","s36":"Nói rõ RenewTube hoạt động thế nào bên trong trình duyệt.","s37":"Esc hai lần để thoát bất cứ lúc nào","s38":"YouTube vẫn nguyên vẹn. Nhấn <kbd>Esc</kbd> hai lần trong một giây để đóng RenewTube và trở về trang YouTube bình thường.","s39":"Phát nền và phát khi tắt màn hình","s40":"Phát khi tắt màn hình dựa vào khả năng phát nền của chính trình duyệt (như phát nền của Orion).","s41":"Không chặn quảng cáo tích hợp","s42":"RenewTube tuân theo quy chuẩn phát trực tuyến của YouTube và không chặn quảng cáo. Có thể dùng cùng một trình chặn nội dung riêng.","s43":"Thư viện cần đăng nhập","s44":"Tìm kiếm, âm nhạc và menu TV dùng được khi chưa đăng nhập. Kênh đăng ký, lịch sử và danh sách phát xuất hiện khi bạn đăng nhập YouTube.","s45":"RenewTube · Một tiện ích trình duyệt yên tĩnh cho YouTube","s47":"Chính sách quyền riêng tư"}};
+  const langSelect = document.getElementById('lang');
+  function applyLang(lang) {
+    const d = I18N[lang] || I18N.en;
+    for (const el of document.querySelectorAll('[data-i18n]')) {
+      const v = d[el.dataset.i18n] ?? I18N.en[el.dataset.i18n];
+      if (v !== undefined) el.innerHTML = v;
+    }
+    root.dataset.lang = lang;
+    root.lang = lang;
+    document.title = 'RenewTube · ' + (d.title || I18N.en.title);
+    document.querySelector('meta[name="description"]').setAttribute('content', d.desc || I18N.en.desc);
+    langSelect.value = lang;
+  }
+  applyLang(root.dataset.lang || 'en');
+  langSelect.addEventListener('change', () => {
+    applyLang(langSelect.value);
+    try { localStorage.setItem('lang', langSelect.value); } catch (e) {}
   });
 
   // 최신 릴리스 메타데이터 확인 및 다운로드 링크 갱신
