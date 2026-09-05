@@ -475,44 +475,6 @@ export function playlists(root: unknown): Playlist[] {
  * A response that has none is not an error — most screens are one flat list —
  * so the caller falls back to `tracks` rather than showing nothing.
  */
-/** A channel as a list offers it: the subscriptions screen, a search. */
-export interface Channel {
-  id: string
-  title: string
-  /** Subscriber count or handle, as the row rendered it. */
-  subtitle: string
-  avatar?: string
-}
-
-/**
- * Channels, from the three shapes a list of them takes.
- *
- * `channelRenderer` is a search result, `gridChannelRenderer` the classic
- * subscriptions grid, and the lockup with a channel `contentType` is the 2025
- * row. The subscriptions list could not be measured signed in from here, so
- * all three are read and whichever the page sends is the one that lands.
- */
-export function channels(root: unknown): Channel[] {
-  const out: Channel[] = []
-  const seen = new Set<string>()
-  const push = (id: unknown, title: string, subtitle: string, avatar: string | undefined) => {
-    if (typeof id !== 'string' || !id.startsWith('UC') || seen.has(id)) return
-    seen.add(id)
-    out.push({ id, title, subtitle, avatar })
-  }
-  for (const key of ['channelRenderer', 'gridChannelRenderer']) {
-    for (const item of collect(root, key)) {
-      if (!isObject(item)) continue
-      push(item.channelId, text(item.title), text(item.subscriberCountText) || text(item.videoCountText), pickThumb(item.thumbnail))
-    }
-  }
-  for (const item of lockups(root, 'LOCKUP_CONTENT_TYPE_CHANNEL')) {
-    const rows = lockupRows(item)
-    push(item.contentId, lockupTitle(item), rows[0] ?? '', pickThumb(findFirst(item, 'thumbnail')))
-  }
-  return out
-}
-
 export function shelves(root: unknown): Shelf[] {
   const out: Shelf[] = []
   // YouTube Music's shelf. Its title hangs off a header rather than sitting on
@@ -565,4 +527,65 @@ export function continuationToken(root: unknown): string | undefined {
 export function dedupe(list: readonly Track[]): Track[] {
   const seen = new Set<string>()
   return list.filter((t) => !seen.has(t.videoId) && seen.add(t.videoId))
+}
+
+/**
+ * One channel, as a list offers it: a search, the subscriptions screen.
+ *
+ * The id is what anything that remembers a channel remembers: a byline is a
+ * display name and names are not identity.
+ */
+export interface Channel {
+  id: string
+  title: string
+  /** The handle and the subscriber count, as the row rendered them. */
+  subtitle: string
+  /** The avatar, ready to use. */
+  avatar?: string
+}
+
+/** The search panel's name for the same thing. */
+export type ChannelHit = Channel
+
+/**
+ * Channels, from every shape a list of them takes.
+ *
+ * `channelRenderer` is the desktop client's search row, which is the one this
+ * app normally gets; `compactChannelRenderer` is m.youtube.com's own, which
+ * names the title `displayName`; `gridChannelRenderer` is the classic
+ * subscriptions grid; and the lockup with a channel `contentType` is the 2025
+ * row. The subscriptions list could not be measured signed in from here, so
+ * all of them are read and whichever the page sends is the one that lands.
+ *
+ * **The two count fields are swapped, and that is YouTube's doing.** Measured
+ * 2026-09-05 against a live channels-only search on both clients:
+ * `videoCountText` holds "1.78K subscribers" and `subscriberCountText` holds
+ * the handle, "@Author_dlwlrma". Reading them by their names would print the
+ * handle where a count belongs, so they are joined in the order the row
+ * renders them and neither is labelled.
+ */
+export function channels(root: unknown): Channel[] {
+  const out: Channel[] = []
+  const seen = new Set<string>()
+  const push = (id: unknown, title: string, subtitle: string, avatar: string | undefined) => {
+    if (typeof id !== 'string' || !id.startsWith('UC') || !title || seen.has(id)) return
+    seen.add(id)
+    // The mobile client hands these out protocol-relative.
+    out.push({ id, title, subtitle, avatar: avatar?.startsWith('//') ? `https:${avatar}` : avatar })
+  }
+  for (const key of ['channelRenderer', 'compactChannelRenderer', 'gridChannelRenderer']) {
+    for (const item of collect(root, key)) {
+      if (!isObject(item)) continue
+      push(
+        item.channelId,
+        text(item.title) || text(item.displayName),
+        [text(item.subscriberCountText), text(item.videoCountText)].filter(Boolean).join(' · '),
+        pickThumb(item.thumbnail),
+      )
+    }
+  }
+  for (const item of lockups(root, 'LOCKUP_CONTENT_TYPE_CHANNEL')) {
+    push(item.contentId, lockupTitle(item), lockupRows(item)[0] ?? '', pickThumb(findFirst(item, 'thumbnail')))
+  }
+  return out
 }

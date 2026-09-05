@@ -158,4 +158,9 @@ export const ID: Record<string, string> = {
   "내 동영상": "Video saya",
   "켜 둔 것만 메뉴에 나옵니다. 음악은 항상 있습니다.": "Hanya yang dinyalakan yang muncul di menu. Musik selalu ada.",
   "구독한 채널이 없습니다.": "Belum ada channel yang disubscribe.",
+  "추천 검색어": "Saran",
+  "최근 검색": "Pencarian terbaru",
+  "지우기": "Hapus",
+  "검색어 삭제": "Hapus pencarian ini",
+  "채널 열기": "Buka channel",
 }

@@ -159,18 +159,21 @@ test('arrow keys move focus, and Enter opens what is focused', async () => {
         return el ? `${el.className}|${el.textContent?.slice(0, 24) ?? ''}` : null
       })
 
-    // Down out of the search field lands on 전체 재생, the first of the two
-    // actions above the rows, and not on a row past them: the actions are as
-    // wide as the field for exactly this reason.
+    // Down out of the search field walks into the answers and stops at a
+    // track, and 전체 재생 is on the way rather than stepped over: the two
+    // actions are as wide as the field for exactly that reason. What stands
+    // between the field and them is the query's playlists and channels, when
+    // it found any, so the walk is followed rather than counted.
+    const classesOf = (state: string | null) => (state ?? '').split('|')[0]!.split(' ')
     await over.locator('.searchbox input').focus()
-    await h.page.keyboard.press('ArrowDown')
-    expect(await focused()).toContain('searchAct')
-    let landed = ''
-    for (let i = 0; i < 8 && !landed.includes('row'); i++) {
+    const walk: string[][] = []
+    for (let i = 0; i < 16; i++) {
       await h.page.keyboard.press('ArrowDown')
-      landed = (await focused()) ?? ''
+      walk.push(classesOf(await focused()))
+      if (walk[walk.length - 1]!.includes('row')) break
     }
-    expect(landed).toContain('row')
+    expect(walk.flat()).toContain('searchAct')
+    expect(walk[walk.length - 1]).toContain('row')
 
     // Enter plays it, the panel goes, and the bar agrees.
     await h.page.keyboard.press('Enter')

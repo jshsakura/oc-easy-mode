@@ -158,4 +158,9 @@ export const ES: Record<string, string> = {
   "내 동영상": "Mis videos",
   "켜 둔 것만 메뉴에 나옵니다. 음악은 항상 있습니다.": "Solo lo activado aparece en el menú. Música siempre está.",
   "구독한 채널이 없습니다.": "Aún no hay canales suscritos.",
+  "추천 검색어": "Sugerencias",
+  "최근 검색": "Búsquedas recientes",
+  "지우기": "Borrar",
+  "검색어 삭제": "Quitar búsqueda",
+  "채널 열기": "Abrir canal",
 }

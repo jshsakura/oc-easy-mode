@@ -158,4 +158,9 @@ export const VI: Record<string, string> = {
   "내 동영상": "Video của tôi",
   "켜 둔 것만 메뉴에 나옵니다. 음악은 항상 있습니다.": "Chỉ những mục đang bật mới hiện trong menu. Âm nhạc luôn có.",
   "구독한 채널이 없습니다.": "Chưa có kênh đã đăng ký.",
+  "추천 검색어": "Gợi ý",
+  "최근 검색": "Tìm kiếm gần đây",
+  "지우기": "Xóa",
+  "검색어 삭제": "Xóa từ khóa này",
+  "채널 열기": "Mở kênh",
 }

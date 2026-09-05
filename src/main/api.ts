@@ -7,6 +7,7 @@
 import { call, hasSession, InnertubeError, type Client } from './innertube.ts'
 import type { Json } from './parse.ts'
 import {
+  channels as parseChannels,
   collect,
   continuationToken,
   isObject,
@@ -15,10 +16,10 @@ import {
   tracks as parseTracks,
   dedupe,
   type Channel,
+  type ChannelHit,
   type Playlist,
   type Shelf,
   type Track,
-  channels as parseChannels,
 } from './parse.ts'
 import type { YtCfg } from './ytcfg.ts'
 
@@ -681,4 +682,112 @@ export async function channelVideos(cfg: YtCfg, channelId: string): Promise<Page
   // home tab answers, which is shelves of the channel's own choosing.
   const res = await call(cfg, 'browse', { browseId: channelId, params: 'EgZ2aWRlb3PyBgQKAjoA' }, as)
   return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: 'browse', client: as }
+}
+
+// ── Suggestions ────────────────────────────────────────────────────────────
+
+/**
+ * Google's suggestion service, on the host that answers from inside the page.
+ *
+ * **Measured 2026-09-05 from the MAIN world, signed out, on both
+ * www.youtube.com and m.youtube.com.** Three ways in were tried, and only one
+ * of them works on both:
+ *
+ * 1. **`<script>` JSONP**, which is how the page itself asks. Refused:
+ *    youtube.com enforces Trusted Types, so `script.src = …` throws
+ *    `TypeError: Failed to set the 'src' property on 'HTMLScriptElement': This
+ *    document requires 'TrustedScriptURL' assignment`, and
+ *    `setAttribute('src', …)` throws the same. That door is shut to anything
+ *    running on this page.
+ * 2. **The page's own origin**, `https://www.youtube.com/complete/search`.
+ *    200 on www, and **404 on m.youtube.com**, so it cannot be the one path.
+ * 3. **`fetch` to suggestqueries-clients6.youtube.com.** 200 on both hosts,
+ *    CORS permitting, cross-origin and unauthenticated. This.
+ *
+ * `client=firefox` rather than the page's `client=youtube`, because the
+ * YouTube one answers with a `window.google.ac.h([…])` callback wrapper that
+ * would have to be unwrapped by hand, and the Firefox one answers the same
+ * suggestions as plain JSON: `[query, [suggestion, …], [], {…}]`.
+ */
+const SUGGEST = 'https://suggestqueries-clients6.youtube.com/complete/search'
+
+/**
+ * What YouTube would offer under its own field, for a half-typed query.
+ *
+ * Nothing found is a normal answer and so is a request that failed: the field
+ * works perfectly well with no suggestions under it, and an error message
+ * about an autocomplete is noise. Both come back as an empty list.
+ */
+export async function suggest(cfg: YtCfg, query: string, limit = 8): Promise<string[]> {
+  const q = query.trim()
+  if (!q) return []
+  const hl = encodeURIComponent(cfg.hl ?? 'ko')
+  try {
+    const res = await fetch(`${SUGGEST}?client=firefox&ds=yt&hl=${hl}&q=${encodeURIComponent(q)}`)
+    if (!res.ok) return []
+    const body = (await res.json()) as unknown
+    if (!Array.isArray(body) || !Array.isArray(body[1])) return []
+    const seen = new Set<string>()
+    return (body[1] as unknown[])
+      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+      .filter((v) => !seen.has(v) && seen.add(v))
+      .slice(0, limit)
+  } catch {
+    return []
+  }
+}
+
+// ── The other kinds of result ──────────────────────────────────────────────
+
+// The same protobuf-encoded filters as VIDEOS_ONLY above, for the other two
+// things a search can find.
+const PLAYLISTS_ONLY = 'EgIQAw%3D%3D'
+const CHANNELS_ONLY = 'EgIQAg%3D%3D'
+
+/** What a query finds besides videos. */
+export interface Kinds {
+  playlists: Playlist[]
+  channels: ChannelHit[]
+}
+
+/**
+ * The playlists and the channels for one query.
+ *
+ * **Two filtered searches rather than one unfiltered one.** The obvious saving
+ * is to drop the videos-only filter and read all three kinds out of a single
+ * response, and it is not a saving. Measured 2026-09-05 on live search for
+ * 아이유, desktop client:
+ *
+ * | request | size | what is in it |
+ * |---|---|---|
+ * | unfiltered | 1,215 KB | 18 videos, 1 playlist, **0 channels**, 65 Shorts |
+ * | videos only | 542 KB | 18 videos |
+ * | playlists only | 360 KB | 19 playlists |
+ * | channels only | 275 KB | 20 channels |
+ *
+ * The unfiltered response costs the same as all three filtered ones together,
+ * spends most of itself on Shorts this app does not show, and carried no
+ * channel at all for two of the three queries tried. So the three run side by
+ * side instead, and the wait is the slowest of them rather than their sum.
+ *
+ * One kind failing does not take the other with it. A search that found
+ * channels and could not reach the playlists should show the channels.
+ */
+export async function searchKinds(cfg: YtCfg, query: string): Promise<Kinds> {
+  // Same client choice, and same fallback, as `search` above.
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
+  const ask = async (params: string): Promise<Json> => {
+    try {
+      return await call(cfg, 'search', { query, params }, as)
+    } catch (err) {
+      if (as === 'page') throw err
+      return call(cfg, 'search', { query, params })
+    }
+  }
+
+  const [lists, chans] = await Promise.allSettled([ask(PLAYLISTS_ONLY), ask(CHANNELS_ONLY)])
+  return {
+    playlists: lists.status === 'fulfilled' ? parsePlaylists(lists.value) : [],
+    channels: chans.status === 'fulfilled' ? parseChannels(chans.value) : [],
+  }
 }
