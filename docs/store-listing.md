@@ -115,8 +115,10 @@ English (`_locales/en/messages.json` 의 `extDescription` 과 같은 값):
 | `promo-marquee-1400x560.png` | 1400×560 | 마키 (선택) |
 | `../site/icon-128.png` | 128×128 | 스토어 아이콘 |
 
-이미지는 실제 화면을 찍은 것이고 합성하지 않았습니다. 다시 찍으려면
-`scratch/store/shots.spec.ts` 를 만들었던 방식대로 1280×800 뷰포트에서 찍습니다.
+스크린샷은 실제 화면을 1280×800 뷰포트에서 찍은 것이고 합성하지 않았습니다.
+프로모 타일 둘과 `site/og.png` 는 영어 문구(RenewTube / A simple player for
+YouTube)로, 아이콘 원본을 그대로 얹은 단색 플레이트입니다. 다시 만들 때도 그라데이션과
+파티클은 넣지 않습니다.
 
 ## 대시보드에서 할 일 (첫 등록)
 
