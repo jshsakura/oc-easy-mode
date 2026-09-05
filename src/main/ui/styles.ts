@@ -1706,4 +1706,81 @@ input[type=range]::-moz-range-thumb {
 .modal.full .setBody { padding: 4px 20px calc(20px + env(safe-area-inset-bottom)); }
 .modal.full .setLink { padding: 14px 12px; font-size: 15px; }
 .modal.full .setRow { font-size: 15px; }
+
+/* ── Search: what fills the panel besides answers ─────────────────────────
+   Kept in one block at the end of the file so that two branches editing this
+   stylesheet at once meet in as few places as possible. */
+
+/* Suggestions, between the field and the answers. A strip rather than a
+   floating dropdown: the panel is already a floating thing, and a second
+   layer over it would cast a shadow on a shadow. */
+.searchSuggest {
+  flex: none; border-bottom: 1px solid var(--pop-line);
+  padding: 8px 10px; margin-top: 10px; max-height: 44dvh; overflow-y: auto;
+}
+.suggestRow {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--radius-md);
+  font-size: 14px; color: var(--foreground); transition: background var(--ease);
+}
+.suggestRow svg { color: var(--muted-foreground); flex: none; }
+.suggestRow span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggestRow:hover { background: var(--hover); }
+.suggestRow:active { background: var(--secondary); }
+
+/* Recent searches: the empty panel's contents. A row, not a chip, because a
+   query is a sentence and a chip is a word, and the ✕ needs somewhere to sit
+   that is not inside the words. */
+.searchRecent { margin-bottom: 8px; }
+/* The prompt under a list of remembered queries is a footnote, not the screen,
+   so it does not keep the room it takes on an entirely empty panel. */
+.searchRecent + .empty { padding: 24px 0 16px; }
+.searchRecent .searchMark { justify-content: space-between; padding-right: 4px; }
+.searchClear {
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--muted-foreground); padding: 2px 6px; border-radius: var(--radius-md);
+}
+.searchClear:hover { color: var(--foreground); background: var(--hover); }
+.recentRow { display: flex; align-items: center; gap: 2px; }
+.recentGo {
+  display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; text-align: left;
+  padding: 8px 12px; border-radius: var(--radius-md);
+  font-size: 14px; color: var(--foreground); transition: background var(--ease);
+}
+.recentGo svg { color: var(--muted-foreground); flex: none; }
+.recentGo span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recentGo:hover { background: var(--hover); }
+.recentDrop {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: var(--radius-md);
+  color: var(--muted-foreground); transition: color var(--ease), background var(--ease);
+}
+.recentDrop:hover { color: var(--foreground); background: var(--hover); }
+
+/* Playlists and channels. Its own row shape, deliberately not .row: a track
+   row carries an index, a duration and an action strip, and none of the three
+   means anything here. */
+.searchKinds { margin-bottom: 4px; }
+.kindRow {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  padding: 7px 12px; border-radius: var(--radius-md); transition: background var(--ease);
+}
+.kindRow:hover { background: var(--hover); }
+.kindRow:active { background: var(--secondary); }
+.kindRow .thumb, .kindRow .avatar {
+  flex: none; width: 44px; height: 44px; overflow: hidden;
+  background: var(--secondary); position: relative;
+}
+.kindRow .thumb { border-radius: var(--radius-md); }
+/* A channel is a face, and a face is round wherever YouTube draws one. */
+.kindRow .avatar { border-radius: 999px; }
+.kindRow .thumb img, .kindRow .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.kindRow .meta { min-width: 0; }
+.kindRow .ttl { font-size: 14px; font-weight: 500; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kindRow .sub { color: var(--muted-foreground); font-size: 13px; line-height: 1.25; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* On a phone the panel is the screen, so these get the same roomier padding
+   the actions above them already take. */
+.modal.search.full .suggestRow, .modal.search.full .recentGo { padding: 10px 12px; font-size: 15px; }
+.modal.search.full .kindRow { padding: 9px 12px; }
 `

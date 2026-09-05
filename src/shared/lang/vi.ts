@@ -149,4 +149,9 @@ export const VI: Record<string, string> = {
   "단축키": "Phím tắt",
   "10초 뒤로": "Lùi 10 giây",
   "10초 앞으로": "Tiến 10 giây",
+  "추천 검색어": "Gợi ý",
+  "최근 검색": "Tìm kiếm gần đây",
+  "지우기": "Xóa",
+  "검색어 삭제": "Xóa từ khóa này",
+  "이 채널 이름으로 검색": "Tìm theo tên kênh này",
 }

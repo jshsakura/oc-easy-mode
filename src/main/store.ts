@@ -316,3 +316,63 @@ export function takeArrival(): string | null {
     return null
   }
 }
+
+// ── What was searched for ──────────────────────────────────────────────────
+//
+// The panel opens on an empty field, and an empty field over an empty panel is
+// a wall. What this browser looked for before is the one thing worth offering
+// there, and offering it costs no request at all.
+//
+// Kept here and only here. A query is a personal thing, and this one never
+// leaves the origin it was typed on. Same prefix as every other key in this
+// file, because it is an address in somebody's browser rather than a name.
+
+const SEARCHES_KEY = 'oc-easy-mode:searches'
+
+/** A dozen fills the empty panel without turning it into a list to read. */
+const SEARCHES_MAX = 12
+
+/** The queries this browser searched for, newest first. */
+export function recentSearches(): string[] {
+  try {
+    const raw = localStorage.getItem(SEARCHES_KEY)
+    if (!raw) return []
+    const got = JSON.parse(raw) as unknown
+    if (!Array.isArray(got)) return []
+    return got.filter((v): v is string => typeof v === 'string' && v.trim().length > 0).slice(0, SEARCHES_MAX)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Puts a query at the front, and only there once.
+ *
+ * An empty query is never stored: a blank row in this list is a row that
+ * searches for nothing, which is not something anyone can have meant.
+ */
+export function rememberSearch(query: string): void {
+  const q = query.trim()
+  if (!q) return
+  try {
+    const next = [q, ...recentSearches().filter((v) => v !== q)].slice(0, SEARCHES_MAX)
+    localStorage.setItem(SEARCHES_KEY, JSON.stringify(next))
+  } catch {
+    // See save(). A forgotten query is not worth a broken panel.
+  }
+}
+
+/** Takes one query off the list. */
+export function forgetSearch(query: string): void {
+  try {
+    const next = recentSearches().filter((v) => v !== query)
+    if (next.length === 0) localStorage.removeItem(SEARCHES_KEY)
+    else localStorage.setItem(SEARCHES_KEY, JSON.stringify(next))
+  } catch {}
+}
+
+export function clearSearches(): void {
+  try {
+    localStorage.removeItem(SEARCHES_KEY)
+  } catch {}
+}

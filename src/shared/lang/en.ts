@@ -149,4 +149,9 @@ export const EN: Record<string, string> = {
   "단축키": "Shortcuts",
   "10초 뒤로": "Back 10 seconds",
   "10초 앞으로": "Forward 10 seconds",
+  "추천 검색어": "Suggestions",
+  "최근 검색": "Recent searches",
+  "지우기": "Clear",
+  "검색어 삭제": "Remove search",
+  "이 채널 이름으로 검색": "Search this channel's name",
 }

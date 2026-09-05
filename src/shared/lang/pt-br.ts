@@ -149,4 +149,9 @@ export const PT_BR: Record<string, string> = {
   "단축키": "Atalhos",
   "10초 뒤로": "Voltar 10 segundos",
   "10초 앞으로": "Avançar 10 segundos",
+  "추천 검색어": "Sugestões",
+  "최근 검색": "Buscas recentes",
+  "지우기": "Limpar",
+  "검색어 삭제": "Remover busca",
+  "이 채널 이름으로 검색": "Buscar o nome deste canal",
 }

@@ -149,4 +149,9 @@ export const ID: Record<string, string> = {
   "단축키": "Pintasan",
   "10초 뒤로": "Mundur 10 detik",
   "10초 앞으로": "Maju 10 detik",
+  "추천 검색어": "Saran",
+  "최근 검색": "Pencarian terbaru",
+  "지우기": "Hapus",
+  "검색어 삭제": "Hapus pencarian ini",
+  "이 채널 이름으로 검색": "Cari nama channel ini",
 }
