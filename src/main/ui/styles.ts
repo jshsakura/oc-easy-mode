@@ -1586,6 +1586,17 @@ input[type=range]::-moz-range-thumb {
 .main .rows .row.now .rowInner { grid-template-columns: 24px 60px 1fr auto; }
 .main .rows .row.now .title { font-size: 15px; font-weight: 600; white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .main .rows .row.now .by { font-size: 13px; }
+/* The card's four-column template must not reach the phone. Under 860px the
+   row is two columns, artwork and text, and the number cell is lifted out of
+   the grid to sit over the artwork as the bars. The four-column rule above is
+   more specific than the phone's two-column one and won: with the number cell
+   absent from the flow, every child slid one column left and the title landed
+   in the 60px artwork column, one character to a line, over the picture.
+   Measured on the queue and 시청 기록 screens, 2026-09-05. */
+@media (max-width: 860px) {
+  .main .rows .row.now .rowInner { grid-template-columns: 60px 1fr; }
+  .main .rows .row.now .idx { left: 10px; width: 60px; height: 60px; }
+}
 .main .rows > .queueMark { padding: 0 4px; }
 .main .rows > .queueMark:first-child { margin-top: 4px; }
 .main .rows > .btn.ghost { margin-bottom: 8px; }
