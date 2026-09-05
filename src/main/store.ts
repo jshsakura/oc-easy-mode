@@ -105,6 +105,38 @@ export function setDislikeRemoves(yes: boolean): void {
   } catch {}
 }
 
+/**
+ * Which menu lines the reader has turned on or off.
+ *
+ * Only the choices actually made are written down, as key to boolean. An
+ * entry nobody has touched is absent, and falls back to the default in
+ * menu.ts — so a line added to the menu later arrives at *its* default
+ * rather than at whatever a stale saved list happened to hold.
+ */
+const MENU_KEY = 'oc-easy-mode:menu'
+
+export function menuChoices(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(MENU_KEY)
+    if (!raw) return {}
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const out: Record<string, boolean> = {}
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof v === 'boolean') out[k] = v
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+export function setMenuChoice(key: string, on: boolean): void {
+  try {
+    localStorage.setItem(MENU_KEY, JSON.stringify({ ...menuChoices(), [key]: on }))
+  } catch {}
+}
+
 export function playlistsFolded(): boolean {
   try {
     return localStorage.getItem(PLAYLISTS_KEY) === 'folded'

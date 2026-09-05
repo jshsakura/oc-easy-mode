@@ -5,6 +5,7 @@ import { t, tn } from '../../shared/i18n.ts'
 import * as api from '../api.ts'
 import { thumbnail, type Playlist, type Shelf, type Track } from '../parse.ts'
 import { forgetHistory, history, setSubsFilter, subsFilter} from '../store.ts'
+import { KIDS, LEARNING_FEED, MENU, topicTitle } from '../menu.ts'
 import { art, h, icon, replace } from './dom.ts'
 import { explain, isSignedOut, type Ctx, type View } from './ctx.ts'
 import { confirm, showMenu } from './overlay.ts'
@@ -59,6 +60,14 @@ export async function render(ctx: Ctx, main: HTMLElement): Promise<void> {
       return playlist(ctx, main, view.id, view.title)
     case 'queue':
       return queue(ctx, main)
+    case 'topic':
+      return topic(ctx, main, view.id)
+    case 'channels':
+      return channelList(ctx, main)
+    case 'channel':
+      return channelVideos(ctx, main, view.id, view.title)
+    case 'myvideos':
+      return listFeed(ctx, main, t('내 동영상'), 'FEmy_videos')
   }
 }
 
@@ -518,23 +527,108 @@ export function addQuick(ctx: Ctx, track: Track): Parameters<typeof row>[2]['qui
 // ── Explore ────────────────────────────────────────────────────────────────
 
 async function explore(ctx: Ctx, main: HTMLElement): Promise<void> {
+  return shelfScreen(ctx, main, t('음악'), () => api.explore(ctx.cfg), 'radio')
+}
+
+/**
+ * A screen made of shelves: 음악, and the television's genres.
+ *
+ * One drawing for all of them, because the shape is one shape. The title is
+ * up first with two outlines under it, the answer replaces them, and a feed
+ * that came back as a flat list rather than as rows is laid out as a grid.
+ */
+async function shelfScreen(ctx: Ctx, main: HTMLElement, title: string, load: () => Promise<api.Page>, glyph: Parameters<typeof icon>[0]): Promise<void> {
   const token = generation
-  replace(main, h('h2', null, t('둘러보기')), skShelf(), skShelf())
+  replace(main, h('h2', null, title), skShelf(), skShelf())
   try {
-    const page = await api.explore(ctx.cfg)
+    const page = await load()
     if (!current(token)) return
     if (page.shelves.length === 0 && page.tracks.length === 0) {
-      return replace(main, h('h2', null, t('둘러보기')), nothing(t('보여줄 것이 없습니다.'), 'radio'))
+      return replace(main, h('h2', null, title), nothing(t('보여줄 것이 없습니다.'), glyph))
     }
     replace(
       main,
-      h('h2', null, t('둘러보기')),
+      h('h2', null, title),
       page.shelves.map((shelf) => shelfRow(ctx, shelf)),
       page.shelves.length === 0 && h('div', { class: 'grid' }, page.tracks.map((_, i) => trackTile(ctx, page.tracks, i))),
     )
   } catch (err) {
     if (!current(token)) return
-    replace(main, h('h2', null, t('둘러보기')), h('div', { class: 'err' }, explain(err)))
+    replace(main, h('h2', null, title), h('div', { class: 'err' }, explain(err)))
+  }
+}
+
+// ── The television's menu ─────────────────────────────────────────────────
+
+/**
+ * 아동, 스포츠, 생방송, 게임, 뉴스, 학습: one screen each, by the feed named in
+ * menu.ts. The kids screen is curated in api.ts because YouTube has no feed
+ * for it; the others are the television's own, asked as the television.
+ */
+async function topic(ctx: Ctx, main: HTMLElement, id: string): Promise<void> {
+  const title = t(topicTitle(id))
+  const line = MENU.find((l) => l.view.kind === 'topic' && l.view.id === id)
+  const glyph = (line?.icon ?? 'radio') as Parameters<typeof icon>[0]
+  if (id === KIDS) return shelfScreen(ctx, main, title, () => api.kids(ctx.cfg), glyph)
+  if (id === LEARNING_FEED) return shelfScreen(ctx, main, title, () => api.learning(ctx.cfg, id), glyph)
+  return shelfScreen(ctx, main, title, () => api.topic(ctx.cfg, id), glyph)
+}
+
+/** 채널: the channels this account subscribes to, one card each. */
+async function channelList(ctx: Ctx, main: HTMLElement): Promise<void> {
+  const token = generation
+  const title = t('채널')
+  replace(main, h('h2', null, title), skShelf())
+  try {
+    const list = await api.subscribedChannels(ctx.cfg)
+    if (!current(token)) return
+    if (list.length === 0) return replace(main, h('h2', null, title), nothing(t('구독한 채널이 없습니다.'), 'channels'))
+    replace(
+      main,
+      h('h2', null, title),
+      h(
+        'div',
+        { class: 'grid' },
+        list.map((ch) =>
+          tile({
+            cover: ch.avatar,
+            title: ch.title,
+            sub: ch.subtitle,
+            square: true,
+            onOpen: () => ctx.go({ kind: 'channel', id: ch.id, title: ch.title }),
+          }),
+        ),
+      ),
+    )
+  } catch (err) {
+    if (!current(token)) return
+    replace(main, h('h2', null, title), h('div', { class: 'err' }, explain(err)))
+  }
+}
+
+/** One channel's videos, newest first, with the two things done to all of them above. */
+async function channelVideos(ctx: Ctx, main: HTMLElement, id: string, title: string): Promise<void> {
+  const token = generation
+  replace(main, h('h2', null, title), skToolbar(t('전체 재생'), t('대기열에 추가')), skShelf())
+  try {
+    const page = await api.channelVideos(ctx.cfg, id)
+    if (!current(token)) return
+    if (page.tracks.length === 0) return replace(main, h('h2', null, title), nothing(t('보여줄 것이 없습니다.'), 'channels'))
+    const all = page.tracks
+    replace(
+      main,
+      h('h2', null, title),
+      h(
+        'div',
+        { class: 'toolbar' },
+        h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.engine.play(all, 0) }, icon('play', 16), t('전체 재생')),
+        h('button', { class: 'btn', 'data-nav': '', onclick: () => { ctx.engine.enqueue(all); ctx.say(`${tn('개', all.length)} · ${t('대기열에 넣었습니다.')}`) } }, icon('plus', 16), t('대기열에 추가')),
+      ),
+      h('div', { class: 'grid' }, all.map((_, i) => trackTile(ctx, all, i))),
+    )
+  } catch (err) {
+    if (!current(token)) return
+    replace(main, h('h2', null, title), h('div', { class: 'err' }, explain(err)))
   }
 }
 
@@ -574,7 +668,7 @@ async function listFeed(ctx: Ctx, main: HTMLElement, title: string, id: api.Feed
         h(
           'div',
           { class: 'toolbar', style: 'justify-content: center' },
-          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('둘러보기')),
+          h('button', { class: 'btn primary', 'data-nav': '', onclick: () => ctx.go({ kind: 'explore' }) }, icon('radio', 16), t('음악')),
           h('button', { class: 'btn', 'data-nav': '', onclick: () => ctx.search() }, icon('search', 16), t('검색')),
         ),
       )

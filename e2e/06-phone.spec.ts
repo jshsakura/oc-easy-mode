@@ -114,7 +114,7 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     expect(top.y).toBe(0)
     expect(Math.round(top.width)).toBe(Math.round(app.width))
     // The header names the screen, and it is the only place that name appears.
-    await expect(ui.locator('.top .name')).toHaveText('둘러보기')
+    await expect(ui.locator('.top .name')).toHaveText('음악')
     await expect(ui.locator('.main > h2')).toBeHidden()
 
     // Its button opens the drawer, and choosing a destination closes it.
@@ -174,7 +174,7 @@ test('it runs on m.youtube.com and lays itself out narrow', async () => {
     // a close button, never taller than two fifths of it. The drawer has to
     // be out for its lines to be pressed.
     await ui.locator('.drawerToggle').click()
-    await ui.locator('.nav').filter({ hasText: '둘러보기' }).click()
+    await ui.locator('.nav').filter({ hasText: '음악' }).click()
     await ui.locator('.shelf .tile:not([aria-hidden])').first().click()
     const more = ui.locator('.main .row .more').first()
     const pressed = (await more.boundingBox())!

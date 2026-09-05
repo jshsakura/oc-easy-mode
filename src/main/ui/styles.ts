@@ -1706,4 +1706,31 @@ input[type=range]::-moz-range-thumb {
 .modal.full .setBody { padding: 4px 20px calc(20px + env(safe-area-inset-bottom)); }
 .modal.full .setLink { padding: 14px 12px; font-size: 15px; }
 .modal.full .setRow { font-size: 15px; }
+
+/* ── The menu switches in the settings sheet ──────────────────────────────
+   One line per menu entry, the switch at the right. Flat colour: the track is
+   the panel's secondary and the on state is the accent, like .seg above. */
+.setToggles { display: flex; flex-direction: column; }
+.setToggle {
+  display: flex; align-items: center; gap: 16px; width: 100%; text-align: left;
+  padding: 9px 0; font-size: 14px; color: var(--foreground);
+  border-radius: var(--radius-md);
+}
+.setToggle .lbl { flex: 1; min-width: 0; font-weight: 500; }
+.setToggle:disabled { cursor: default; }
+.setToggle:disabled .lbl { color: var(--muted-foreground); }
+.setToggle .switch {
+  flex: none; position: relative; width: 40px; height: 24px; border-radius: 999px;
+  background: var(--secondary); border: 1px solid var(--border);
+  transition: background var(--ease), border-color var(--ease);
+}
+.setToggle .knob {
+  position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 999px;
+  background: var(--muted-foreground);
+  transition: transform var(--ease), background var(--ease);
+}
+.setToggle.on .switch { background: var(--primary); border-color: var(--primary); }
+.setToggle.on .knob { transform: translateX(16px); background: var(--primary-foreground); }
+.setToggle:focus-visible .switch { outline: 2px solid var(--ring); outline-offset: 2px; }
+.modal.full .setToggle { font-size: 15px; padding: 11px 0; }
 `

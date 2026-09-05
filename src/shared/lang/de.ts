@@ -149,4 +149,13 @@ export const DE: Record<string, string> = {
   "단축키": "Tastenkürzel",
   "10초 뒤로": "10 Sekunden zurück",
   "10초 앞으로": "10 Sekunden vor",
+  "아동": "Kinder",
+  "스포츠": "Sport",
+  "생방송": "Live",
+  "게임": "Gaming",
+  "뉴스": "Nachrichten",
+  "학습": "Lernen",
+  "내 동영상": "Meine Videos",
+  "켜 둔 것만 메뉴에 나옵니다. 음악은 항상 있습니다.": "Nur Eingeschaltetes erscheint im Menü. Musik ist immer da.",
+  "구독한 채널이 없습니다.": "Noch keine abonnierten Kanäle.",
 }

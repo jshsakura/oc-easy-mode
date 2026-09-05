@@ -223,6 +223,41 @@ function tracksFromVideoRenderers(root: unknown, key: string): Track[] {
   return out
 }
 
+/**
+ * The television's row: `tileRenderer`.
+ *
+ * The TV client is the only one that answers the genre feeds at all — the same
+ * `FEtopics_*` browse ids are 400 from a WEB context, measured 2026-09-05 —
+ * and it sends a shape none of the others use. Everything is somewhere else:
+ * the id is `contentId` rather than `videoId`, the title and the channel are
+ * under `tileMetadataRenderer` (the channel being the first of `lines`), and
+ * the duration is the overlay badge on the thumbnail.
+ *
+ * `contentType` is checked because the same renderer carries channels and
+ * playlists on those screens, and only the videos belong in a track list.
+ */
+function tracksFromTiles(root: unknown): Track[] {
+  const out: Track[] = []
+  for (const item of collect(root, 'tileRenderer')) {
+    if (!isObject(item)) continue
+    if (item.contentType !== 'TILE_CONTENT_TYPE_VIDEO') continue
+    const videoId = typeof item.contentId === 'string' ? item.contentId : watchVideoId(item)
+    if (!videoId || isShort(item)) continue
+    const meta = findFirst(item.metadata, 'tileMetadataRenderer')
+    const lines = isObject(meta) && Array.isArray(meta.lines) ? meta.lines : []
+    out.push({
+      videoId,
+      title: text(isObject(meta) ? meta.title : undefined),
+      // The first line is the channel; the second is views and age, which is
+      // not a byline and would read as one if both were taken.
+      byline: text(findFirst(lines[0], 'text')),
+      duration: text(findFirst(item.header, 'thumbnailOverlayTimeStatusRenderer') && findFirst(findFirst(item.header, 'thumbnailOverlayTimeStatusRenderer'), 'text')),
+      unavailable: false,
+    })
+  }
+  return out
+}
+
 /** The queue panel of a `next` response, which is what a mix is. */
 function tracksFromQueue(root: unknown): Track[] {
   const out: Track[] = []
@@ -354,6 +389,7 @@ export function tracks(root: unknown): Track[] {
     ...tracksFromQueue(root),
     ...tracksFromLockups(root),
     ...tracksFromMusic(root),
+    ...tracksFromTiles(root),
   ])
 }
 
@@ -439,6 +475,44 @@ export function playlists(root: unknown): Playlist[] {
  * A response that has none is not an error — most screens are one flat list —
  * so the caller falls back to `tracks` rather than showing nothing.
  */
+/** A channel as a list offers it: the subscriptions screen, a search. */
+export interface Channel {
+  id: string
+  title: string
+  /** Subscriber count or handle, as the row rendered it. */
+  subtitle: string
+  avatar?: string
+}
+
+/**
+ * Channels, from the three shapes a list of them takes.
+ *
+ * `channelRenderer` is a search result, `gridChannelRenderer` the classic
+ * subscriptions grid, and the lockup with a channel `contentType` is the 2025
+ * row. The subscriptions list could not be measured signed in from here, so
+ * all three are read and whichever the page sends is the one that lands.
+ */
+export function channels(root: unknown): Channel[] {
+  const out: Channel[] = []
+  const seen = new Set<string>()
+  const push = (id: unknown, title: string, subtitle: string, avatar: string | undefined) => {
+    if (typeof id !== 'string' || !id.startsWith('UC') || seen.has(id)) return
+    seen.add(id)
+    out.push({ id, title, subtitle, avatar })
+  }
+  for (const key of ['channelRenderer', 'gridChannelRenderer']) {
+    for (const item of collect(root, key)) {
+      if (!isObject(item)) continue
+      push(item.channelId, text(item.title), text(item.subscriberCountText) || text(item.videoCountText), pickThumb(item.thumbnail))
+    }
+  }
+  for (const item of lockups(root, 'LOCKUP_CONTENT_TYPE_CHANNEL')) {
+    const rows = lockupRows(item)
+    push(item.contentId, lockupTitle(item), rows[0] ?? '', pickThumb(findFirst(item, 'thumbnail')))
+  }
+  return out
+}
+
 export function shelves(root: unknown): Shelf[] {
   const out: Shelf[] = []
   // YouTube Music's shelf. Its title hangs off a header rather than sitting on
@@ -460,7 +534,12 @@ export function shelves(root: unknown): Shelf[] {
       const inside = tracks(items)
       const lists = playlists(items)
       if (inside.length === 0 && lists.length === 0) continue
-      out.push({ title: text(shelf.title), tracks: inside, playlists: lists })
+      // The television's shelf carries no `title` of its own: the name sits in
+      // a `headerRenderer` beside the content (measured on FEtopics_sports,
+      // where the four rows are Highlights, Live, Trending and Top Stories).
+      // Falling back rather than replacing, so every other shelf is untouched.
+      const title = text(shelf.title) || text(findFirst(shelf.headerRenderer, 'title'))
+      out.push({ title, tracks: inside, playlists: lists })
     }
   }
   return out

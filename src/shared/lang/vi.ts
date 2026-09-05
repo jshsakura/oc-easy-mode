@@ -149,4 +149,13 @@ export const VI: Record<string, string> = {
   "단축키": "Phím tắt",
   "10초 뒤로": "Lùi 10 giây",
   "10초 앞으로": "Tiến 10 giây",
+  "아동": "Trẻ em",
+  "스포츠": "Thể thao",
+  "생방송": "Trực tiếp",
+  "게임": "Trò chơi",
+  "뉴스": "Tin tức",
+  "학습": "Học tập",
+  "내 동영상": "Video của tôi",
+  "켜 둔 것만 메뉴에 나옵니다. 음악은 항상 있습니다.": "Chỉ những mục đang bật mới hiện trong menu. Âm nhạc luôn có.",
+  "구독한 채널이 없습니다.": "Chưa có kênh đã đăng ký.",
 }

@@ -14,6 +14,13 @@ export type View =
   | { kind: 'playlists' }
   | { kind: 'playlist'; id: string; title: string }
   | { kind: 'queue' }
+  /** One of the television's genre screens, or the kids screen. `id` is the feed; see menu.ts. */
+  | { kind: 'topic'; id: string; title: string }
+  /** The channels this account subscribes to. */
+  | { kind: 'channels' }
+  /** One channel's videos. */
+  | { kind: 'channel'; id: string; title: string }
+  | { kind: 'myvideos' }
 
 export interface Ctx {
   engine: Engine

@@ -149,4 +149,13 @@ export const ID: Record<string, string> = {
   "단축키": "Pintasan",
   "10초 뒤로": "Mundur 10 detik",
   "10초 앞으로": "Maju 10 detik",
+  "아동": "Anak",
+  "스포츠": "Olahraga",
+  "생방송": "Siaran langsung",
+  "게임": "Game",
+  "뉴스": "Berita",
+  "학습": "Belajar",
+  "내 동영상": "Video saya",
+  "켜 둔 것만 메뉴에 나옵니다. 음악은 항상 있습니다.": "Hanya yang dinyalakan yang muncul di menu. Musik selalu ada.",
+  "구독한 채널이 없습니다.": "Belum ada channel yang disubscribe.",
 }

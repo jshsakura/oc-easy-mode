@@ -14,9 +14,11 @@ import {
   shelves as parseShelves,
   tracks as parseTracks,
   dedupe,
+  type Channel,
   type Playlist,
   type Shelf,
   type Track,
+  channels as parseChannels,
 } from './parse.ts'
 import type { YtCfg } from './ytcfg.ts'
 
@@ -494,7 +496,7 @@ export async function dislike(cfg: YtCfg, videoId: string): Promise<void> {
 }
 
 /** The feeds the page itself shows: home, subscriptions, history. Signed-in only for the last two. */
-export type FeedId = 'FEwhat_to_watch' | 'FEsubscriptions' | 'FEhistory'
+export type FeedId = 'FEwhat_to_watch' | 'FEsubscriptions' | 'FEhistory' | 'FEmy_videos'
 
 export async function feed(cfg: YtCfg, browseId: FeedId): Promise<Page> {
   // As the desktop client where the page is not one. The mobile client answers
@@ -587,4 +589,96 @@ export async function explore(cfg: YtCfg): Promise<Page> {
   if (music) return music
   const res = await call(cfg, 'browse', { browseId: MUSIC_CHANNEL })
   return { tracks: parseTracks(res), shelves: parseShelves(res), endpoint: 'browse' }
+}
+
+// ── The television's menu ─────────────────────────────────────────────────
+
+/**
+ * One of the television's genre feeds: 스포츠, 생방송, 게임, 뉴스.
+ *
+ * Asked as the TV client, which is the only one that answers these ids at
+ * all (a WEB context gets 400; measured 2026-09-05, signed out). The answer is
+ * shelves of `tileRenderer`, which parse.ts reads. No fallback client: there
+ * is none that has this screen.
+ */
+export async function topic(cfg: YtCfg, browseId: string): Promise<Page> {
+  let res: Json
+  try {
+    res = await call(cfg, 'browse', { browseId }, 'tv')
+  } catch (err) {
+    // The news feed answered 503 once in four asks and 200 on every retry
+    // (measured 2026-09-05). One more ask is cheaper than an empty screen.
+    if (!(err instanceof InnertubeError) || err.kind !== 'request') throw err
+    res = await call(cfg, 'browse', { browseId }, 'tv')
+  }
+  return { tracks: parseTracks(res), shelves: parseShelves(res), endpoint: 'browse', client: 'tv' }
+}
+
+/** 학습, which the desktop client answers as a flat list of lockups. */
+export async function learning(cfg: YtCfg, browseId: string): Promise<Page> {
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
+  const res = await call(cfg, 'browse', { browseId }, as)
+  return { tracks: parseTracks(res), shelves: parseShelves(res), continuation: continuationToken(res), endpoint: 'browse', client: as }
+}
+
+/**
+ * The kids screen, which YouTube does not have.
+ *
+ * YouTube Kids is a separate service with its own client, and youtube.com has
+ * no browse id for it: FEtopics_kids is 400 and /kids redirects to a family
+ * settings page. So the screen is curated. One shelf per channel, the channels
+ * being the ones a Korean child already knows, each checked signed out on
+ * 2026-09-05 to answer a browse with its videos. The names are the channels'
+ * own; the ids are theirs and will outlive a rename.
+ */
+const KIDS_CHANNELS: ReadonlyArray<{ id: string; name: string }> = [
+  { id: 'UCqXwKu6dKobXEQFhdKtiJLQ', name: '핑크퐁 (인기 동요・동화)' },
+  { id: 'UC-9Tn-iH6W_187YwCOf7CGw', name: '핑크퐁! 아기상어 올리' },
+  { id: 'UCPUeGC_AL-OnDQORKhRm6iA', name: '뽀로로(Pororo)' },
+  { id: 'UCxUZwdsqshu2iLQwdEE6e7Q', name: '꼬마버스 타요' },
+  { id: 'UCscjd-azZ1AqHxxrO6YDIQg', name: '베이비버스 인기 동요・동화' },
+  { id: 'UCNvn7bFpHvfvULxpRf2Ea-g', name: '코코멜론 인기 동요・키즈송' },
+  { id: 'UCDN8_Gba4SnAYw87x0vUXZA', name: '시크릿 쥬쥬' },
+  { id: 'UCWagwPGESinCm58hOwmRvIg', name: '캐리TV 스토리' },
+  { id: 'UC0SVqB_1E2Kgh3cx3Y8xtfA', name: '헬로카봇' },
+  { id: 'UC3sCmmMaM383cjv1jNdiU2w', name: '콩순이' },
+  { id: 'UCKBt6VowYGmBpXFf3rVhaQA', name: '브레드이발소' },
+]
+
+/** How many of a channel's videos one shelf shows. A row, not the channel. */
+const KIDS_SHELF = 12
+
+export async function kids(cfg: YtCfg): Promise<Page> {
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
+  // All at once, and a channel that fails drops out rather than taking the
+  // screen with it: eleven requests will not all succeed every time.
+  const results = await Promise.allSettled(KIDS_CHANNELS.map((ch) => call(cfg, 'browse', { browseId: ch.id }, as)))
+  const shelves: Shelf[] = []
+  results.forEach((r, i) => {
+    if (r.status !== 'fulfilled') return
+    const tracks = parseTracks(r.value).slice(0, KIDS_SHELF)
+    if (tracks.length > 0) shelves.push({ title: KIDS_CHANNELS[i]!.name, tracks, playlists: [] })
+  })
+  return { tracks: shelves.flatMap((s) => s.tracks), shelves, endpoint: 'browse' }
+}
+
+/**
+ * The channels this account subscribes to. Signed in only: signed out the
+ * list comes back 200 and empty, the way the other personal feeds do.
+ */
+export async function subscribedChannels(cfg: YtCfg): Promise<Channel[]> {
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
+  const res = await call(cfg, 'browse', { browseId: 'FEchannels' }, as)
+  const list = parseChannels(res)
+  if (list.length === 0 && !hasSession()) throw new InnertubeError('signed out', 'auth', 401)
+  return list
+}
+
+/** One channel's videos: its Videos tab, newest first, with a continuation. */
+export async function channelVideos(cfg: YtCfg, channelId: string): Promise<Page> {
+  const as: Client = cfg.clientName !== '1' ? 'web' : 'page'
+  // The Videos tab's params, which the page itself sends. Without them the
+  // home tab answers, which is shelves of the channel's own choosing.
+  const res = await call(cfg, 'browse', { browseId: channelId, params: 'EgZ2aWRlb3PyBgQKAjoA' }, as)
+  return { tracks: parseTracks(res), shelves: [], continuation: continuationToken(res), endpoint: 'browse', client: as }
 }

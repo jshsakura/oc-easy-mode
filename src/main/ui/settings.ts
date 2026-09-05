@@ -14,6 +14,7 @@
 import { t } from '../../shared/i18n.ts'
 import type { Mode, Theme } from '../store.ts'
 import { SHORTCUTS } from './keys.ts'
+import { MENU, menuOn, type MenuLine } from '../menu.ts'
 import { YOUTUBE_PAGES, youtubeUrl, type YouTubePage } from '../ytsettings.ts'
 import { h, icon } from './dom.ts'
 import type { Ctx } from './ctx.ts'
@@ -25,6 +26,8 @@ export interface SettingsActions {
   setTheme(theme: Theme): void
   mode(): Mode
   setMode(mode: Mode): void
+  /** Turns one line of the menu on or off, and redraws the column. */
+  setMenuLine(line: MenuLine, on: boolean): void
 }
 
 /** The one sheet that can be open, and the way to close it. */
@@ -68,6 +71,23 @@ function segment<T extends string>(value: T, options: ReadonlyArray<{ id: T; lab
         o.label,
       ),
     ),
+  )
+}
+
+/** One on/off line: the name, and a switch that says which it is. */
+function toggleRow(label: string, on: boolean, fixed: boolean, flip: () => void): HTMLElement {
+  return h(
+    'button',
+    {
+      class: on ? 'setToggle on' : 'setToggle',
+      'data-nav': '',
+      role: 'switch',
+      'aria-checked': String(on),
+      disabled: fixed || undefined,
+      onclick: fixed ? undefined : flip,
+    },
+    h('span', { class: 'lbl' }, label),
+    h('span', { class: 'switch', 'aria-hidden': 'true' }, h('span', { class: 'knob' })),
   )
 }
 
@@ -151,6 +171,24 @@ export function openSettings(ctx: Ctx, actions: SettingsActions): void {
             draw('.setRow .seg button')
           },
         ),
+      ),
+      // The menu, one switch per line, in the order the column shows them.
+      // 음악 is drawn and cannot be turned off: a menu with nothing fixed can be
+      // emptied, and an empty column is a screen with no way anywhere.
+      h('h4', { class: 'setGroup' }, t('메뉴')),
+      h('p', { class: 'setNote' }, t('켜 둔 것만 메뉴에 나옵니다. 음악은 항상 있습니다.')),
+      h(
+        'div',
+        { class: 'setToggles' },
+        MENU.map((line) =>
+          toggleRow(t(line.label), menuOn(line), line.fixed === true, () => {
+            actions.setMenuLine(line, !menuOn(line))
+            draw(`.setToggle[data-key="${line.key}"]`)
+          }),
+        ).map((el, i) => {
+          el.dataset.key = MENU[i]!.key
+          return el
+        }),
       ),
       // Printed, not offered. The keys are fixed, and a list that looked like
       // a form would be promising a rebind that is not there.

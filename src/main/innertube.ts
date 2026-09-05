@@ -98,7 +98,7 @@ export function hasSession(): boolean {
  * InnerTube allows and youtube.com itself does — the desktop site asks the
  * music backend the same way.
  */
-export type Client = 'page' | 'web' | 'music'
+export type Client = 'page' | 'web' | 'music' | 'tv'
 
 /** Name, version and header number for each. */
 const CLIENTS: Record<Exclude<Client, 'page'>, { name: string; version: string; number: string }> = {
@@ -109,6 +109,11 @@ const CLIENTS: Record<Exclude<Client, 'page'>, { name: string; version: string; 
   web: { name: 'WEB', version: '2.20250901.00.00', number: '1' },
   // YouTube Music's client. Same origin, same cookies, different backend.
   music: { name: 'WEB_REMIX', version: '1.20250901.01.00', number: '67' },
+  // The television's client. The genre feeds a TV shows in its menu, the
+  // FEtopics_* browse ids, answer only to this name: the same ids from a WEB
+  // context are 400 (measured 2026-09-05, signed out). Same origin, same
+  // cookies, a different shape of answer (tileRenderer; see parse.ts).
+  tv: { name: 'TVHTML5', version: '7.20250901.10.00', number: '7' },
 }
 
 /** The page's own context, or it wearing another client's name. */

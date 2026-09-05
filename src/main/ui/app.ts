@@ -25,6 +25,7 @@ import { render } from './views.ts'
 import { closeSearch, openSearch } from './search.ts'
 import { closeEqualizer, openEqualizer } from './equalizer.ts'
 import { closeSettings, openSettings, type SettingsActions } from './settings.ts'
+import { MENU, menuLines, setMenuOn, topicTitle } from '../menu.ts'
 
 export interface AppOptions {
   shell: Shell
@@ -244,17 +245,18 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     | { view: View; open?: undefined }
     | { view?: undefined; open: () => void }
   )
-  const NAV: NavItem[] = [
-    { view: { kind: 'explore' }, label: t('둘러보기'), icon: 'radio' },
-    { open: () => ctx.search(), label: t('검색'), icon: 'search' },
-    { view: { kind: 'home' }, label: t('홈'), icon: 'home' },
-    { view: { kind: 'subs' }, label: t('구독'), icon: 'subs' },
-    { view: { kind: 'history' }, label: t('시청 기록'), icon: 'history', section: t('내 라이브러리') },
-    // 대기열 above 내 재생목록, by the user's word (2026-09-04): what is
-    // playing next is reached for more often than what has been kept.
-    { view: { kind: 'queue' }, label: t('대기열'), icon: 'queue' },
-    { view: { kind: 'playlists' }, label: t('내 재생목록'), icon: 'library' },
-  ]
+  // The column is the menu (menu.ts), with the search line after 음악: it is
+  // not a screen but it is the thing done from every screen, and it belongs
+  // where a hand goes first.
+  function navItems(): NavItem[] {
+    const lines = menuLines()
+    const out: NavItem[] = []
+    for (const line of lines) {
+      out.push({ view: line.view, label: t(line.label), icon: line.icon as NavItem['icon'], section: line.section && t(line.section) })
+      if (line.key === 'music') out.push({ open: () => ctx.search(), label: t('검색'), icon: 'search' })
+    }
+    return out
+  }
 
   // The header carries the way into the drawer and the name of the screen.
   //
@@ -383,6 +385,14 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   const settingsActions: SettingsActions = {
     theme: () => engine.state.theme,
     setTheme: chooseTheme,
+    // A line switched off while its screen is up sends the reader to 음악,
+    // which cannot be switched off. A column pointing nowhere is worse than a
+    // screen change nobody pressed for.
+    setMenuLine: (line, on) => {
+      setMenuOn(line, on)
+      drawSide()
+      if (!on && nameOf(line.view) === nameOf(ctx.view)) ctx.go({ kind: 'explore' })
+    },
     mode: () => engine.state.mode,
     setMode: (mode: Mode) => {
       engine.setMode(mode)
@@ -455,7 +465,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
         { class: 'sideScroll' },
         // On a phone the header already carries 검색, and the drawer saying it
         // again read as two ways in to one thing (asked about on 2026-09-04).
-        NAV.filter((item) => !(narrowNow() && item.open)).map((item) => [
+        navItems().filter((item) => !(narrowNow() && item.open)).map((item) => [
           item.section && h('h4', null, item.section),
           // 내 재생목록 is a section, not a destination. It used to be both: a
           // line that opened a screen, and under it the same lists again as a
@@ -1323,7 +1333,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
 function titleOf(view: View): string {
   switch (view.kind) {
     case 'explore':
-      return t('둘러보기')
+      return t('음악')
     case 'home':
       return t('홈')
     case 'subs':
@@ -1331,24 +1341,49 @@ function titleOf(view: View): string {
     case 'history':
       return t('시청 기록')
     case 'playlists':
-      return t('내 재생목록')
+      return t('재생목록')
     case 'queue':
       return t('대기열')
+    case 'channels':
+      return t('채널')
+    case 'myvideos':
+      return t('내 동영상')
+    case 'topic':
+      return t(topicTitle(view.id))
     case 'playlist':
+    case 'channel':
       return view.title
   }
 }
 
 /** The view name that survives a reload, and its way back. */
 function nameOf(view: View): string {
-  return view.kind === 'playlist' ? `playlist:${view.id}:${view.title}` : view.kind
+  if (view.kind === 'playlist') return `playlist:${view.id}:${view.title}`
+  if (view.kind === 'channel') return `channel:${view.id}:${view.title}`
+  if (view.kind === 'topic') return `topic:${view.id}`
+  return view.kind
+}
+
+/** `prefix:id:title` back into its parts, or undefined when it is not one. */
+function splitName(name: string, prefix: string): { id: string; title: string } | undefined {
+  if (!name.startsWith(`${prefix}:`)) return undefined
+  const rest = name.slice(prefix.length + 1)
+  const cut = rest.indexOf(':')
+  if (cut <= 0) return undefined
+  return { id: rest.slice(0, cut), title: rest.slice(cut + 1) }
 }
 
 function viewFromName(name: string): View {
-  if (name.startsWith('playlist:')) {
-    const rest = name.slice('playlist:'.length)
-    const cut = rest.indexOf(':')
-    if (cut > 0) return { kind: 'playlist', id: rest.slice(0, cut), title: rest.slice(cut + 1) }
+  const playlist = splitName(name, 'playlist')
+  if (playlist) return { kind: 'playlist', ...playlist }
+  const channel = splitName(name, 'channel')
+  if (channel) return { kind: 'channel', ...channel }
+  if (name.startsWith('topic:')) {
+    // Only a topic the menu still has. A saved screen for a feed that has
+    // since gone would otherwise be asked for on every load.
+    const id = name.slice('topic:'.length)
+    const line = MENU.find((l) => l.view.kind === 'topic' && l.view.id === id)
+    if (line) return line.view
   }
   switch (name) {
     case 'explore':
@@ -1357,6 +1392,8 @@ function viewFromName(name: string): View {
     case 'history':
     case 'playlists':
     case 'queue':
+    case 'channels':
+    case 'myvideos':
       return { kind: name }
     // 최근 감상 was its own screen until 시청 기록 absorbed it. A browser that
     // was last left there has this name written down, and dropping it would
