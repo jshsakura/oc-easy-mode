@@ -1,256 +1,114 @@
 # RenewTube
 
-유튜브 화면을 **내 UI 로 갈아끼우는** 확장. 음악과 영상을 한 자리에서 다루고,
-재생은 유튜브 자신의 플레이어가 그대로 한다. **오리온 브라우저용**이고
-크롬에서도 같은 패키지가 그대로 돈다.
+**YouTube, tidied up.**
 
-**받는 곳: https://jshsakura.github.io/renewtube/**
+RenewTube is a browser extension that replaces the YouTube page with a simple,
+TV-like player. YouTube's own player keeps playing and your own account keeps
+working; only the screen changes. Turn it off and plain YouTube is back.
 
-```
-유튜브가 데이터와 재생을 맡고,  화면은 내가 맡는다
-      ↓                              ↓
-  youtubei/v1 (페이지 자신의 API)   섀도우 DOM 안의 내 UI
-```
+It started from one wish: to open YouTube and see a menu, a list and a play
+button, not a wall. Music and video in one place, nothing pulling at your
+attention, and a way back at any time.
 
-## 주요 기능
+**Website and download:** https://jshsakura.github.io/renewtube/
+**Privacy policy:** https://jshsakura.github.io/renewtube/privacy.html
 
-- **홈·구독·시청 기록**을 내 목록 화면으로 보고, **검색**은 어느 화면에서든 그 위에 띄워 고르면 바로 재생한다
-- **대기열**이 있다. 다음에 재생, 대기열에 추가, 셔플, 반복(전체·한 곡)
-- **재생목록**을 만들고, 넣고, 빼고, 지운다
-- **라디오** — 곡 하나로 유튜브의 믹스를 받아 대기열에 채운다
-- **화면 위치** 세 가지 — 크게 보기 / 구석에 두기 / 소리만 듣기
-- **음악 · 영상** 두 모드. 목록이 트랙 줄이 되거나 큰 썸네일 격자가 된다
-- **둘러보기** — 선반으로 된 첫 화면. 로그인 없이도 늘 채워져 있다
-- **화살표 키로만도 쓸 수 있다.** 리모컨처럼
-- **쇼츠는 나오지 않는다.** 아래 참조
+## Install
 
-광고 제거는 하지 않는다. 그건 [`oc-ad-bye-pass`](../oc-ad-bye-pass) 의 일이고,
-둘을 같이 켜두면 이 UI 안에서 그대로 걸린다.
+- **Chrome Web Store:** submission in progress. Until it lands, use the zip below.
+- **Chrome / Edge:** download the zip from the website, unzip it, open
+  `chrome://extensions`, turn on Developer mode, choose **Load unpacked** and
+  pick the unzipped folder.
+- **Orion (macOS and iPhone):** Settings → Extensions → **+** → pick the zip.
+  The same file works on the phone.
 
-## TV 형태 — 선반, 격자, 화살표
+Press the toolbar icon to switch RenewTube on or off. Inside, **Esc twice**
+within a second always leaves, even if something has gone wrong, and if the
+screen has not appeared within eight seconds the extension steps aside on its own.
 
-**첫 화면은 `둘러보기`다.** 유튜브의 홈은 시청 기록이 없으면 "검색하여 시작하기"
-안내만 돌려주므로(실측 2026-09-03) 첫 화면으로 못 쓴다. 대신 유튜브의 **음악 채널**을
-브라우즈한다. 누구나 볼 수 있는 평범한 채널이고, 그래서 **늘 채워져 있다** — 한글
-제목이 붙은 선반 아홉 줄이 온다.
+## What it does
 
-로그인해서 홈에 내용이 생기면 그 홈도 선반 그대로 그린다. 응답에 선반이 있으면
-선반으로, 없으면 평평한 목록으로 간다.
+**Two modes.** Music mode keeps the picture out of the way (in a corner, or
+hidden on a phone) and shows lists as tracks. Video mode puts the picture on
+stage and shows the same lists as large thumbnails.
 
-**영상 모드는 같은 목록을 큰 썸네일 격자로 그린다.** 데이터도 "더 보기"도 같고
-배치만 바뀐다. **모드를 바꿔도 유튜브에 다시 묻지 않는다** — 들고 있던 목록으로
-그 자리에서 다시 그린다. 배치를 바꾸자고 같은 줄을 또 받아오는 것은 느리고 무례하다.
-구독은 자기 요소가 문서에서 빠진 뒤 처음 울릴 때 스스로 끊는다.
+**A menu you choose.** The column follows a YouTube TV's menu, with Music first:
+Music, Home, Kids, Sports, Live, Gaming, News, Learning, Channels,
+Subscriptions, History, Queue, Playlists, Your videos. Every line except Music
+has a switch in Settings, and the TV genres start off. Only what you switch on
+appears.
 
-**화살표 키가 리모컨이다.** 규칙은 하나뿐이다 — 누른 방향으로 가장 멀리 가지 않으면서
-옆으로 가장 덜 벗어난 것으로 초점을 옮긴다(누른 축 거리 + 옆 거리 × 3). 선반이든
-격자든 목록이든 사이드바든 같은 규칙이 처리하므로 **화면마다 따로 짜 넣은 이동 코드가
-없다.** 새 화면은 요소에 `data-nav` 만 붙으면 그날로 리모컨에 잡힌다.
+**Search that helps.** Suggestions as you type, recent searches remembered,
+and results that include playlists and channels alongside videos. Search opens
+over whatever screen you are on.
 
-Enter 로 열고, 초점은 진짜 DOM 초점이다. 스크롤·스크린리더·탭 이동이 공짜로 따라온다.
-키는 **문서 단계에서 가로챈다** — 방금 다시 그려진 화면은 초점을 잃어 body 에 있고,
-거기서 시작한 이벤트는 섀도우 트리로 들어오지 않아 정작 필요한 순간에 조용해지기
-때문이다. 덤으로 화살표가 유튜브 플레이어에 닿아 영상이 감기는 일도 없다.
+**A queue and playlists.** Add a track, a whole search result or a playlist to
+the queue; play next; drag to reorder; save the queue as a playlist. Create,
+fill, reorder and delete your YouTube playlists. Start a radio (YouTube's mix)
+from any track.
 
-## 디자인 — shadcn/ui, 설치가 아니라 이식
+**The rest of a player.** Playback speed, sleep timer, repeat and shuffle,
+lyrics, a channel screen for any channel, a history screen that merges what
+you played here with YouTube's history, theme (auto, light, dark), and links to
+YouTube's own account and settings pages.
 
-**설치는 못 한다.** shadcn 은 React 컴포넌트를 Tailwind 클래스로 스타일링해 붙여넣는
-방식이고, 이 UI 는 콘텐츠 스크립트의 섀도우 루트 안에서 도는 수백 줄짜리 순수 DOM 이다.
-React 런타임과 Tailwind 빌드를 끌고 들어오면 **제품보다 도구가 커진다.**
+**Keyboard and remote.** Arrow keys move focus the way a TV remote does on
+every screen. Shortcuts: Space or K play/pause, J and L skip ten seconds,
+S shuffle, R repeat, V show the picture, M mute, `/` search, Esc Esc leave.
 
-그런데 shadcn 의 실체는 **토큰 집합과 컴포넌트 레시피**이고 둘 다 옮길 수 있다.
-그래서 `src/main/ui/styles.ts` 는 shadcn 기본 다크 테마를 값 그대로 들고 있다 —
-`--background` `--card` `--popover` `--primary` `--secondary` `--muted` `--accent`
-`--destructive` `--border` `--input` `--ring` 과 사이드바 계열까지. 그 아래 규칙은
-버튼(기본·secondary·ghost·destructive), 인풋, 카드, 드롭다운 메뉴, 다이얼로그,
-슬라이더, 구분선을 손으로 풀어 쓴 것이다. 팝업(`public/popup.css`)도 같은 토큰을 쓴다.
+**Phones too.** The same screens on m.youtube.com and on Orion for iPhone: a
+drawer instead of a sidebar, a two-line bar, sheets along the bottom.
 
-일부러 다르게 한 것이 둘 있다.
+## What it does not do
 
-- **`rem` 을 안 쓴다.** `rem` 은 **페이지의** 루트 글꼴 크기를 따르는데 이 스타일시트는
-  유튜브 안에서 산다. `--radius: 0.625rem` 을 10px 로 박아, 루트를 키우는 사이트가
-  우리 UI 를 같이 키우지 못하게 했다.
-- **호버 색을 명시한다.** Tailwind 의 `/90` 같은 불투명도 접미사는 CSS 가 아니라
-  컴파일 결과물이라 그대로 옮길 수 없다.
+- **No Shorts.** They do not appear on any screen, and there is no feed for
+  them to come from.
+- **No ad blocking.** RenewTube changes the screen, not the traffic. It runs
+  alongside an ad blocker without getting in its way.
+- **No data collection.** There is no server, no analytics and no account.
+  Settings live in your browser's own storage. See the privacy policy.
+- **Not on music.youtube.com.** YouTube Music is already what this is for
+  regular YouTube.
 
-## 쇼츠
+## How it works, in one paragraph
 
-**어느 목록에도 안 나온다.** TV 의 유튜브처럼 보이는 게 목적인데, 세로로 자동
-재생되며 다음으로 넘어가는 클립은 그 반대이기 때문이다.
+Two scripts run on youtube.com. One draws RenewTube's screens inside a shadow
+root; the other, in the page's own world, drives YouTube's player and asks the
+page's own API (`youtubei/v1`) for lists, using the page's own session. The
+TV genres are asked for as YouTube's TV client, because those feeds answer no
+one else. YouTube's DOM is never edited: the page is hidden with CSS and the
+player is placed over RenewTube's stage, so leaving is a deletion, not a
+restore. The details are in [docs/architecture.md](docs/architecture.md).
 
-대부분은 애초에 오지도 않는다 — 검색은 `params` 로 **영상만** 달라고 하고, 쇼츠가
-실려오는 렌더러(`shortsLockupViewModel`)는 파서가 수집하는 이름이 아니다. 다만
-피드에서는 같은 자리에 둘 다 올 수 있어서, 그 우연을 보장으로 바꿔뒀다. 판정은 두
-가지다 — `reelWatchEndpoint` 가 있거나, 링크가 `/shorts/` 로 시작하거나
-(`isShort`, `src/main/parse.ts`).
-
-`e2e/03-parse.spec.ts` 가 실제 검색 응답을 잘라 만든 픽스처로 이걸 붙잡는다.
-평범한 영상 셋, 쇼츠 선반 하나, 그리고 **영상처럼 생겼는데 `/shorts/` 로 가는 행**
-하나가 들어있다.
-
-### 빈 홈 화면
-
-로그인이나 시청 기록이 없는 세션에게 유튜브는 홈 대신 "검색하여 시작하기" 안내만
-돌려준다. 확장의 문제가 아니라 그 계정에 아직 줄 게 없는 것이다. 검색·라디오는
-로그인 없이도 된다.
-
-## 원본 화면 복귀
-
-이 확장이 지키는 문장은 하나다. **유튜브의 DOM 은 건드리지 않는다.**
-
-페이지에 넣는 것은 정확히 두 개다. 스타일시트 하나와 섀도우 호스트 하나(그리고
-메뉴용 쌍둥이 하나). 유튜브의 노드는 옮기지도, 지우지도, 속성 하나 고치지도
-않는다. 플레이어조차 **CSS 로 자리만 잡아준다** — `visibility` 로 나머지를 가리고,
-플레이어에만 다시 켜준 다음 `position: fixed` 로 우리 슬롯 위에 올린다.
-
-그래서 **나가는 것은 복원이 아니라 삭제**다. 되돌릴 상태가 없으니 되돌리다 실패할
-수도 없다. 나가는 길은 세 가지다.
-
-| | |
-|---|---|
-| 사이드바의 **유튜브로 돌아가기** · 툴바 스위치 | 평소에 쓰는 길 |
-| **Esc 두 번** (1초 안에) | UI 가 깨져도 듣는다. 캡처 단계에서 잡는다 |
-| 워치독 | 8초 안에 화면이 안 뜨면 알아서 놓아준다 |
-
-Esc **한 번**은 손대지 않는다. 메뉴를 닫고 입력창에서 빠져나오는 키라서, 그것까지
-가져가면 그게 또 하나의 덫이 된다.
-
-꺼져 있을 때는 아무 일도 하지 않는다. 기본값이 꺼짐이고, 스크립트는 플래그를
-읽고 바로 끝난다.
-
-## 유튜브를 백엔드로 쓰는 구조
-
-페이지 자신이 쓰는 `youtubei/v1` 을 페이지의 `ytcfg` 로 부른다. 공식 Data API 를
-안 쓰는 이유는 할당량이다 — 곡 하나 추가에 50 유닛, 하루 10,000 유닛이면 200곡에서
-벽에 닿는다. 페이지 자신의 트래픽에는 그 예산이 없다.
-
-대신 내부 API 라 유튜브가 바꾸면 깨진다. 그래서 응답은 **경로로 찍지 않고 렌더러
-이름으로 찾는다**(`src/main/parse.ts`). 경로는 화면마다 다르고 예고 없이 바뀌지만,
-렌더러 이름은 유튜브 자신의 클라이언트가 분기하는 기준이라 잘 안 바뀐다.
-
-로그인은 SAPISIDHASH 로 증명한다. 로그인이 없어도 검색·홈·라디오는 되고,
-구독·기록·내 재생목록만 로그인을 요구한다. 그 판정은 응답을 넘겨짚지 않고
-**쿠키를 직접 본다** — 로그아웃 상태의 개인 피드는 오류가 아니라 빈 페이지로
-오기 때문에, 그러지 않으면 "본 게 없다"로 잘못 읽힌다.
-
-## 동작 범위
-
-매치는 `https://*.youtube.com/*` 하나다. 데스크톱(`www`)과 모바일(`m`) 양쪽에서 돈다.
-
-**`music.youtube.com` 은 일부러 제외했다.** 거기서도 마운트는 되는데 클라이언트가
-달라 `#movie_player` 도 없고 목록이 하나도 안 나온다. 멀쩡한 사이트 위에 빈 껍데기를
-덮는 것보다 안 뜨는 편이 낫다. 애초에 이 확장의 목적이 **일반 유튜브를 뮤직처럼
-쓰는 것**이라, 진짜 뮤직 위에서 할 일이 없다.
-
-### 폰과 데스크톱 판별
-
-**UA 로 판단하지 않는다.** 오리온은 아이폰에서도 데스크톱 맥 크롬 UA 를 보낸다 —
-형제 확장이 실기기에서 측정한 사실이다. UA 를 믿으면 **정확히 이 확장이 사는 그 기기**
-하나를 틀린다. 뷰포트도 아니다. 좁게 줄인 데스크톱 창은 폰이 아니고, 가로로 눕힌 폰은
-844px 이면서 여전히 폰이다.
-
-두 가지로 가른다 (`src/main/ui/device.ts`).
-
-1. 호스트가 `m.youtube.com` 이면 폰이다. **유튜브가 이미 판단해서 알려준 것이다.**
-2. 아니면 `screen` 의 짧은 변이 500px 이하인지 본다. 화면은 창이 아니라 기기를
-   설명하고, 짧은 변은 세로로 들든 가로로 눕히든 같다.
-
-### 폰 전용 배치
-
-- 사이드바가 **서랍**이 된다. 왼쪽에 붙은 아이콘 줄이 아니라, 하단 바의 버튼으로 연다.
-- 재생바가 두 줄이 된다. 위에 곡과 조작, 아래에 둘러보기 막대.
-- 목록에서 번호와 재생시간이 빠진다. 그 폭이 없다.
-- **음악 모드의 기본이 "소리만 듣기" 다.** 390px 화면에서 288px 짜리 구석 창은
-  뜰 자리가 없어 읽고 있는 목록을 덮는다. 하단 바의 앨범 이미지가 그림 역할을 한다.
-- 모바일 유튜브는 **같은 선반을 다른 렌더러로 보낸다** — `compactStationRenderer` 와
-  `compactVideoRenderer`. 파서가 둘 다 안다. 이걸 모르면 둘러보기가 통째로 빈다.
-
-## 광고 차단 비포함 — 병행이 전제
-
-**이 확장에는 광고 차단이 없고, 앞으로도 넣지 않는다.** 차단기는 언제든 다른 것으로
-바꿀 수 있어야 하는 물건이고, 여기에 끼워 넣으면 그 선택을 뺏는다.
-
-[`oc-ad-bye-pass`](../oc-ad-bye-pass) 와 같이 켜도 서로 방해하지 않는다.
-차단기는 네트워크 응답 단계에서 걸러서 우리 UI 안에서도 그대로 동작하고, 우리가
-페이지를 가려도 그 훅은 살아있다. `e2e/05-coexist.spec.ts` 가 둘을 한 브라우저에
-같이 올려 확인한다 — 우리 화면이 뜨고, 차단기의 마커가 살아있고, Esc 두 번으로
-나가는 것까지.
-
-**PiP 는 이 확장에 없다.** 그건 차단기 쪽 기능이고 여기엔 코드가 한 줄도 없다.
-
-## 오리온 대응
-
-**오리온은 매니페스트의 `world: "MAIN"` 을 무시한다.** 실패로 알려주지도 않는다 —
-같은 파일을 격리 세계에 대신 올려놓는데, 거기서는 `ytcfg` 도 `#movie_player` 의
-메서드도 보이지 않는다. 그대로 두면 빈 화면이다.
-
-그래서 두 겹으로 간다.
-
-```
-크롬   매니페스트가 main.js 를 페이지 세계에 올린다 → 바로 동작
-오리온 main.js 가 격리 세계에 떨어진다 → chrome.runtime.id 가 보이므로 조용히 멈춘다
-       isolated.js 가 0.5초 안에 아무 신고도 못 받으면 <script> 로 직접 주입한다
-```
-
-판정은 `chrome.runtime.id` 다. 격리 세계에서는 확장 ID 이고 페이지에서는
-`undefined` 이라 정확하다. 페이지 세계 안에서는 전역 하나로 한 번만 돌게 잠근다.
-
-주입 스크립트의 **`async` 는 반드시 `true` 로 둔다.** `false` 면 문서의 순서대로
-실행 목록에 끼어들어, 그 뒤에 삽입되는 스크립트(유튜브가 플레이어를 그렇게 만든다)가
-전부 우리 요청을 기다린다. 응답도 실패도 안 오는 요청 하나가 플레이어를 통째로
-멈춰 세운다. 형제 확장에서 2026-08-12 에 하루를 쓴 대가다.
-
-이 경로는 `e2e/02-orion.spec.ts` 가 지킨다. `world` 키를 떼어낸 빌드를 만들어
-같은 상황을 실제로 재현한다.
-
-## 빌드와 설치
+## Development
 
 ```bash
 npm install
-npm run build          # → dist/
-npm test               # 실기 Chromium 으로 live 유튜브에 대고 12개
+npm run build     # → dist/
+npm test          # builds, then runs the e2e suite against live youtube.com
+npm run check     # types only
+npm run zip       # renewtube.zip from dist/
+npm run site      # assembles the website the way GitHub Pages does
 ```
 
-**오리온** — 설정 → 확장 → **+** → [페이지](https://jshsakura.github.io/renewtube/)에서
-받은 zip. 아이폰 오리온도 같은 파일이다.
+Releases are tags: `release.yml` checks that the tag, `package.json` and the
+manifest agree, builds, verifies the package and attaches
+`renewtube-vX_Y_Z.zip` to a GitHub release. The website is built from `main`.
+The store upload is `store.yml`, run by hand with a tag. The listing copy of
+record is [docs/store-listing.md](docs/store-listing.md).
 
-**크롬** — `chrome://extensions` → 개발자 모드 → **압축해제된 확장 프로그램을 로드**
-→ `dist/`. 툴바 아이콘을 눌러 켠다.
-
-### 페이지 확인
-
-`npm run site` 는 미리보기가 아니라 **설치 시험**이다 — 빌드하고, `dist/` **안에서**
-압축하고(최상위가 `dist` 폴더인 zip 은 manifest 없는 확장으로 읽힌다), Pages 가 하는
-그대로 `_site/` 를 조립해서 띄운다. 로컬과 워크플로가 **같은 `download/index.json`** 을
-쓰므로 버튼의 주소가 로컬에서만 맞고 배포본에서 틀리는 일이 없다.
-
-배포된 페이지에서 받은 파일이 실제로 설치되는지도 확인할 수 있다:
-
-```bash
-unzip -q ~/Downloads/renewtube-0.1.0.zip -d /tmp/live
-DIST_DIR=/tmp/live npx playwright test e2e/00-safety.spec.ts e2e/04-tv.spec.ts
-```
-
-| 스크립트 | |
+| Path | What is there |
 |---|---|
-| `npm run dev` | 파일을 지켜보며 다시 빌드 |
-| `npm run check` | 타입만 검사 |
-| `npm run icons` | 아이콘 3종 다시 그림 |
-| `npm run zip` | 배포용 zip |
+| `src/main/` | the player engine, the API and parser, the screens |
+| `src/popup/` | the toolbar switch |
+| `public/` | manifest, icons, locales |
+| `e2e/` | Playwright tests, run against live YouTube with the extension loaded |
+| `site/` | the website and its images |
+| `docs/` | architecture, safety notes, store listing |
 
-## 남은 작업
+RenewTube is an independent project, not affiliated with YouTube or Google.
+YouTube is a trademark of Google LLC.
 
-- **아이폰 백그라운드 재생은 이 확장으로 안 된다.** 구글이 2026-02-03 에 서버에서
-  막았고 클라이언트에서 이길 수 있는 싸움이 아니다. **브라우저 자체의 백그라운드
-  재생 기능을 쓴다** — 오리온과 파이어폭스가 제공한다. 근거는
-  [`../oc-tunes/docs/research.md`](../oc-tunes/docs/research.md).
-- 재생목록 **순서 바꾸기**. `browse/edit_playlist` 에 이동 액션이 있으니 될 것이나
-  아직 안 붙였다.
-- 대기열 **드래그 정렬**.
-- 채널 화면이 없다. 지금은 "유튜브에서 열기"로 넘긴다.
-- 선반의 가로 스크롤에 좌우 버튼이 없다. 화살표 키로는 되고 마우스는 휠·드래그다.
-- `둘러보기`가 음악 채널 하나에 묶여 있다. 영상 쪽 둘러보기는 아직 없다.
-
-## 라이선스
+## License
 
 GPL-3.0-or-later.
