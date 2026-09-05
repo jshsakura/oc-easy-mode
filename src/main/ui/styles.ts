@@ -1375,9 +1375,18 @@ input[type=range]::-moz-range-thumb {
      indent the playing row past its neighbours; over the thumbnail is where
      every music app puts this, and it costs the grid nothing. */
   .row { position: relative; }
+  /* The box is placed from .rowInner, not from .row. .rowInner carries the
+     swipe transform, and a transform makes an element the containing block
+     for absolute descendants whether or not it is positioned, so any offset
+     written against the row's padding lands that much past the artwork.
+     Measured on the queue in both engines, 2026-09-05: with left: 10px the
+     bars sat 10px to the right of the picture and covered the gap before the
+     title. Positioned explicitly, so the origin is the same with the transform
+     gone, and the artwork is the first column, at 0. */
+  .rowInner { position: relative; }
   .row.now .idx {
     display: flex; align-items: center; justify-content: center;
-    position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
     width: 44px; height: 44px; z-index: 1;
     background: oklch(0 0 0 / 45%); border-radius: var(--radius-md);
   }
@@ -1595,7 +1604,7 @@ input[type=range]::-moz-range-thumb {
    Measured on the queue and 시청 기록 screens, 2026-09-05. */
 @media (max-width: 860px) {
   .main .rows .row.now .rowInner { grid-template-columns: 60px 1fr; }
-  .main .rows .row.now .idx { left: 10px; width: 60px; height: 60px; }
+  .main .rows .row.now .idx { left: 0; width: 60px; height: 60px; }
 }
 .main .rows > .queueMark { padding: 0 4px; }
 .main .rows > .queueMark:first-child { margin-top: 4px; }
