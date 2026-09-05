@@ -215,6 +215,26 @@ ytd-app > ytd-popup-container {
   display: none !important;
 }
 
+/* And then everything else, without naming it.
+ *
+ * The list above is a guess at YouTube's furniture, and a guess is what let a
+ * Shorts row float over the lists on a signed-in desktop after two rounds of
+ * guessing (2026-09-06). This rule needs no names: every element in the page
+ * that does not contain the player, is not the player or part of it, and is
+ * not ours, is not displayed. What survives is exactly the player's own
+ * ancestor chain (which inherited visibility still keeps invisible), the
+ * player, the mobile page's control subtree and its settings sheet with their
+ * own ancestors (the controls are a sibling subtree of the player's, so their
+ * chain is not the player's chain), and the sibling blocker's button. A page with no player yet, which is every browse
+ * page before a track is chosen, keeps nothing at all.
+ *
+ * :has() is in every browser this runs in (Chrome 105, WebKit 15.4). Whatever
+ * YouTube renames or moves, the rule follows the player, because it is
+ * written in terms of the player. Removing our stylesheet puts it all back. */
+body *:not(:has(#movie_player, #player-control-container, bottom-sheet-container)):not(#movie_player):not(#movie_player *):not(${HOST_TAG}):not(${OVERLAY_TAG}):not(#player-control-container):not(#player-control-container *):not(bottom-sheet-container):not(bottom-sheet-container *):not(#oc-abp-pip) {
+  display: none !important;
+}
+
 /* The desktop player hides its own right-hand buttons once it is narrow —
  * .ytp-xsmall-width-mode takes out every .ytp-right-controls .ytp-button — and
  * our stage is narrow often. 자막 and 설정 are not optional furniture; they are
