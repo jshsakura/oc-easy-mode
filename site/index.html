@@ -159,6 +159,16 @@ svg {
   --gap: 40px;
 }
 @media (max-width: 720px) {
+  /* The pill has to fit a phone: the icon, the language and the theme, and
+     not the words, which wrapped to two lines and pushed the pill to the
+     full width of the screen. */
+  .badge [data-i18n="s1"] { display: none; }
+  .badge { padding-left: 8px; }
+  #lang { max-width: 140px; }
+}
+/* Korean breaks between words, not inside them. */
+:root[lang="ko"] body { word-break: keep-all; }
+@media (max-width: 720px) {
   :root { --band: 56px; --gap: 28px; }
 }
 
