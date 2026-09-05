@@ -487,3 +487,56 @@ export function dedupe(list: readonly Track[]): Track[] {
   const seen = new Set<string>()
   return list.filter((t) => !seen.has(t.videoId) && seen.add(t.videoId))
 }
+
+/**
+ * One channel, as a search offers it.
+ *
+ * There is no channel screen in this app, so a hit is a name to search for
+ * rather than a place to go. The id is read anyway, because a byline is a
+ * display name and names are not identity, and whatever wants a channel screen
+ * later will want this.
+ */
+export interface ChannelHit {
+  id: string
+  title: string
+  /** The handle and the subscriber count, as the row rendered them. */
+  subtitle: string
+  /** The avatar, ready to use. */
+  avatar?: string
+}
+
+/**
+ * Channels from a search.
+ *
+ * **The two count fields are swapped, and that is YouTube's doing.** Measured
+ * 2026-09-05 against a live channels-only search on both clients:
+ * `videoCountText` holds "1.78K subscribers" and `subscriberCountText` holds
+ * the handle, "@Author_dlwlrma". Reading them by their names would print the
+ * handle where a count belongs and a count where the handle belongs, so they
+ * are joined in the order the row renders them and neither is labelled.
+ *
+ * `channelRenderer` is the desktop client's row, which is the one this app
+ * normally gets: search borrows the WEB client wherever the page is not one.
+ * `compactChannelRenderer` is what m.youtube.com's own client answers with,
+ * which is the fallback path, and it names the title `displayName`.
+ */
+export function channels(root: unknown): ChannelHit[] {
+  const out: ChannelHit[] = []
+  for (const key of ['channelRenderer', 'compactChannelRenderer']) {
+    for (const item of collect(root, key)) {
+      if (!isObject(item) || typeof item.channelId !== 'string') continue
+      const title = text(item.title) || text(item.displayName)
+      if (!title) continue
+      const avatar = pickThumb(item.thumbnail)
+      out.push({
+        id: item.channelId,
+        title,
+        subtitle: [text(item.subscriberCountText), text(item.videoCountText)].filter(Boolean).join(' · '),
+        // The mobile client hands these out protocol-relative.
+        avatar: avatar?.startsWith('//') ? `https:${avatar}` : avatar,
+      })
+    }
+  }
+  const seen = new Set<string>()
+  return out.filter((c) => !seen.has(c.id) && seen.add(c.id))
+}
