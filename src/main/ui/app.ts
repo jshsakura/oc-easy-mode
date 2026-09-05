@@ -23,7 +23,6 @@ import { installKeys } from './keys.ts'
 import { closeChannels } from './channels.ts'
 import { render } from './views.ts'
 import { closeSearch, openSearch } from './search.ts'
-import { closeEqualizer, openEqualizer } from './equalizer.ts'
 import { closeSettings, openSettings, type SettingsActions } from './settings.ts'
 import { MENU, menuLines, setMenuOn, topicTitle } from '../menu.ts'
 
@@ -661,7 +660,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     showMenu(shell.overlay, moreButton, [
       { label: `${t('재생 속도')} · ${rateLabel(engine.state.rate)}`, icon: 'next', onSelect: showSpeedMenu },
       { label: `${t('수면 예약')}${sleepSub}`, icon: 'moon', onSelect: showSleepMenu },
-      { label: `${t('이퀄라이저')} · ${engine.audio.on ? t('켜짐') : t('꺼짐')}`, icon: 'eq', onSelect: () => openEqualizer(ctx) },
       '-',
       {
         label: rating === 'dislike' ? t('관심 없음 취소') : t('관심 없음'),
@@ -671,16 +669,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     ])
   })
 
-  // The chain speaks up once, when it has found that this browser silences
-  // it. By then the sound is gone for this page load and only a reload
-  // brings it back, so the reload is done for the reader after the toast has
-  // had time to be read. The refusal is remembered, so it will not repeat.
-  let reloadTimer: ReturnType<typeof setTimeout> | undefined
-  const offAudio = engine.audio.subscribe((ev) => {
-    if (ev !== 'refused') return
-    toast(shell.overlay, t('소리가 나지 않아 이퀄라이저를 껐습니다. 새로고침합니다.'), true)
-    reloadTimer = setTimeout(() => location.reload(), 2500)
-  })
 
   /**
    * The two things the overflow menu was hiding, as buttons of their own.
@@ -699,8 +687,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   speedButton.addEventListener('click', showSpeedMenu)
   const sleepButton = h('button', { class: 'sl', 'data-nav': '', title: t('수면 예약') }, icon('moon', 18))
   sleepButton.addEventListener('click', showSleepMenu)
-  const eqButton = h('button', { class: 'eqb', 'data-nav': '', title: t('이퀄라이저') }, icon('eq', 18))
-  eqButton.addEventListener('click', () => openEqualizer(ctx))
 
   /**
    * The picture, turned on and off where you are watching.
@@ -972,7 +958,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   // The heart leads the right-hand row on every screen. Beside the title it
   // took the title's room in a column that has little: "하트 위치가 제목
   // 짜르고 있네" (2026-09-04). The title's column is the title's.
-  const rightRow = h('div', { class: 'right' }, rateBox, queueButton, lyricsButton, speedButton, sleepButton, eqButton, moreButton, muteButton, volume, videoButton)
+  const rightRow = h('div', { class: 'right' }, rateBox, queueButton, lyricsButton, speedButton, sleepButton, moreButton, muteButton, volume, videoButton)
   const now = h('div', { class: 'now' }, nowThumb, h('div', { class: 'nowText' }, nowTitle, nowBy))
   // The track itself is the handle: a phone opens the player by tapping what
   // is playing, which is what every music app has taught. It is a button on a
@@ -1024,7 +1010,6 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     speedButton.textContent = engine.state.rate === 1 ? '1x' : `${engine.state.rate}x`
     speedButton.classList.toggle('on', engine.state.rate !== 1)
     sleepButton.classList.toggle('on', engine.sleep !== undefined)
-    eqButton.classList.toggle('on', engine.audio.on)
     // The thumb as well as the track. Only the fill was being set, so muting
     // with the m key left the slider sitting at 100 with the sound off — the
     // one place a person looks to find out how loud it is.
@@ -1043,10 +1028,10 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     loadRating()
     // Lit while either of the things behind it is doing something, because a
     // player running at 1.5x with a timer armed should say so somewhere.
-    const armed = engine.state.rate !== 1 || engine.sleep !== undefined || engine.audio.on
+    const armed = engine.state.rate !== 1 || engine.sleep !== undefined
     moreButton.classList.toggle('on', armed)
     moreButton.title = armed
-      ? [engine.state.rate !== 1 ? `${engine.state.rate}x` : '', engine.sleep ? t('수면 예약') : '', engine.audio.on ? t('이퀄라이저') : '']
+      ? [engine.state.rate !== 1 ? `${engine.state.rate}x` : '', engine.sleep ? t('수면 예약') : '']
           .filter(Boolean)
           .join(' · ')
       : t('더보기')
@@ -1312,12 +1297,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
       // kept every shortcut and the twice-to-leave dead.
       closeSearch()
       closeChannels()
-      closeEqualizer()
       closeSettings()
-      // A reload still pending would take the plain page the reader has just
-      // gone back to; leaving the mode is the end of the matter.
-      clearTimeout(reloadTimer)
-      offAudio()
       themeWatch.disconnect()
       window.removeEventListener('resize', onResize)
       document.removeEventListener('keydown', onEscape)

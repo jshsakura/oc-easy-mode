@@ -138,22 +138,3 @@ test('the settings sheet does not outlive the mode', async () => {
   }
 })
 
-test('the equalizer dialog does not outlive the mode', async () => {
-  const h = await open('https://www.youtube.com/', false)
-  try {
-    await enterThroughConfig(h.page)
-    await survivesReentry(h.page, async (page) => {
-      const ui = app(page)
-      const over = page.locator('oc-easy-mode-overlay')
-      // Through the ⋯ menu: the bar's own equalizer button is drawn only on a
-      // phone with the player open.
-      await ui.locator('.bar .right .mr').click()
-      await over.locator('.menu button', { hasText: '이퀄라이저' }).click()
-      // Opened, not switched on. Turning it on builds the graph, which is a
-      // different thing from the dialog holding the modal count.
-      await expect(over.locator('.modal.equalizer')).toBeVisible()
-    })
-  } finally {
-    await h.close()
-  }
-})

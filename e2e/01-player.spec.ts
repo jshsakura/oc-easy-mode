@@ -162,7 +162,7 @@ test('an arrival of our own is allowed to play', async () => {
   const h = await open(WATCH, true)
   try {
     // The harness's quick flag is cleared by the background's answer once the
-    // app is up (see 10-equalizer); set again for the load that follows.
+    // app is up; set again for the load that follows.
     await h.page.addInitScript(() => {
       try {
         localStorage.setItem('oc-easy-mode:on', '1')
