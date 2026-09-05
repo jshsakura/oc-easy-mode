@@ -192,6 +192,29 @@ bottom-sheet-container {
  * the guide, so it is simply not drawn while the mode is on. */
 tp-yt-app-drawer#guide { display: none !important; }
 
+/* And the rest of the page's furniture, the same way. Hidden by inherited
+ * visibility, a subtree can still be brought back by any rule of YouTube's
+ * that declares visibility on it, and a Shorts row was seen floating over our
+ * lists on a signed-in desktop (2026-09-06) after the drawer had been dealt
+ * with. Nothing here can hold the player: the browse pages (home, playlist,
+ * channel) never have one, and on a watch page it lives in #primary. Display
+ * is not inherited and cannot be undone below, so these cannot paint at all.
+ * Removing our stylesheet puts every one of them back. */
+ytd-masthead,
+#masthead-container,
+ytd-mini-guide-renderer,
+ytd-browse,
+ytd-search,
+ytd-shorts,
+ytd-miniplayer,
+ytd-watch-flexy #secondary,
+ytd-watch-flexy #below,
+ytd-watch-flexy #panels,
+ytd-watch-flexy #chat-container,
+ytd-app > ytd-popup-container {
+  display: none !important;
+}
+
 /* The desktop player hides its own right-hand buttons once it is narrow —
  * .ytp-xsmall-width-mode takes out every .ytp-right-controls .ytp-button — and
  * our stage is narrow often. 자막 and 설정 are not optional furniture; they are

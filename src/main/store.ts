@@ -180,7 +180,7 @@ export const DEFAULTS: Persisted = {
   shuffle: false,
   volume: 100,
   rate: 1,
-  video: 'corner',
+  video: 'hidden',
   // Not 'home', which YouTube leaves empty until it knows you.
   view: 'explore',
 }
@@ -188,14 +188,14 @@ export const DEFAULTS: Persisted = {
 /**
  * Where the picture goes when a mode is switched on.
  *
- * On a narrow screen, music mode shows no picture at all. A floating corner
- * window has nowhere to float to on 390 pixels — it sits on top of the list you
- * are reading — and the intent here is YouTube Music, where the artwork in the
- * bar is picture enough.
+ * Music mode shows no picture at all, on every screen. It used to float a
+ * corner window on a desktop, and the owner met it as "that PiP thing in the
+ * bottom right" (2026-09-06): a window over a list nobody asked to watch,
+ * with YouTube's own controls on it. The intent here is YouTube Music, where
+ * the artwork in the bar is picture enough; 영상 is the mode for the picture.
  */
-export function layoutFor(mode: Mode, narrow: boolean = narrowNow()): VideoLayout {
-  if (mode === 'video') return 'stage'
-  return narrow ? 'hidden' : 'corner'
+export function layoutFor(mode: Mode, _narrow: boolean = narrowNow()): VideoLayout {
+  return mode === 'video' ? 'stage' : 'hidden'
 }
 
 export function load(): Persisted {
@@ -206,7 +206,10 @@ export function load(): Persisted {
     const raw = localStorage.getItem(KEY)
     if (!raw) return fresh
     const got = JSON.parse(raw) as Partial<Persisted>
-    return { ...fresh, ...got, queue: Array.isArray(got.queue) ? got.queue : [] }
+    const merged = { ...fresh, ...got, queue: Array.isArray(got.queue) ? got.queue : [] }
+    // The corner window is gone; a state saved with it lands on sound only.
+    if (merged.video === 'corner') merged.video = 'hidden'
+    return merged
   } catch {
     return fresh
   }

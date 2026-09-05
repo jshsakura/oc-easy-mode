@@ -35,7 +35,7 @@ test('search returns tracks, and choosing one drives the page\'s player', async 
   }
 })
 
-test('the player is placed over the slot, and the slot moves with the layout', async () => {
+test('music mode shows no picture, and the bar button brings the stage over the slot', async () => {
   const h = await open(WATCH)
   try {
     const ui = app(h.page)
@@ -54,24 +54,22 @@ test('the player is placed over the slot, and the slot moves with the layout', a
         return { slot: [slot.x, slot.y, slot.width, slot.height], player: [player.x, player.y, player.width, player.height] }
       })
 
-    await expect
-      .poll(async () => {
-        const r = await rects()
-        return r.slot.every((v, i) => Math.abs(v - r.player[i]!) < 2)
-      })
-      .toBe(true)
-
-    const corner = (await rects()).slot
-    // Cycle the bar's own button to the big layout; the player follows.
-    // Desktop order is hidden, corner, stage.
+    // Music mode shows no picture: the slot is drawn hidden and the player
+    // is parked out of sight. The corner window that used to appear here was
+    // taken for a stray PiP, and is gone.
+    await expect(ui.locator('.slot')).toHaveClass(/hidden/)
+    // The bar's own button brings the stage; the player follows the slot.
     await ui.locator('.bar .vid').click()
     await expect(ui.locator('.slot')).toHaveClass(/stage/)
     await expect
       .poll(async () => {
         const r = await rects()
-        return r.slot[2]! > corner[2]! + 100 && r.slot.every((v, i) => Math.abs(v - r.player[i]!) < 2)
+        return r.slot[2]! > 400 && r.slot.every((v, i) => Math.abs(v - r.player[i]!) < 2)
       })
       .toBe(true)
+    // And back to sound only.
+    await ui.locator('.bar .vid').click()
+    await expect(ui.locator('.slot')).toHaveClass(/hidden/)
   } finally {
     await h.close()
   }

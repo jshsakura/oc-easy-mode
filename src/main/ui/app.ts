@@ -704,7 +704,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
    * The list's shape follows the big one: watching is 영상, and 영상 draws
    * thumbnails.
    */
-  const videoOrder = (): Placement[] => (narrowNow() ? ['hidden', 'stage'] : ['hidden', 'corner', 'stage'])
+  const videoOrder = (): Placement[] => ['hidden', 'stage']
   const videoButton = h('button', { class: 'vid', 'data-nav': '', title: t('화면 보기') }, icon('video', 18))
   videoButton.addEventListener('click', () => {
     const order = videoOrder()
@@ -1022,7 +1022,7 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
     const next = { hidden: 'video', corner: 'expand', stage: 'videoOff' } as const
     replace(videoButton, icon(next[where], 18))
     videoButton.className = where === 'hidden' ? 'vid' : 'vid on'
-    videoButton.title = where === 'hidden' ? t('화면 보기') : where === 'stage' ? t('크게 보기') : t('구석에 두기')
+    videoButton.title = where === 'hidden' ? t('화면 보기') : t('소리만 듣기')
     prevButton.disabled = engine.state.queue.length === 0
     nextButton.disabled = engine.state.queue.length === 0
     loadRating()
@@ -1252,10 +1252,11 @@ export function mountApp(opts: AppOptions): { ctx: Ctx; destroy(): void } {
   function pictureNow(): VideoLayout {
     if (!engine.current) return 'hidden'
     if (engine.state.mode === 'video') return 'stage'
-    // Music: a corner window where there is room for one, and nothing at all
-    // on a phone. Leaving the stage up with the switch off was the bug —
-    // pressing it has to change something.
-    return narrowNow() ? 'hidden' : 'corner'
+    // Music: nothing at all. The corner window a desktop used to get here was
+    // a window over the list being read, with YouTube's controls on it, and
+    // was taken for a stray PiP (2026-09-06). Leaving the stage up with the
+    // switch off was the earlier bug, so pressing it still changes something.
+    return 'hidden'
   }
 
   let showing = engine.current?.videoId

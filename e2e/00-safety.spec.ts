@@ -4,6 +4,8 @@
 import { expect, test } from '@playwright/test'
 import { app, open } from './fixture.ts'
 
+const WATCH = 'https://www.youtube.com/watch?v=BzYnNdJhZQw'
+
 test('does nothing at all while switched off', async () => {
   const h = await open('https://www.youtube.com/', false)
   try {
@@ -77,6 +79,64 @@ test('nothing of YouTube shows through, even with its guide drawer open', async 
     await h.close()
   }
 })
+
+/**
+ * The strict check: nothing but ours is on top, anywhere on the screen.
+ *
+ * Not computed styles but the hit test: elementFromPoint on a grid over the
+ * whole viewport must land on our host, our overlay, the player, or the
+ * sibling blocker's PiP button. This catches a YouTube element that paints
+ * above us for any reason at all, a z-index we did not expect, a top-layer
+ * popover, a stylesheet of YouTube's that undoes our hiding, without knowing
+ * the reason in advance. A Shorts row floated over the lists on a desktop
+ * (2026-09-06) and the visibility census did not see it; this does.
+ */
+async function nothingOnTopBut(page: import('@playwright/test').Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const ok = (el: Element | null): boolean => {
+      if (!el) return true // outside the document: nothing painted there
+      const tag = el.tagName.toLowerCase()
+      if (tag === 'oc-easy-mode' || tag === 'oc-easy-mode-overlay') return true
+      if (tag === 'html' || tag === 'body') return true
+      if (el.closest('#movie_player, #player-control-container, bottom-sheet-container, #oc-abp-pip')) return true
+      return false
+    }
+    const bad: string[] = []
+    const w = innerWidth, h = innerHeight
+    for (let i = 0; i < 16; i++) {
+      for (let j = 0; j < 10; j++) {
+        const x = Math.round(((i + 0.5) / 16) * w), y = Math.round(((j + 0.5) / 10) * h)
+        const el = document.elementFromPoint(x, y)
+        if (!ok(el) && bad.length < 8) bad.push(`${x},${y}: ${el!.tagName.toLowerCase()}#${el!.id}.${[...el!.classList].slice(0, 2).join('.')}`)
+      }
+    }
+    return bad
+  })
+}
+
+for (const [name, url] of [
+  ['the home page', 'https://www.youtube.com/'],
+  ['a watch page', WATCH],
+  ['a playlist page', 'https://www.youtube.com/playlist?list=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI'],
+  ['a search page', 'https://www.youtube.com/results?search_query=shorts'],
+] as const) {
+  test(`nothing of YouTube paints on top of ours on ${name}, even with the guide open`, async () => {
+    const h = await open(url)
+    try {
+      await expect(app(h.page).locator('.app')).toBeVisible()
+      await h.page.waitForTimeout(2500)
+      expect(await nothingOnTopBut(h.page)).toEqual([])
+      await h.page.evaluate(() => {
+        const drawer = document.querySelector('tp-yt-app-drawer') as { opened?: boolean } | null
+        if (drawer) drawer.opened = true
+      })
+      await h.page.waitForTimeout(800)
+      expect(await nothingOnTopBut(h.page)).toEqual([])
+    } finally {
+      await h.close()
+    }
+  })
+}
 
 test('Escape twice puts YouTube back', async () => {
   const h = await open('https://www.youtube.com/')
