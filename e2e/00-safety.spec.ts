@@ -43,6 +43,41 @@ test('mounts exactly two nodes and touches nothing else', async () => {
   }
 })
 
+test('nothing of YouTube shows through, even with its guide drawer open', async () => {
+  const h = await open('https://www.youtube.com/')
+  try {
+    await expect(app(h.page).locator('.app')).toBeVisible()
+    // Polymer's drawer declares visibility: visible on its own content when
+    // opened, which inherited hidden cannot beat. Opened here the way the
+    // page would open it, then counted: every YouTube element with a box on
+    // screen that our sheet has not whitelisted, computed through shadow roots.
+    await h.page.evaluate(() => {
+      const drawer = document.querySelector('tp-yt-app-drawer') as { opened?: boolean } | null
+      if (drawer) drawer.opened = true
+    })
+    await h.page.waitForTimeout(800)
+    const visible = await h.page.evaluate(() => {
+      let n = 0
+      const walk = (root: Document | ShadowRoot) => {
+        for (const el of root.querySelectorAll('*')) {
+          if (el.closest('oc-easy-mode, oc-easy-mode-overlay')) continue
+          if (el.shadowRoot) walk(el.shadowRoot)
+          if (el.closest('#movie_player, #player-control-container, bottom-sheet-container')) continue
+          const cs = getComputedStyle(el)
+          if (cs.visibility !== 'visible' || cs.display === 'none') continue
+          const r = el.getBoundingClientRect()
+          if (r.width >= 40 && r.height >= 40) n++
+        }
+      }
+      walk(document)
+      return n
+    })
+    expect(visible).toBe(0)
+  } finally {
+    await h.close()
+  }
+})
+
 test('Escape twice puts YouTube back', async () => {
   const h = await open('https://www.youtube.com/')
   try {

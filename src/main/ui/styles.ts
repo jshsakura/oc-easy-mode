@@ -688,17 +688,16 @@ input { font: inherit; color: inherit; }
 
 .shelf { margin-bottom: 36px; }
 .shelf h3 { margin: 0 0 14px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
-/* A shelf that runs off the edge should look like it runs off the edge.
-   It was clipping a card in half against a hard border, which reads as broken
-   rather than as "there is more this way" — the complaint, in one word, was
-   구리다. The mask fades the last centimetre out, and disappears once the row
-   is scrolled to its end so nothing is faded that cannot be reached. */
+/* A shelf runs edge to edge. It used to stop at the pane's padding and fade
+   its last centimetre into nothing, and the owner asked for the width instead
+   of the fade (2026-09-06): the row is pulled out to the pane's own edges, and
+   a card cut by the edge is simply a card cut by the edge, which is what a
+   scrolling row looks like. */
 .shelfRow {
-  display: flex; gap: 16px; overflow-x: auto; padding: 0 0 12px;
-  scroll-snap-type: x proximity; scroll-padding-left: 0;
+  display: flex; gap: 16px; overflow-x: auto; padding: 0 44px 12px;
+  margin: 0 -44px;
+  scroll-snap-type: x proximity; scroll-padding-left: 44px;
   scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent 100%);
-  mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent 100%);
 }
 .shelfRow::-webkit-scrollbar { height: 0; }
 /* Scrolled to the end there is nothing beyond, so nothing fades. */
@@ -1184,7 +1183,6 @@ input[type=range]::-moz-range-thumb {
    error rather than as more content. The negative margin is the content
    padding, so the first card still lines up with the heading above it. */
 .app.narrow .shelfRow {
-  -webkit-mask-image: none; mask-image: none;
   margin-left: -16px; margin-right: -16px;
   padding-left: 16px; padding-right: 16px;
   scroll-padding-left: 16px;

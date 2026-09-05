@@ -182,6 +182,16 @@ bottom-sheet-container {
   pointer-events: auto !important;
 }
 
+/* YouTube's guide drawer, the one thing on the desktop page that undoes the
+ * blanking rule by itself. Polymer's app-drawer writes visibility: visible
+ * onto its content container whenever the drawer is opened, and inherited
+ * hidden loses to a declared visible. So with the guide open the whole guide,
+ * subscriptions and all, came back under our panes (reported from a desktop,
+ * 2026-09-06, as YouTube's sidebar and a Shorts row showing through). Display
+ * is not inherited and not undone by a descendant, and nothing of ours needs
+ * the guide, so it is simply not drawn while the mode is on. */
+tp-yt-app-drawer#guide { display: none !important; }
+
 /* The desktop player hides its own right-hand buttons once it is narrow —
  * .ytp-xsmall-width-mode takes out every .ytp-right-controls .ytp-button — and
  * our stage is narrow often. 자막 and 설정 are not optional furniture; they are
